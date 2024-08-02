@@ -1,0 +1,29 @@
+.App {
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+.timetable, .news, .valorant-stats {
+  margin: 20px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.news ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.news li {
+  margin: 10px 0;
+}
+
+.news a {
+  text-decoration: none;
+  color: #0366d6;
+}
+
+.news a:hover {
+  text-decoration: underline;
+}
