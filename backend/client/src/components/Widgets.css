@@ -1,0 +1,13 @@
+
+.Wid-container {
+
+    border: 1px solid #e6e6e6;
+    border-radius: 5px;
+    background-color: #363131;
+    width: 99%;
+    left: 5px;
+    height: 800px; /* Set a fixed height for the container */
+    position: relative;
+
+  }
+  

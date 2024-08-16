@@ -1,0 +1,78 @@
+/* src/components/HourlyForecast.css */
+
+  
+
+  .hourly-graph {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    position: relative;
+    height: 335px; /* Increase height to make better use of the container */
+    width: 99.5%;
+
+
+  }
+  
+  .hourly-point {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    border-left: 1px #f1f1f1;
+
+    width: 60px;
+    transition: height 0.3s ease-in-out; /* Smooth transition for height adjustment */
+    border-left: 1px  #f1f1f1;  /*Add a dotted left border for separation */
+    padding: 0 20px; /* Add padding to avoid content touching the border */
+  }
+  
+  .temperature {
+    font-size: 1em;
+    margin-bottom: 5px;
+    color: #f1f1f1; /* Light text color for better contrast */
+  }
+  
+  .weather-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 5px;
+  }
+  
+  .time {
+    font-size: 0.9em;
+    margin-top: 5px;
+    color: #f1f1f1; /* Light text color for better contrast */
+  }
+  
+  .hourly-details {
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.8em;
+    position: absolute;
+    bottom: 0;
+    
+
+  }
+  
+  .rain-chance, .wind-details {
+    display: flex;
+    align-items: center;
+    margin: 2px 0;
+  }
+  
+  .rain-chance span, .wind-details span {
+    margin-left: 5px;
+  }
+  
+  .hourly-graph::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #ffffff;
+    width: 99%;
+  }

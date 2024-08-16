@@ -1,29 +1,87 @@
+@font-face {
+  font-family: 'NothingFont';
+  src: url('./fonts/nothing-font-5x7.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Time-Font';
+  src: url('./fonts/Panton-LightCaps.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 .App {
   text-align: center;
-  font-family: Arial, sans-serif;
+  font-family: 'NothingFont', Arial, sans-serif;
+  color: white;
+  background-color: rgb(92, 83, 83);
+  height: 100vh;
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+  row-gap: 10px;
+  
 }
 
-.timetable, .news, .valorant-stats {
-  margin: 20px;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.time-container {
+
+  width: 100%;
+  height: auto;
+  top: 0;
+position: relative;
+
+  font-family: 'Montserrat', sans-serif;
+  
 }
 
-.news ul {
-  list-style-type: none;
-  padding: 0;
+.time-container-time {
+  top: 0;
+  font-family: 'Time-Font', Arial, sans-serif;
+  font-size: 14em;
+  font-weight: bold;
+  align-items: center;
 }
 
-.news li {
-  margin: 10px 0;
+.time-container-dateCon{
+
+  font-family: 'NothingFont';
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 200px 200px;
+    grid-gap: 10px;
+  
+  
+}
+.time-container-weekday , .temp-container-stats-temp, .temp-container-stats-weather ,.time-container-stats-humidity{
+flex: 1;
+
+margin: 10px;
+padding: 15px;
+
+border-radius: 5px;
+background-color: #252323;
+text-align: center;
+position: relative;
+transition: background-color 0.3s;
+}
+.temp-container-stats-temp ,.time-container-stats-humidity{
+  font-size: 3em;
+  padding-top: 50px;  
+
 }
 
-.news a {
-  text-decoration: none;
-  color: #0366d6;
+.time-container-weekday{
+  font-size: 3em;
+  overflow: hidden; ;
+  position: relative;
+  text-shadow: #ddd;
+  text-align: left;
 }
 
-.news a:hover {
-  text-decoration: underline;
+.CurrentWeather-Icon{
+
 }
+
