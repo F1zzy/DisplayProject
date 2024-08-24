@@ -40,7 +40,7 @@ position: relative;
 .time-container-time {
   top: 0;
   font-family: 'Time-Font', Arial, sans-serif;
-  font-size: 14em;
+  font-size: 10em;
   font-weight: bold;
   align-items: center;
 }

@@ -1,17 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import './StockMarket.css';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 async function fetchStockData(symbol, apiKey) {
   const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${apiKey}`;
-  
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error("Failed to fetch stock data");
-    }
-    const data = await response.json();
-    return data["Time Series (Daily)"];
+    const response = await axios.get(url);
+    const data = response.data['Time Series (Daily)'];
+    return data;
   } catch (error) {
     console.error("Error fetching stock data:", error);
     return null;
@@ -19,58 +36,115 @@ async function fetchStockData(symbol, apiKey) {
 }
 
 function StockMarket() {
-  const [stockData, setStockData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [stocks, setStocks] = useState([]);
+  const [selectedStockIndex, setSelectedStockIndex] = useState(0);
+
+  const symbols = ['AAPL', 'GOOGL', 'MSFT']; // Top 3 stocks you want to display
 
   useEffect(() => {
-    const fetchAllStockData = async () => {
+    const fetchAllStocks = async () => {
       const apiKey = process.env.REACT_APP_STOCK_API_KEY;
-      const symbols = ['AAPL', 'GOOGL', 'AMZN']; // Add more symbols if needed
-      const stockDataPromises = symbols.map(symbol => fetchStockData(symbol, apiKey));
-      
-      const results = await Promise.all(stockDataPromises);
-      setStockData(results);
-      setLoading(false);
+      const stockData = await Promise.all(symbols.map(symbol => fetchStockData(symbol, apiKey)));
+      setStocks(stockData);
     };
 
-    fetchAllStockData();
+    fetchAllStocks();
   }, []);
 
-  if (loading) {
-    return <div className="loading">Loading stock data...</div>;
-  }
+  const handleStockClick = (index) => {
+    setSelectedStockIndex(index);
+  };
 
-  const formatDataForChart = (data) => {
-    const labels = Object.keys(data).reverse().slice(0, 30); // Last 30 days
-    const prices = labels.map(label => parseFloat(data[label]["4. close"]));
+  const renderStockGraph = (data) => {
+    if (!data) return null;
 
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Stock Price',
-          data: prices,
-          fill: false,
-          backgroundColor: 'rgba(75,192,192,0.2)',
-          borderColor: 'rgba(75,192,192,1)',
-        },
-      ],
+    const dates = Object.keys(data).slice(0, 7).reverse();
+    const prices = dates.map(date => parseFloat(data[date]['4. close']));
+
+    const chartData = {
+      labels: dates,
+      datasets: [{
+        label: 'Stock Price',
+        data: prices,
+        fill: false,
+        backgroundColor: 'rgba(75,192,192,0.4)',
+        borderColor: 'rgba(75,192,192,1)',
+        tension: 0.1
+      }]
     };
+
+    const chartOptions = {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: '#333',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#ddd',
+          },
+          grid: {
+            color: '#444',
+          },
+        },
+        y: {
+          ticks: {
+            color: '#ddd',
+          },
+          grid: {
+            color: '#444',
+          },
+        }
+      }
+    };
+
+    return (
+      <div className="chart-wrapper">
+        <h2 className="chart-title">Last Week Performance</h2>
+        <div className="chart-container">
+          <Line data={chartData} options={chartOptions} />
+        </div>
+      </div>
+    );
+  };
+
+  const renderStockInfo = (data, symbol) => {
+    if (!data) return null;
+
+    const latestDate = Object.keys(data)[0];
+    const latestInfo = data[latestDate];
+
+    return (
+      <div className={`stock-item ${symbols.indexOf(symbol) === selectedStockIndex ? 'selected' : ''}`}
+           onClick={() => handleStockClick(symbols.indexOf(symbol))}>
+        <h3>{symbol}</h3>
+        <p>Latest Price: ${latestInfo['4. close']}</p>
+        <p>High: ${latestInfo['2. high']}</p>
+        <p>Low: ${latestInfo['3. low']}</p>
+        <p>Volume: {latestInfo['5. volume']}</p>
+      </div>
+    );
   };
 
   return (
-    <div className="stock-widget">
-      {stockData.map((data, index) => {
-        const symbol = ['AAPL', 'GOOGL', 'AMZN'][index]; // Match the symbol order with the data
-        const chartData = formatDataForChart(data);
-
-        return (
-          <div key={symbol} className="stock-chart-container">
-            <h3>{symbol}</h3>
-            <Line data={chartData} />
+    <div className="stock-market-widget">
+      <div className="stock-list">
+        {stocks.map((stock, index) => (
+          <div key={symbols[index]}>
+            {renderStockInfo(stock, symbols[index])}
           </div>
-        );
-      })}
+        ))}
+      </div>
+      <div className="stock-graph">
+        {renderStockGraph(stocks[selectedStockIndex])}
+      </div>
     </div>
   );
 }

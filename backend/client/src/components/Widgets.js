@@ -8,7 +8,7 @@ function Widgets() {
   const [currentWidget, setCurrentWidget] = useState(0);
   const widgetComponents = [
 
-    <StockMarket key="stock" />
+<StockMarket key="stock" />
   ];
 
   useEffect(() => {
