@@ -1,32 +1,49 @@
 /* src/components/WeatherBar.css */
 
 .forecast-container {
-
   border: 1px solid #e6e6e6;
   border-radius: 5px;
   background-color: #363131;
   width: 99%;
   left: 5px;
-  height: 400px; /* Set a fixed height for the container */
+  height: 400px;
   position: relative;
-  
+  overflow: hidden;
 }
 
 .forecast-content,
 .hourly-content {
-  transition: opacity 1s ease-in-out, transform 1s ease-in-out; /* Smooth transition for content change */
-  position: fixed;
-
-
+  transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
-.hourly-content{
+.forecast-content {
+  overflow: auto;
+}
+
+.hourly-content {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hourly-content h2 {
+  margin: 0 0 8px;
+  flex-shrink: 0;
+  font-size: 1.25rem;
 }
 
 .hidden {
   opacity: 0;
   transform: translateX(-100%);
+  pointer-events: none;
 }
 
 .visible {
