@@ -23,26 +23,24 @@ function TimeDisplay() {
     <div className="time-container">
       <div className="time-container-time">{time}</div>
       <div className="time-container-dateCon">
-        <div className="time-container-weekday">
+        <div className="time-container-weekday stat-card">
           <div>{weekday}</div>
           <div>{date}</div>
         </div>
-        <div className="temp-container-stats-temp">
-          {loading ? 'Loading...' : current ? `${current.temperature}°C` : 'N/A'}
+        <div className="time-container-stats-temp stat-card">
+          {loading ? '—' : current ? `${current.temperature}°C` : 'N/A'}
         </div>
-        <div className="temp-container-stats-weather">
-          <div></div>
-          <div className="CurrentWeather-Temp">
-            <h1>{loading ? 'Loading...' : current ? `${current.temperature}°C` : 'N/A'}</h1>
-          </div>
+        <div className="temp-container-stats-weather stat-card">
           <div className="CurrentWeather-Icon">
-            {current?.iconUrl && (
+            {current?.iconUrl ? (
               <img src={weatherIconUrl(current.iconUrl)} alt="Weather Icon" />
+            ) : (
+              <span>{loading ? '…' : '—'}</span>
             )}
           </div>
         </div>
-        <div className="time-container-stats-humidity">
-          {loading ? 'Humidity: --' : current ? `Humidity: ${current.humidity}%` : 'Humidity: N/A'}
+        <div className="time-container-stats-humidity stat-card">
+          {loading ? 'Humidity —' : current ? `${current.humidity}% humidity` : 'Humidity N/A'}
         </div>
       </div>
     </div>
@@ -73,9 +71,15 @@ function AppContent() {
 
   return (
     <div className="App">
-      <TimeDisplay />
-      <WeatherBar />
-      <Widgets forcedWidget={forcedWidget} onWidgetShown={() => setForcedWidget(null)} />
+      <header className="dashboard-header">
+        <TimeDisplay />
+      </header>
+      <section className="dashboard-weather">
+        <WeatherBar />
+      </section>
+      <section className="dashboard-widgets">
+        <Widgets forcedWidget={forcedWidget} onWidgetShown={() => setForcedWidget(null)} />
+      </section>
     </div>
   );
 }

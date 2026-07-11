@@ -1,4 +1,5 @@
 import React from 'react';
+import './TimeTable.css';
 
 const DEFAULT_SCHEDULE = [
   { time: '09:00', title: 'Morning standup', location: 'Remote' },

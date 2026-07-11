@@ -17,7 +17,7 @@
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  border-left: 1px solid rgba(241, 241, 241, 0.25);
+  border-left: 1px solid var(--border);
   padding: 0 1px;
   box-sizing: border-box;
   height: 100%;
@@ -44,7 +44,7 @@
   justify-content: flex-start;
   padding-top: 6px;
   box-sizing: border-box;
-  background: linear-gradient(to top, rgba(3, 102, 214, 0.45), rgba(37, 35, 35, 0.9));
+  background: linear-gradient(to top, var(--accent-soft), rgba(37, 35, 35, 0.9));
   border-radius: 4px 4px 0 0;
   transition: height 0.3s ease-in-out;
   min-height: 18%;
@@ -53,7 +53,7 @@
 .temperature {
   font-size: clamp(0.65rem, 1.1vw, 0.9rem);
   margin: 0 0 2px;
-  color: #f1f1f1;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
@@ -66,7 +66,7 @@
 .time {
   font-size: clamp(0.6rem, 1vw, 0.8rem);
   margin: 0;
-  color: #f1f1f1;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -78,7 +78,7 @@
   font-size: clamp(0.55rem, 0.9vw, 0.75rem);
   margin-top: 4px;
   flex-shrink: 0;
-  color: #ddd;
+  color: var(--text-secondary);
 }
 
 .rain-chance,
@@ -98,7 +98,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: var(--border-strong);
 }
 
 .hourly-status {
@@ -106,5 +106,5 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ddd;
+  color: var(--text-secondary);
 }

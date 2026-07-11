@@ -25,9 +25,9 @@ function WeatherForecast() {
     return () => clearInterval(intervalId);
   }, []);
 
-  if (loading) return <div>Getting Data. Wait to load</div>;
-  if (error) return <div>Failed to load weather data</div>;
-  if (!forecast) return <div>No forecast available</div>;
+  if (loading) return <div className="forecast-container panel widget-loading">Loading weather...</div>;
+  if (error) return <div className="forecast-container panel widget-loading">Failed to load weather data</div>;
+  if (!forecast) return <div className="forecast-container panel widget-loading">No forecast available</div>;
 
   const today = new Date().toISOString().split('T')[0];
   const getDayName = (dateStr) => {
@@ -43,7 +43,7 @@ function WeatherForecast() {
   };
 
   return (
-    <div className="forecast-container">
+    <div className="forecast-container panel">
       <div className={`forecast-content ${showHourly ? 'visible' : 'hidden'}`}>
         <h2>7-Day Forecast</h2>
         <div className="forecast-row">

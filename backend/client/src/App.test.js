@@ -18,7 +18,7 @@ beforeEach(() => {
   };
 });
 
-test('renders loading weather state', async () => {
+test('renders dashboard with weather stats', async () => {
   render(<App />);
-  expect(await screen.findByText(/Humidity:/i)).toBeInTheDocument();
+  expect(await screen.findByText(/humidity/i)).toBeInTheDocument();
 });

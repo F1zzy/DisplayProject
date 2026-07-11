@@ -5,9 +5,9 @@ import Timetable from './WidgetComponents/TimeTable';
 import StockMarket from './WidgetComponents/StockMarket';
 
 const WIDGET_COMPONENTS = [
-  { key: 'stock', Component: StockMarket },
-  { key: 'news', Component: News },
-  { key: 'timetable', Component: Timetable },
+  { key: 'stock', label: 'Stocks', Component: StockMarket },
+  { key: 'news', label: 'News', Component: News },
+  { key: 'timetable', label: 'Schedule', Component: Timetable },
 ];
 
 function Widgets({ forcedWidget, onWidgetShown }) {
@@ -31,7 +31,20 @@ function Widgets({ forcedWidget, onWidgetShown }) {
   const { Component } = WIDGET_COMPONENTS[currentWidget];
 
   return (
-    <div className="Wid-container">
+    <div className="Wid-container panel">
+      <div className="widget-toolbar">
+        <h2 className="widget-toolbar-title">Widgets</h2>
+        <div className="widget-tabs">
+          {WIDGET_COMPONENTS.map((widget, index) => (
+            <span
+              key={widget.key}
+              className={`widget-tab ${index === currentWidget ? 'active' : ''}`}
+            >
+              {widget.label}
+            </span>
+          ))}
+        </div>
+      </div>
       <div className="widget-display">
         <Component key={WIDGET_COMPONENTS[currentWidget].key} />
       </div>
