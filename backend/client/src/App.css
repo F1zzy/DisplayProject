@@ -26,6 +26,20 @@
   
 }
 
+.display-sleep {
+  width: 100vw;
+  height: 100vh;
+}
+
+.display-sleep--sleep {
+  background: #000;
+}
+
+.display-sleep--off {
+  background: #000;
+  opacity: 0;
+}
+
 .time-container {
 
   width: 100%;

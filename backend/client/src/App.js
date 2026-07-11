@@ -1,47 +1,20 @@
 import './App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import WeatherBar from './components/WeatherBar';
 import Widgets from './components/Widgets';
-async function getCurrentWeather(city) {
-  const apiKey = process.env.REACT_APP_WEATHER_API_KEY ; // Replace with your WeatherAPI key
-  const apiUrl = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}&aqi=no`;
-
-  try {
-    const response = await fetch(apiUrl);
-    const data = await response.json();
-
-    // Extract temperature and icon URL
-    const temperature = data.current.temp_c; // Temperature in Celsius
-    const iconUrl = data.current.condition.icon; // URL of the weather icon
-
-    return { temperature, iconUrl };
-  } catch (error) {
-    console.error("Error fetching weather data:", error);
-    return { temperature: null, iconUrl: '' }; // Return default values in case of error
-  }
-}
+import { WeatherProvider, useWeather } from './context/WeatherContext';
+import { useDisplayControl } from './hooks/useDisplayControl';
+import { weatherIconUrl } from './api/client';
 
 function TimeDisplay() {
   const [now, setNow] = useState(new Date());
-  const [weather, setWeather] = useState({ temperature: null, iconUrl: '' });
+  const { current, loading } = useWeather();
 
   useEffect(() => {
-    // Set an interval to update the time every second
     const timer = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timer); // Clear the interval on component unmount
+    return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    // Fetch weather data when the component mounts
-    const fetchWeather = async () => {
-      const weatherData = await getCurrentWeather('Nottingham'); // Replace with desired city
-      setWeather(weatherData);
-    };
-
-    fetchWeather();
-  }, []); // Empty dependency array to run only once on component mount
-
-  // Format the time to include seconds
   const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const weekday = now.toLocaleDateString([], { weekday: 'long' });
   const date = now.toLocaleDateString([], { month: 'long', day: 'numeric' });
@@ -54,28 +27,64 @@ function TimeDisplay() {
           <div>{weekday}</div>
           <div>{date}</div>
         </div>
-        <div className="temp-container-stats-temp">Temp: 89</div>
+        <div className="temp-container-stats-temp">
+          {loading ? 'Loading...' : current ? `${current.temperature}°C` : 'N/A'}
+        </div>
         <div className="temp-container-stats-weather">
           <div></div>
-          <div className='CurrentWeather-Temp'> <h1>{weather.temperature !== null ? `${weather.temperature}°C` : 'Loading...'}</h1> </div>
-         <div className='CurrentWeather-Icon'>{weather.iconUrl && <img src={`https:${weather.iconUrl}`} alt="Weather Icon" />}</div> 
-
+          <div className="CurrentWeather-Temp">
+            <h1>{loading ? 'Loading...' : current ? `${current.temperature}°C` : 'N/A'}</h1>
+          </div>
+          <div className="CurrentWeather-Icon">
+            {current?.iconUrl && (
+              <img src={weatherIconUrl(current.iconUrl)} alt="Weather Icon" />
+            )}
+          </div>
         </div>
-        <div className="time-container-stats-humidity">Humidity: 78%</div>
+        <div className="time-container-stats-humidity">
+          {loading ? 'Humidity: --' : current ? `Humidity: ${current.humidity}%` : 'Humidity: N/A'}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function AppContent() {
+  const [displayPower, setDisplayPower] = useState('on');
+  const [forcedWidget, setForcedWidget] = useState(null);
+
+  const handleDisplayMessage = useCallback((message) => {
+    if (message.type === 'display:power') {
+      setDisplayPower(message.action);
+    }
+    if (message.type === 'widgets:rotate') {
+      setForcedWidget(message.currentWidget);
+    }
+    if (message.type === 'widgets:set') {
+      setForcedWidget(message.currentWidget);
+    }
+  }, []);
+
+  useDisplayControl(handleDisplayMessage);
+
+  if (displayPower === 'off' || displayPower === 'sleep') {
+    return <div className={`display-sleep display-sleep--${displayPower}`} />;
+  }
+
+  return (
+    <div className="App">
+      <TimeDisplay />
+      <WeatherBar />
+      <Widgets forcedWidget={forcedWidget} onWidgetShown={() => setForcedWidget(null)} />
     </div>
   );
 }
 
 function App() {
   return (
-    <div className="App">
-      <TimeDisplay />
-      <WeatherBar />
-     <Widgets />
-      
-      {/* Other components like Timetable, News, ValorantStats */}
-    </div>
+    <WeatherProvider>
+      <AppContent />
+    </WeatherProvider>
   );
 }
 

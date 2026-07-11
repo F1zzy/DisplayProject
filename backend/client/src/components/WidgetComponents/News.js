@@ -1,26 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { getNews } from '../../api/client';
 import './News.css';
-
-async function fetchNews(category, apiKey) {
-    let url = '';
-
-    if (category === 'general') {
-        url = `https://newsapi.org/v2/top-headlines?sources=bbc-news&apiKey=${apiKey}`;
-    } else {
-        url = `https://newsapi.org/v2/top-headlines?q=technology&apiKey=${apiKey}`;
-    }
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error("Failed to fetch news");
-    }
-    const data = await response.json();
-    return data.articles;
-  } catch (error) {
-    console.error("Error fetching news:", error);
-    return [];
-  }
-}
 
 function News() {
   const [generalNews, setGeneralNews] = useState([]);
@@ -29,16 +9,18 @@ function News() {
 
   useEffect(() => {
     const fetchAllNews = async () => {
-      const apiKey = process.env.REACT_APP_NEWS_API_KEY;
-
-      const [general, tech] = await Promise.all([
-        fetchNews('general', apiKey),
-        fetchNews('technology', apiKey)
-      ]);
-
-      setGeneralNews(general);
-      setTechNews(tech);
-      setLoading(false);
+      try {
+        const [general, tech] = await Promise.all([
+          getNews('general'),
+          getNews('technology'),
+        ]);
+        setGeneralNews(general);
+        setTechNews(tech);
+      } catch (error) {
+        console.error('Error fetching news:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchAllNews();
@@ -50,7 +32,9 @@ function News() {
 
   const renderNewsItem = (article) => (
     <div className="news-item" key={article.url}>
-    <img src={article.urlToImage || 'ERROR'} className="news-image" />
+      {article.urlToImage && (
+        <img src={article.urlToImage} alt="" className="news-image" />
+      )}
       <div className="news-content">
         <h4 className="news-title">{article.title}</h4>
         <p className="news-description">{article.description}</p>

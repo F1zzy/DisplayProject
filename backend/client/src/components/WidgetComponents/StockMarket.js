@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -11,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { getStocks } from '../../api/client';
 import './StockMarket.css';
 
 ChartJS.register(
@@ -23,29 +23,23 @@ ChartJS.register(
   Legend
 );
 
-async function fetchStockData(symbol, apiKey) {
-  const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${apiKey}`;
-  try {
-    const response = await axios.get(url);
-    const data = response.data['Time Series (Daily)'];
-    return data;
-  } catch (error) {
-    console.error("Error fetching stock data:", error);
-    return null;
-  }
-}
-
 function StockMarket() {
   const [stocks, setStocks] = useState([]);
   const [selectedStockIndex, setSelectedStockIndex] = useState(0);
-
-  const symbols = ['AAPL', 'GOOGL', 'MSFT']; // Top 3 stocks you want to display
+  const [symbols, setSymbols] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAllStocks = async () => {
-      const apiKey = process.env.REACT_APP_STOCK_API_KEY;
-      const stockData = await Promise.all(symbols.map(symbol => fetchStockData(symbol, apiKey)));
-      setStocks(stockData);
+      try {
+        const result = await getStocks(['AAPL', 'GOOGL', 'MSFT']);
+        setSymbols(result.symbols);
+        setStocks(result.data);
+      } catch (error) {
+        console.error('Error fetching stock data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchAllStocks();
@@ -59,7 +53,7 @@ function StockMarket() {
     if (!data) return null;
 
     const dates = Object.keys(data).slice(0, 7).reverse();
-    const prices = dates.map(date => parseFloat(data[date]['4. close']));
+    const prices = dates.map((date) => parseFloat(data[date]['4. close']));
 
     const chartData = {
       labels: dates,
@@ -69,16 +63,14 @@ function StockMarket() {
         fill: false,
         backgroundColor: 'rgba(75,192,192,0.4)',
         borderColor: 'rgba(75,192,192,1)',
-        tension: 0.1
-      }]
+        tension: 0.1,
+      }],
     };
 
     const chartOptions = {
       responsive: true,
       plugins: {
-        legend: {
-          display: false
-        },
+        legend: { display: false },
         tooltip: {
           backgroundColor: '#333',
           titleColor: '#fff',
@@ -87,22 +79,14 @@ function StockMarket() {
       },
       scales: {
         x: {
-          ticks: {
-            color: '#ddd',
-          },
-          grid: {
-            color: '#444',
-          },
+          ticks: { color: '#ddd' },
+          grid: { color: '#444' },
         },
         y: {
-          ticks: {
-            color: '#ddd',
-          },
-          grid: {
-            color: '#444',
-          },
-        }
-      }
+          ticks: { color: '#ddd' },
+          grid: { color: '#444' },
+        },
+      },
     };
 
     return (
@@ -122,8 +106,10 @@ function StockMarket() {
     const latestInfo = data[latestDate];
 
     return (
-      <div className={`stock-item ${symbols.indexOf(symbol) === selectedStockIndex ? 'selected' : ''}`}
-           onClick={() => handleStockClick(symbols.indexOf(symbol))}>
+      <div
+        className={`stock-item ${symbols.indexOf(symbol) === selectedStockIndex ? 'selected' : ''}`}
+        onClick={() => handleStockClick(symbols.indexOf(symbol))}
+      >
         <h3>{symbol}</h3>
         <p>Latest Price: ${latestInfo['4. close']}</p>
         <p>High: ${latestInfo['2. high']}</p>
@@ -132,6 +118,10 @@ function StockMarket() {
       </div>
     );
   };
+
+  if (loading) {
+    return <div className="stock-market-widget">Loading stocks...</div>;
+  }
 
   return (
     <div className="stock-market-widget">

@@ -1,8 +1,24 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+jest.mock('./api/client', () => ({
+  getLocation: () => 'Nottingham',
+  getCurrentWeather: () =>
+    Promise.resolve({ temperature: 18, humidity: 65, iconUrl: '//cdn.weatherapi.com/icon.png' }),
+  getForecast: () => Promise.resolve([]),
+  getHourlyForecast: () => Promise.resolve([]),
+  getStocks: () => Promise.resolve({ symbols: [], data: [] }),
+  getNews: () => Promise.resolve([]),
+  weatherIconUrl: (icon) => (icon.startsWith('http') ? icon : `https:${icon}`),
+}));
+
+beforeEach(() => {
+  global.WebSocket = class {
+    close() {}
+  };
+});
+
+test('renders loading weather state', async () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(await screen.findByText(/Humidity:/i)).toBeInTheDocument();
 });

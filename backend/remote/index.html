@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111827" />
+  <link rel="manifest" href="/remote/manifest.json" />
+  <title>Display Remote</title>
+  <link rel="stylesheet" href="/remote/styles.css" />
+</head>
+<body>
+  <main class="remote">
+    <h1>Display Remote</h1>
+    <p class="remote-status" id="status">Ready</p>
+
+    <section class="remote-section">
+      <h2>Display Power</h2>
+      <div class="remote-buttons">
+        <button data-action="on">On</button>
+        <button data-action="sleep">Sleep</button>
+        <button data-action="off">Off</button>
+      </div>
+    </section>
+
+    <section class="remote-section">
+      <h2>Widgets</h2>
+      <div class="remote-buttons">
+        <button data-widget="rotate">Next Widget</button>
+        <button data-widget="0">Stocks</button>
+        <button data-widget="1">News</button>
+        <button data-widget="2">Timetable</button>
+      </div>
+    </section>
+
+    <section class="remote-section">
+      <h2>Settings</h2>
+      <label>
+        API Key
+        <input id="apiKey" type="password" placeholder="CONTROL_API_KEY" />
+      </label>
+      <label>
+        Server URL
+        <input id="serverUrl" type="text" placeholder="http://localhost:3000" />
+      </label>
+    </section>
+  </main>
+  <script src="/remote/app.js"></script>
+</body>
+</html>

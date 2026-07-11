@@ -1,48 +1,33 @@
-// src/components/WeatherBar.js
 import React, { useEffect, useState } from 'react';
 import './WeatherBar.css';
 import HourlyForecast from './HourlyForecast';
+import { useWeather } from '../context/WeatherContext';
+import { weatherIconUrl } from '../api/client';
 
 function WeatherForecast() {
-  const [forecast, setForecast] = useState(null);
+  const { forecast, loading, error } = useWeather();
   const [showHourly, setShowHourly] = useState(true);
   const [showMinTemp, setShowMinTemp] = useState(true);
-  const API_KEY = process.env.REACT_APP_WEATHER_API_KEY ;
-  const LOCATION = 'Nottingham';
 
-  useEffect(() => {
-    async function fetchForecast() {
-      try {
-        const response = await fetch(`http://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${LOCATION}&days=7`);
-        const data = await response.json();
-        console.log('Forecast Data:', data);
-        setForecast(data.forecast.forecastday);
-      } catch (error) {
-        console.error('Error fetching forecast data:', error);
-      }
-    }
-
-    fetchForecast();
-  }, [API_KEY, LOCATION]);
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setShowMinTemp(prev => !prev);
+      setShowMinTemp((prev) => !prev);
     }, 3000);
 
-    
-
     return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setShowHourly(prev => !prev);
-    }, 3000000); // Toggle view every 30 seconds
+      setShowHourly((prev) => !prev);
+    }, 30000);
 
     return () => clearInterval(intervalId);
   }, []);
 
-  if (!forecast) return <div>Getting Data. Wait to load </div>;
+  if (loading) return <div>Getting Data. Wait to load</div>;
+  if (error) return <div>Failed to load weather data</div>;
+  if (!forecast) return <div>No forecast available</div>;
 
   const today = new Date().toISOString().split('T')[0];
   const getDayName = (dateStr) => {
@@ -62,13 +47,17 @@ function WeatherForecast() {
       <div className={`forecast-content ${showHourly ? 'visible' : 'hidden'}`}>
         <h2>7-Day Forecast</h2>
         <div className="forecast-row">
-          {forecast.map(day => (
+          {forecast.map((day) => (
             <div
               key={day.date}
-              className={`forecast-item ${day.date === today ? 'highlighted' : ''}`}>
+              className={`forecast-item ${day.date === today ? 'highlighted' : ''}`}
+            >
               <p>{day.date === today ? 'Today' : getDayName(day.date)}</p>
               <p>{formatDate(day.date)}</p>
-              <img src={day.day.condition.icon} alt={day.day.condition.text} />
+              <img
+                src={weatherIconUrl(day.day.condition.icon)}
+                alt={day.day.condition.text}
+              />
               <p>{day.day.condition.text}</p>
 
               <div className={`temp-sun-container-${showMinTemp ? 'show-min' : 'show-max'}`}>
@@ -84,14 +73,11 @@ function WeatherForecast() {
                   </>
                 )}
               </div>
-
-
             </div>
           ))}
         </div>
       </div>
       <div className={`hourly-content ${showHourly ? 'hidden' : 'visible'}`}>
-
         <h2>12 Hour Forecast</h2>
         <HourlyForecast />
       </div>

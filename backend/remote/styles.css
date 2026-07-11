@@ -1,0 +1,62 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #111827;
+  color: #f9fafb;
+}
+
+.remote {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.remote h1 {
+  margin-top: 0;
+}
+
+.remote-section {
+  margin-bottom: 1.5rem;
+}
+
+.remote-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+label {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+input {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #374151;
+  background: #1f2937;
+  color: inherit;
+}
+
+.remote-status {
+  color: #93c5fd;
+}
+
+.remote-status--error {
+  color: #fca5a5;
+}

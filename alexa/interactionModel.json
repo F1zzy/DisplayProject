@@ -1,0 +1,53 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "display project",
+      "intents": [
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "DisplayPowerIntent",
+          "slots": [
+            {
+              "name": "Action",
+              "type": "DISPLAY_ACTION"
+            }
+          ],
+          "samples": [
+            "turn {Action} the display",
+            "set display to {Action}",
+            "{Action} the display"
+          ]
+        },
+        {
+          "name": "NextWidgetIntent",
+          "samples": [
+            "next widget",
+            "next widget on the display",
+            "rotate widget"
+          ]
+        }
+      ],
+      "types": [
+        {
+          "name": "DISPLAY_ACTION",
+          "values": [
+            { "name": { "value": "on" } },
+            { "name": { "value": "off" } },
+            { "name": { "value": "sleep" } }
+          ]
+        }
+      ]
+    }
+  }
+}

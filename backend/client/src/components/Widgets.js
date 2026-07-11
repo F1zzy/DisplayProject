@@ -4,26 +4,36 @@ import News from './WidgetComponents/News';
 import Timetable from './WidgetComponents/TimeTable';
 import StockMarket from './WidgetComponents/StockMarket';
 
-function Widgets() {
-  const [currentWidget, setCurrentWidget] = useState(0);
-  const widgetComponents = [
+const WIDGET_COMPONENTS = [
+  { key: 'stock', Component: StockMarket },
+  { key: 'news', Component: News },
+  { key: 'timetable', Component: Timetable },
+];
 
-<StockMarket key="stock" />
-  ];
+function Widgets({ forcedWidget, onWidgetShown }) {
+  const [currentWidget, setCurrentWidget] = useState(0);
 
   useEffect(() => {
-    // Rotate widgets every 2 minutes (120,000 milliseconds)
-    const interval = setInterval(() => {
-      setCurrentWidget((prevWidget) => (prevWidget + 1) % widgetComponents.length);
-    }, 120000); // 120000ms = 2 minutes
+    if (forcedWidget !== null && forcedWidget !== undefined) {
+      setCurrentWidget(forcedWidget);
+      onWidgetShown?.();
+    }
+  }, [forcedWidget, onWidgetShown]);
 
-    return () => clearInterval(interval); // Cleanup on component unmount
-  }, [widgetComponents.length]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentWidget((prevWidget) => (prevWidget + 1) % WIDGET_COMPONENTS.length);
+    }, 120000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const { Component } = WIDGET_COMPONENTS[currentWidget];
 
   return (
     <div className="Wid-container">
       <div className="widget-display">
-        {widgetComponents[currentWidget]}
+        <Component key={WIDGET_COMPONENTS[currentWidget].key} />
       </div>
     </div>
   );
