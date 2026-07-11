@@ -1,5 +1,6 @@
 const express = require('express');
 const api = require('../services/api');
+const { setDisplayPower } = require('../services/displayPower');
 
 function createDisplayRouter(broadcast) {
   const router = express.Router();
@@ -29,6 +30,7 @@ function createDisplayRouter(broadcast) {
 
     displayState = { ...displayState, power: action };
     broadcast({ type: 'display:power', action });
+    setDisplayPower(action);
     res.json(displayState);
   });
 
@@ -58,6 +60,7 @@ function createDisplayRouter(broadcast) {
     if (action === 'on' || action === 'off') {
       displayState = { ...displayState, power: action };
       broadcast({ type: 'display:power', action });
+      setDisplayPower(action);
     }
     res.sendStatus(200);
   });

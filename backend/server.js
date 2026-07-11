@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const http = require('http');
+const os = require('os');
 const { WebSocketServer } = require('ws');
 
 const apiRoutes = require('./routes/api');
@@ -10,7 +11,20 @@ const createDisplayRouter = require('./routes/display');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || '0.0.0.0';
 const clients = new Set();
+
+function getLanAddress() {
+  const interfaces = os.networkInterfaces();
+  for (const entries of Object.values(interfaces)) {
+    for (const entry of entries || []) {
+      if (entry.family === 'IPv4' && !entry.internal) {
+        return entry.address;
+      }
+    }
+  }
+  return null;
+}
 
 function broadcast(message) {
   const payload = JSON.stringify(message);
@@ -55,8 +69,13 @@ wss.on('connection', (ws) => {
 });
 
 if (require.main === module) {
-  server.listen(port, () => {
+  server.listen(port, host, () => {
     console.log(`Server running at http://localhost:${port}`);
+    const lanAddress = getLanAddress();
+    if (lanAddress) {
+      console.log(`LAN access: http://${lanAddress}:${port}`);
+      console.log(`Remote control: http://${lanAddress}:${port}/remote`);
+    }
   });
 }
 

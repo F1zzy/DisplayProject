@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=DisplayProject Kiosk
+Comment=Fullscreen dashboard on HDMI monitor
+Exec=__APP_DIR__/scripts/raspberry-pi/kiosk.sh
+X-GNOME-Autostart-enabled=true
