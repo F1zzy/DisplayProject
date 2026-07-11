@@ -30,6 +30,8 @@ function WeatherForecast() {
   if (!forecast) return <div className="forecast-container panel widget-loading">No forecast available</div>;
 
   const today = new Date().toISOString().split('T')[0];
+  const forecastDays = forecast.slice(0, 3);
+
   const getDayName = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { weekday: 'long' });
@@ -45,33 +47,50 @@ function WeatherForecast() {
   return (
     <div className="forecast-container panel">
       <div className={`forecast-content ${showHourly ? 'visible' : 'hidden'}`}>
-        <h2>7-Day Forecast</h2>
+        <h2>3-Day Forecast</h2>
         <div className="forecast-row">
-          {forecast.map((day) => (
+          {forecastDays.map((day) => (
             <div
               key={day.date}
               className={`forecast-item ${day.date === today ? 'highlighted' : ''}`}
             >
-              <p>{day.date === today ? 'Today' : getDayName(day.date)}</p>
-              <p>{formatDate(day.date)}</p>
-              <img
-                src={weatherIconUrl(day.day.condition.icon)}
-                alt={day.day.condition.text}
-              />
-              <p>{day.day.condition.text}</p>
+              <div className="forecast-item-header">
+                <span className="forecast-day-name">
+                  {day.date === today ? 'Today' : getDayName(day.date)}
+                </span>
+                <span className="forecast-day-date">{formatDate(day.date)}</span>
+              </div>
 
-              <div className={`temp-sun-container-${showMinTemp ? 'show-min' : 'show-max'}`}>
-                {showMinTemp ? (
-                  <>
-                    <p>Min Temp: {day.day.mintemp_c}°C</p>
-                    <p>Sunrise: {day.astro.sunrise}</p>
-                  </>
-                ) : (
-                  <>
-                    <p>Max Temp: {day.day.maxtemp_c}°C</p>
-                    <p>Sunset: {day.astro.sunset}</p>
-                  </>
-                )}
+              <div className="forecast-item-body">
+                <img
+                  className="forecast-icon"
+                  src={weatherIconUrl(day.day.condition.icon)}
+                  alt={day.day.condition.text}
+                />
+                <p className="forecast-condition">{day.day.condition.text}</p>
+              </div>
+
+              <div className="forecast-details">
+                <div className={`forecast-details-block ${showMinTemp ? 'active' : ''}`}>
+                  <div className="forecast-stat">
+                    <span className="forecast-stat-label">Min</span>
+                    <span className="forecast-stat-value">{day.day.mintemp_c}°C</span>
+                  </div>
+                  <div className="forecast-stat forecast-stat--secondary">
+                    <span className="forecast-stat-label">Sunrise</span>
+                    <span className="forecast-stat-value">{day.astro.sunrise}</span>
+                  </div>
+                </div>
+                <div className={`forecast-details-block ${showMinTemp ? '' : 'active'}`}>
+                  <div className="forecast-stat">
+                    <span className="forecast-stat-label">Max</span>
+                    <span className="forecast-stat-value">{day.day.maxtemp_c}°C</span>
+                  </div>
+                  <div className="forecast-stat forecast-stat--secondary">
+                    <span className="forecast-stat-label">Sunset</span>
+                    <span className="forecast-stat-value">{day.astro.sunset}</span>
+                  </div>
+                </div>
               </div>
             </div>
           ))}

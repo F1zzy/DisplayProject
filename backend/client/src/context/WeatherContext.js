@@ -17,7 +17,7 @@ export function WeatherProvider({ children }) {
       try {
         const [currentData, forecastData, hourlyData] = await Promise.all([
           getCurrentWeather(location),
-          getForecast(location),
+          getForecast(location, 3),
           getHourlyForecast(location),
         ]);
         setCurrent(currentData);

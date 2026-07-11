@@ -13,6 +13,8 @@ import {
 import { getStocks } from '../../api/client';
 import './StockMarket.css';
 
+const APP_FONT = "'NothingFont', 'Segoe UI', sans-serif";
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -22,6 +24,9 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+
+ChartJS.defaults.font.family = APP_FONT;
+ChartJS.defaults.color = '#b8bcc4';
 
 function formatPrice(value) {
   return Number.parseFloat(value).toFixed(2);
@@ -101,6 +106,8 @@ function StockMarket() {
           bodyColor: '#ddd',
           borderColor: '#444',
           borderWidth: 1,
+          titleFont: { family: APP_FONT },
+          bodyFont: { family: APP_FONT },
           callbacks: {
             label: (context) => `$${context.parsed.y.toFixed(2)}`,
           },
@@ -108,12 +115,13 @@ function StockMarket() {
       },
       scales: {
         x: {
-          ticks: { color: '#aaa', maxRotation: 0 },
+          ticks: { color: '#aaa', maxRotation: 0, font: { family: APP_FONT } },
           grid: { color: 'rgba(255, 255, 255, 0.06)' },
         },
         y: {
           ticks: {
             color: '#aaa',
+            font: { family: APP_FONT },
             callback: (value) => `$${value}`,
           },
           grid: { color: 'rgba(255, 255, 255, 0.08)' },
