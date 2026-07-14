@@ -1,6 +1,8 @@
 const express = require('express');
 const api = require('../services/api');
 const calendar = require('../services/calendar');
+const networkStats = require('../services/networkStats');
+const settings = require('../services/settings');
 
 const router = express.Router();
 
@@ -22,7 +24,8 @@ router.get('/weather/current', async (req, res) => {
 router.get('/weather/forecast', async (req, res) => {
   try {
     const location = api.getLocation(req);
-    const days = Math.min(parseInt(req.query.days, 10) || 7, 7);
+    const defaultDays = settings.getSettings().forecastDays;
+    const days = Math.min(parseInt(req.query.days, 10) || defaultDays, 7);
     const data = await api.getForecast(location, days);
     res.json(data);
   } catch (error) {
@@ -54,7 +57,8 @@ router.get('/stocks/:symbol', async (req, res) => {
 
 router.get('/stocks', async (req, res) => {
   try {
-    const symbols = (req.query.symbols || 'AAPL,GOOGL,MSFT')
+    const defaultSymbols = settings.getSettings().stockSymbols.join(',');
+    const symbols = (req.query.symbols || defaultSymbols)
       .split(',')
       .map((s) => s.trim().toUpperCase())
       .filter(Boolean);
@@ -88,7 +92,8 @@ router.get('/calendar/events', async (req, res) => {
       });
     }
 
-    const days = Math.min(parseInt(req.query.days, 10) || 1, 7);
+    const defaultDays = settings.getSettings().calendarDays;
+    const days = Math.min(parseInt(req.query.days, 10) || defaultDays, 7);
     const events = await calendar.getUpcomingEvents({ days });
     res.json({ configured: true, events });
   } catch (error) {
@@ -101,6 +106,16 @@ router.get('/calendar/events', async (req, res) => {
       });
     }
     res.status(502).json({ error: 'Failed to fetch calendar events', events: [] });
+  }
+});
+
+router.get('/network/stats', async (_req, res) => {
+  try {
+    const stats = await networkStats.getNetworkStats();
+    res.json(stats);
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({ error: 'Failed to fetch network stats' });
   }
 });
 

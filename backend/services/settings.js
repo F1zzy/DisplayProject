@@ -1,0 +1,174 @@
+const fs = require('fs');
+const path = require('path');
+
+const DATA_DIR = path.join(__dirname, '..', 'data');
+const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
+
+const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network'];
+
+const VALID_BACKGROUND_MODES = ['default', 'color', 'image'];
+
+const DEFAULTS = {
+  location: process.env.LOCATION || 'Nottingham',
+  stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
+  widgetRotationMs: 120000,
+  enabledWidgets: [...VALID_WIDGETS],
+  calendarDays: 1,
+  newsGeneral: true,
+  newsTechnology: true,
+  forecastDays: 3,
+  backgroundMode: 'default',
+  backgroundColor: '#141212',
+  backgroundImage: '',
+};
+
+let cache = null;
+
+function ensureDataDir() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+}
+
+function sanitizeSymbols(input) {
+  const list = Array.isArray(input)
+    ? input
+    : String(input || '')
+        .split(',')
+        .map((s) => s.trim());
+
+  return list
+    .map((s) => String(s).toUpperCase().replace(/[^A-Z0-9.-]/g, ''))
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function sanitizeEnabledWidgets(input) {
+  if (!Array.isArray(input)) return [...DEFAULTS.enabledWidgets];
+  const seen = new Set();
+  const result = [];
+  for (const id of input) {
+    if (VALID_WIDGETS.includes(id) && !seen.has(id)) {
+      seen.add(id);
+      result.push(id);
+    }
+  }
+  return result.length > 0 ? result : [...DEFAULTS.enabledWidgets];
+}
+
+function clampInt(value, min, max, fallback) {
+  const n = parseInt(value, 10);
+  if (Number.isNaN(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+function sanitizeBackgroundMode(value) {
+  const mode = String(value || '').toLowerCase();
+  return VALID_BACKGROUND_MODES.includes(mode) ? mode : DEFAULTS.backgroundMode;
+}
+
+function sanitizeBackgroundColor(value) {
+  const color = String(value || '').trim();
+  if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(color)) {
+    return color.toLowerCase();
+  }
+  return DEFAULTS.backgroundColor;
+}
+
+function sanitizeBackgroundImage(value) {
+  const url = String(value || '').trim();
+  if (!url) return '';
+  if (url.length > 2048) return '';
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return '';
+    }
+    return parsed.toString();
+  } catch {
+    return '';
+  }
+}
+
+function normalize(partial = {}) {
+  const merged = { ...DEFAULTS, ...partial };
+  const symbols = sanitizeSymbols(merged.stockSymbols);
+
+  return {
+    location: String(merged.location || DEFAULTS.location).trim() || DEFAULTS.location,
+    stockSymbols: symbols.length ? symbols : [...DEFAULTS.stockSymbols],
+    widgetRotationMs: clampInt(merged.widgetRotationMs, 0, 3600000, DEFAULTS.widgetRotationMs),
+    enabledWidgets: sanitizeEnabledWidgets(merged.enabledWidgets),
+    calendarDays: clampInt(merged.calendarDays, 1, 7, DEFAULTS.calendarDays),
+    newsGeneral: Boolean(merged.newsGeneral),
+    newsTechnology: Boolean(merged.newsTechnology),
+    forecastDays: clampInt(merged.forecastDays, 1, 7, DEFAULTS.forecastDays),
+    backgroundMode: sanitizeBackgroundMode(merged.backgroundMode),
+    backgroundColor: sanitizeBackgroundColor(merged.backgroundColor),
+    backgroundImage: sanitizeBackgroundImage(merged.backgroundImage),
+  };
+}
+
+function readFromDisk() {
+  try {
+    if (!fs.existsSync(SETTINGS_PATH)) {
+      return normalize();
+    }
+    const raw = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
+    return normalize(raw);
+  } catch (error) {
+    console.error('Failed to read settings.json, using defaults:', error.message);
+    return normalize();
+  }
+}
+
+function writeToDisk(settings) {
+  ensureDataDir();
+  const tmpPath = `${SETTINGS_PATH}.${process.pid}.tmp`;
+  fs.writeFileSync(tmpPath, `${JSON.stringify(settings, null, 2)}\n`, 'utf8');
+  fs.renameSync(tmpPath, SETTINGS_PATH);
+}
+
+function getSettings() {
+  if (!cache) {
+    cache = readFromDisk();
+  }
+  return { ...cache, stockSymbols: [...cache.stockSymbols], enabledWidgets: [...cache.enabledWidgets] };
+}
+
+function updateSettings(partial) {
+  if (!partial || typeof partial !== 'object' || Array.isArray(partial)) {
+    const error = new Error('Settings body must be an object');
+    error.status = 400;
+    throw error;
+  }
+
+  const allowed = new Set(Object.keys(DEFAULTS));
+  const unknown = Object.keys(partial).filter((key) => !allowed.has(key));
+  if (unknown.length) {
+    const error = new Error(`Unknown settings keys: ${unknown.join(', ')}`);
+    error.status = 400;
+    throw error;
+  }
+
+  const next = normalize({ ...getSettings(), ...partial });
+  writeToDisk(next);
+  cache = next;
+  return getSettings();
+}
+
+function resetSettingsCache() {
+  cache = null;
+}
+
+module.exports = {
+  VALID_WIDGETS,
+  VALID_BACKGROUND_MODES,
+  DEFAULTS,
+  getSettings,
+  updateSettings,
+  normalize,
+  resetSettingsCache,
+  SETTINGS_PATH,
+  DATA_DIR,
+};

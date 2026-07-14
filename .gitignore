@@ -27,3 +27,6 @@ Thumbs.db
 
 # Test coverage
 coverage/
+
+# Runtime settings (defaults applied if missing)
+backend/data/settings.json

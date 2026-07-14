@@ -20,6 +20,7 @@
   gap: var(--gap-lg);
   font-family: var(--font-body);
   color: var(--text-primary);
+  background-color: transparent;
 }
 
 .dashboard-header,

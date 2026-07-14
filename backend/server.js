@@ -8,6 +8,7 @@ const { WebSocketServer } = require('ws');
 
 const apiRoutes = require('./routes/api');
 const createDisplayRouter = require('./routes/display');
+const createSettingsRouter = require('./routes/settings');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -40,6 +41,9 @@ app.use('/api', apiRoutes);
 
 const displayRouter = createDisplayRouter(broadcast);
 app.use('/api/display', displayRouter);
+
+const settingsRouter = createSettingsRouter(broadcast);
+app.use('/api/settings', settingsRouter);
 
 app.post('/api/control-display', (req, res, next) => {
   req.url = '/control-display';

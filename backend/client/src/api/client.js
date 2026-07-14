@@ -49,6 +49,14 @@ export async function getCalendarEvents(days = 1) {
   };
 }
 
+export function getNetworkStats() {
+  return request('/api/network/stats');
+}
+
+export function getSettings() {
+  return request('/api/settings');
+}
+
 export function weatherIconUrl(iconPath) {
   if (!iconPath) return '';
   return iconPath.startsWith('http') ? iconPath : `https:${iconPath}`;

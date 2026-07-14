@@ -11,6 +11,7 @@ import {
   Legend,
 } from 'chart.js';
 import { getStocks } from '../../api/client';
+import { useSettings } from '../../context/SettingsContext';
 import './StockMarket.css';
 
 const APP_FONT = "'NothingFont', 'Segoe UI', sans-serif";
@@ -42,26 +43,40 @@ function formatChartDate(dateStr) {
 }
 
 function StockMarket() {
+  const { settings } = useSettings();
+  const symbolsKey = (settings.stockSymbols || []).join(',');
   const [stocks, setStocks] = useState([]);
   const [selectedStockIndex, setSelectedStockIndex] = useState(0);
   const [symbols, setSymbols] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    const requestedSymbols = symbolsKey
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
     const fetchAllStocks = async () => {
+      setLoading(true);
       try {
-        const result = await getStocks(['AAPL', 'GOOGL', 'MSFT']);
+        const result = await getStocks(requestedSymbols);
+        if (cancelled) return;
         setSymbols(result.symbols);
         setStocks(result.data);
+        setSelectedStockIndex(0);
       } catch (error) {
         console.error('Error fetching stock data:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchAllStocks();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [symbolsKey]);
 
   const selectedSymbol = symbols[selectedStockIndex];
   const selectedData = stocks[selectedStockIndex];

@@ -13,6 +13,7 @@ const NEWS_TTL_MS = 15 * 60 * 1000;
 const STOCK_FETCH_DELAY_MS = 13000;
 
 const cache = require('./cache');
+const settings = require('./settings');
 
 async function fetchJson(url) {
   const response = await fetch(url);
@@ -23,7 +24,10 @@ async function fetchJson(url) {
 }
 
 function getLocation(req) {
-  return req.query.location || LOCATION;
+  if (req?.query?.location) {
+    return req.query.location;
+  }
+  return settings.getSettings().location || LOCATION;
 }
 
 async function getCurrentWeather(location) {

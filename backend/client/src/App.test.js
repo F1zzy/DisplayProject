@@ -3,6 +3,20 @@ import App from './App';
 
 jest.mock('./api/client', () => ({
   getLocation: () => 'Nottingham',
+  getSettings: () =>
+    Promise.resolve({
+      location: 'Nottingham',
+      stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
+      widgetRotationMs: 120000,
+      enabledWidgets: ['stock', 'news', 'timetable', 'network'],
+      calendarDays: 1,
+      newsGeneral: true,
+      newsTechnology: true,
+      forecastDays: 3,
+      backgroundMode: 'default',
+      backgroundColor: '#141212',
+      backgroundImage: '',
+    }),
   getCurrentWeather: () =>
     Promise.resolve({ temperature: 18, humidity: 65, iconUrl: '//cdn.weatherapi.com/icon.png' }),
   getForecast: () => Promise.resolve([]),
@@ -10,6 +24,16 @@ jest.mock('./api/client', () => ({
   getStocks: () => Promise.resolve({ symbols: [], data: [] }),
   getNews: () => Promise.resolve([]),
   getCalendarEvents: () => Promise.resolve({ events: [], configured: false }),
+  getNetworkStats: () =>
+    Promise.resolve({
+      online: true,
+      latencyMs: 12,
+      checkedAt: new Date().toISOString(),
+      lastOnlineAt: new Date().toISOString(),
+      interface: null,
+      rxBps: null,
+      txBps: null,
+    }),
   weatherIconUrl: (icon) => (icon.startsWith('http') ? icon : `https:${icon}`),
 }));
 

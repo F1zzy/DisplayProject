@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getNews } from '../../api/client';
+import { useSettings } from '../../context/SettingsContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faNewspaper, faMicrochip } from '@fortawesome/free-solid-svg-icons';
 import './News.css';
@@ -55,28 +56,42 @@ function NewsThumbnail({ article, variant = 'general' }) {
 }
 
 function News() {
+  const { settings } = useSettings();
+  const showGeneral = settings.newsGeneral !== false;
+  const showTechnology = settings.newsTechnology !== false;
   const [generalNews, setGeneralNews] = useState([]);
   const [techNews, setTechNews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchAllNews = async () => {
+      setLoading(true);
       try {
-        const [general, tech] = await Promise.all([
-          getNews('general'),
-          getNews('technology'),
-        ]);
-        setGeneralNews(general);
-        setTechNews(tech);
+        const tasks = [];
+        if (showGeneral) tasks.push(getNews('general').then((data) => ({ type: 'general', data })));
+        if (showTechnology) {
+          tasks.push(getNews('technology').then((data) => ({ type: 'technology', data })));
+        }
+
+        const results = await Promise.all(tasks);
+        if (cancelled) return;
+
+        setGeneralNews(results.find((r) => r.type === 'general')?.data || []);
+        setTechNews(results.find((r) => r.type === 'technology')?.data || []);
       } catch (error) {
         console.error('Error fetching news:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchAllNews();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [showGeneral, showTechnology]);
 
   if (loading) {
     return <div className="widget-loading">Loading news...</div>;
@@ -97,21 +112,33 @@ function News() {
     </article>
   );
 
+  if (!showGeneral && !showTechnology) {
+    return (
+      <div className="news-widget">
+        <p className="widget-empty">No news columns enabled. Turn them on in Remote settings.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="news-widget">
-      <div className="news-section">
-        <h3 className="news-section-title">Top Headlines</h3>
-        <div className="news-list">
-          {generalNews.slice(0, 3).map((article) => renderNewsItem(article, 'general'))}
+      {showGeneral && (
+        <div className="news-section">
+          <h3 className="news-section-title">Top Headlines</h3>
+          <div className="news-list">
+            {generalNews.slice(0, 3).map((article) => renderNewsItem(article, 'general'))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="news-section">
-        <h3 className="news-section-title">Technology News</h3>
-        <div className="news-list">
-          {techNews.slice(0, 2).map((article) => renderNewsItem(article, 'technology'))}
+      {showTechnology && (
+        <div className="news-section">
+          <h3 className="news-section-title">Technology News</h3>
+          <div className="news-list">
+            {techNews.slice(0, 2).map((article) => renderNewsItem(article, 'technology'))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

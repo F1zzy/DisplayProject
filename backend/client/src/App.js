@@ -2,9 +2,14 @@ import './App.css';
 import React, { useCallback, useState, useEffect } from 'react';
 import WeatherBar from './components/WeatherBar';
 import Widgets from './components/Widgets';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { WeatherProvider, useWeather } from './context/WeatherContext';
 import { useDisplayControl } from './hooks/useDisplayControl';
 import { weatherIconUrl } from './api/client';
+import {
+  applyDocumentBackground,
+  buildDashboardBackgroundStyle,
+} from './utils/dashboardBackground';
 
 function TimeDisplay() {
   const [now, setNow] = useState(new Date());
@@ -50,18 +55,30 @@ function TimeDisplay() {
 function AppContent() {
   const [displayPower, setDisplayPower] = useState('on');
   const [forcedWidget, setForcedWidget] = useState(null);
+  const { settings, applySettings } = useSettings();
 
-  const handleDisplayMessage = useCallback((message) => {
-    if (message.type === 'display:power') {
-      setDisplayPower(message.action);
-    }
-    if (message.type === 'widgets:rotate') {
-      setForcedWidget(message.currentWidget);
-    }
-    if (message.type === 'widgets:set') {
-      setForcedWidget(message.currentWidget);
-    }
-  }, []);
+  useEffect(() => {
+    applyDocumentBackground(settings);
+    return () => applyDocumentBackground({ backgroundMode: 'default' });
+  }, [settings]);
+
+  const handleDisplayMessage = useCallback(
+    (message) => {
+      if (message.type === 'display:power') {
+        setDisplayPower(message.action);
+      }
+      if (message.type === 'widgets:rotate') {
+        setForcedWidget(message.currentWidget);
+      }
+      if (message.type === 'widgets:set') {
+        setForcedWidget(message.currentWidget);
+      }
+      if (message.type === 'settings:update') {
+        applySettings(message.settings);
+      }
+    },
+    [applySettings]
+  );
 
   useDisplayControl(handleDisplayMessage);
 
@@ -69,8 +86,10 @@ function AppContent() {
     return <div className={`display-sleep display-sleep--${displayPower}`} />;
   }
 
+  const backgroundStyle = buildDashboardBackgroundStyle(settings);
+
   return (
-    <div className="App">
+    <div className="App" style={backgroundStyle || undefined}>
       <header className="dashboard-header">
         <TimeDisplay />
       </header>
@@ -86,9 +105,11 @@ function AppContent() {
 
 function App() {
   return (
-    <WeatherProvider>
-      <AppContent />
-    </WeatherProvider>
+    <SettingsProvider>
+      <WeatherProvider>
+        <AppContent />
+      </WeatherProvider>
+    </SettingsProvider>
   );
 }
 

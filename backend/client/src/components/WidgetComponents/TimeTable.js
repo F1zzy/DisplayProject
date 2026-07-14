@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getCalendarEvents } from '../../api/client';
+import { useSettings } from '../../context/SettingsContext';
 import './TimeTable.css';
 
 function isPastEvent(event) {
@@ -8,6 +9,8 @@ function isPastEvent(event) {
 }
 
 function Timetable() {
+  const { settings } = useSettings();
+  const calendarDays = settings.calendarDays || 1;
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(true);
@@ -23,8 +26,9 @@ function Timetable() {
     let cancelled = false;
 
     async function load() {
+      setLoading(true);
       try {
-        const data = await getCalendarEvents(1);
+        const data = await getCalendarEvents(calendarDays);
         if (cancelled) return;
         setConfigured(data.configured !== false);
         setEvents(data.events || []);
@@ -44,7 +48,7 @@ function Timetable() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [calendarDays]);
 
   return (
     <div className="widget-content timetable-widget">

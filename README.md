@@ -6,10 +6,10 @@ Widget-style dashboard for a secondary monitor, with weather, stocks, news, and 
 
 - Live clock and current weather
 - 3-day and hourly forecast views
-- Rotating widgets: stocks, news, timetable (Google Calendar)
+- Rotating widgets: stocks, news, timetable (Google Calendar), network
 - Backend API proxy (API keys stay server-side)
-- Remote control page at `/remote`
-- WebSocket updates for display power and widget rotation
+- Remote control page at `/remote` (API-key unlock + dashboard settings)
+- WebSocket updates for display power, widgets, and settings
 - Raspberry Pi kiosk install with HDMI power control
 - Alexa skill stub in [`alexa/`](alexa/)
 
@@ -166,8 +166,11 @@ Disable screen blanking in Pi OS desktop preferences as an extra safeguard again
 
 1. Start the server
 2. Open `http://localhost:3000/remote` (or `http://<pi-ip>:3000/remote` from another device)
-3. Enter your `CONTROL_API_KEY` from `backend/.env`
+3. Enter your `CONTROL_API_KEY` from `backend/.env` and tap **Unlock**
 4. Use On / Sleep / Off and widget buttons
+5. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, and background (default / colour / image URL), then **Save settings** — the kiosk updates live over WebSocket
+
+The remote page stays locked until the API key is verified. Lock the session when finished. Settings are stored in `backend/data/settings.json` (not committed).
 
 Install as a PWA on Android for a simple remote control app.
 
@@ -182,7 +185,11 @@ Install as a PWA on Android for a simple remote control app.
 | `GET /api/stocks?symbols=AAPL,GOOGL,MSFT` | Stock data (cached, rate-limited) |
 | `GET /api/news?category=general` | News headlines |
 | `GET /api/calendar/events?days=1` | Today’s Google Calendar events (503 if not configured) |
+| `GET /api/network/stats` | Connection latency + local NIC rx/tx rates (light probe, cached ~15s) |
+| `GET /api/settings` | Dashboard preferences (location, widgets, stocks, etc.) |
+| `PUT /api/settings` | Update preferences (requires `x-api-key`); broadcasts `settings:update` |
 | `GET /api/display/state` | Display state |
+| `POST /api/display/auth/verify` | Validate `CONTROL_API_KEY` for remote unlock |
 | `POST /api/display/power` | `{ action: "on" \| "off" \| "sleep" }` (requires `x-api-key`) |
 | `POST /api/display/widgets/rotate` | Next widget (requires `x-api-key`) |
 | `WS /ws/display` | Real-time display events |
