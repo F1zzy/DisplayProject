@@ -84,7 +84,7 @@ describe('settings service', () => {
       backgroundImage: 'javascript:alert(1)',
     });
     expect(cleared.backgroundMode).toBe('default');
-    expect(cleared.backgroundColor).toBe('#141212');
+    expect(cleared.backgroundColor).toBe('#101115');
     expect(cleared.backgroundImage).toBe('');
   });
 });

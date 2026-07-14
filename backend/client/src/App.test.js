@@ -14,7 +14,7 @@ jest.mock('./api/client', () => ({
       newsTechnology: true,
       forecastDays: 3,
       backgroundMode: 'default',
-      backgroundColor: '#141212',
+      backgroundColor: '#101115',
       backgroundImage: '',
     }),
   getCurrentWeather: () =>

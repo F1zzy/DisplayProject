@@ -39,15 +39,15 @@
   align-items: center;
   padding: var(--gap-md) var(--gap-lg);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-panel-elevated) 100%);
+  border-radius: 0;
+  background: var(--bg-card);
 }
 
 .timetable-time {
   font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--accent-light);
+  color: var(--accent);
 }
 
 .timetable-item strong {
@@ -75,5 +75,5 @@
 
 .timetable-empty code {
   font-size: 0.9em;
-  color: var(--accent-light);
+  color: var(--accent);
 }

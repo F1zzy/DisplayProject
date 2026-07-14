@@ -9,7 +9,7 @@ body,
 body {
   margin: 0;
   font-family: var(--font-body);
-  background: radial-gradient(circle at top, #2a2626 0%, var(--bg-app) 45%);
+  background: var(--bg-app);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

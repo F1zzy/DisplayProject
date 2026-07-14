@@ -1,6 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { getNetworkStats } from '../../api/client';
 import './NetworkStats.css';
+
+const APP_FONT = "'NothingFont', 'Segoe UI', sans-serif";
+const HISTORY_MAX = 24;
+const POLL_MS = 15000;
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend
+);
 
 function formatRate(bps) {
   if (bps == null || Number.isNaN(bps)) return '—';
@@ -9,10 +34,32 @@ function formatRate(bps) {
   return `${(bps / (1024 * 1024)).toFixed(2)} MB/s`;
 }
 
+function formatRateTick(bps) {
+  if (bps == null || Number.isNaN(bps)) return '';
+  if (bps < 1024) return `${Math.round(bps)} B`;
+  if (bps < 1024 * 1024) return `${(bps / 1024).toFixed(0)} K`;
+  return `${(bps / (1024 * 1024)).toFixed(1)} M`;
+}
+
 function formatCheckedAt(iso) {
   if (!iso) return '';
   try {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return new Date(iso).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch {
+    return '';
+  }
+}
+
+function formatChartTime(iso) {
+  try {
+    return new Date(iso).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   } catch {
     return '';
   }
@@ -20,6 +67,7 @@ function formatCheckedAt(iso) {
 
 function NetworkStats() {
   const [stats, setStats] = useState(null);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -32,6 +80,19 @@ function NetworkStats() {
         if (cancelled) return;
         setStats(data);
         setError(null);
+        setHistory((prev) => {
+          const point = {
+            at: data.checkedAt || new Date().toISOString(),
+            rxBps: data.rxBps,
+            txBps: data.txBps,
+            latencyMs: data.latencyMs,
+          };
+          const last = prev[prev.length - 1];
+          if (last && last.at === point.at) {
+            return prev;
+          }
+          return [...prev, point].slice(-HISTORY_MAX);
+        });
       } catch (err) {
         console.error(err);
         if (!cancelled) setError('Unable to load network stats');
@@ -41,13 +102,143 @@ function NetworkStats() {
     }
 
     load();
-    const interval = setInterval(load, 30000);
+    const interval = setInterval(load, POLL_MS);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
   }, []);
+
+  const hasRateHistory = history.some(
+    (point) => point.rxBps != null || point.txBps != null
+  );
+  const hasLatencyHistory = history.some((point) => point.latencyMs != null);
+  const showTrafficChart = hasRateHistory;
+  const showChart = showTrafficChart || hasLatencyHistory;
+
+  const chartData = useMemo(() => {
+    const labels = history.map((point) => formatChartTime(point.at));
+
+    if (showTrafficChart) {
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Download',
+            data: history.map((point) => point.rxBps),
+            borderColor: '#ff6a1a',
+            backgroundColor: 'rgba(255, 106, 26, 0.12)',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointBackgroundColor: '#ff6a1a',
+            tension: 0.35,
+            fill: true,
+            spanGaps: true,
+          },
+          {
+            label: 'Upload',
+            data: history.map((point) => point.txBps),
+            borderColor: '#3ddc97',
+            backgroundColor: 'rgba(61, 220, 151, 0.1)',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointBackgroundColor: '#3ddc97',
+            tension: 0.35,
+            fill: true,
+            spanGaps: true,
+          },
+        ],
+      };
+    }
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Latency',
+          data: history.map((point) => point.latencyMs),
+          borderColor: '#ff6a1a',
+          backgroundColor: 'rgba(255, 106, 26, 0.12)',
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#ff6a1a',
+          tension: 0.35,
+          fill: true,
+          spanGaps: true,
+        },
+      ],
+    };
+  }, [history, showTrafficChart]);
+
+  const chartOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          align: 'end',
+          labels: {
+            color: '#8a8c92',
+            boxWidth: 10,
+            boxHeight: 10,
+            padding: 12,
+            font: { family: APP_FONT, size: 11 },
+          },
+        },
+        tooltip: {
+          backgroundColor: '#1f1f1f',
+          titleColor: '#fff',
+          bodyColor: '#ddd',
+          borderColor: '#444',
+          borderWidth: 1,
+          titleFont: { family: APP_FONT },
+          bodyFont: { family: APP_FONT },
+          callbacks: {
+            label: (context) => {
+              const value = context.parsed.y;
+              if (context.dataset.label === 'Latency') {
+                return `Latency: ${value == null ? '—' : `${value} ms`}`;
+              }
+              return `${context.dataset.label}: ${formatRate(value)}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#8a8c92',
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 6,
+            font: { family: APP_FONT, size: 10 },
+          },
+          grid: { color: 'rgba(255, 255, 255, 0.06)' },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: '#8a8c92',
+            font: { family: APP_FONT, size: 10 },
+            callback: (value) =>
+              showTrafficChart ? formatRateTick(value) : `${value} ms`,
+          },
+          grid: { color: 'rgba(255, 255, 255, 0.08)' },
+        },
+      },
+    }),
+    [showTrafficChart]
+  );
 
   const online = stats?.online === true;
 
@@ -62,7 +253,9 @@ function NetworkStats() {
       {!loading && !error && stats && (
         <>
           <div className="network-status-row">
-            <span className={`network-badge ${online ? 'network-badge--online' : 'network-badge--offline'}`}>
+            <span
+              className={`network-badge ${online ? 'network-badge--online' : 'network-badge--offline'}`}
+            >
               {online ? 'Online' : 'Offline'}
             </span>
             <span className="network-latency">
@@ -79,6 +272,16 @@ function NetworkStats() {
               <span className="network-rate-label">Upload</span>
               <strong className="network-rate-value">{formatRate(stats.txBps)}</strong>
             </div>
+          </div>
+
+          <div className="network-chart">
+            {showChart ? (
+              <Line data={chartData} options={chartOptions} />
+            ) : (
+              <p className="network-chart-empty">
+                Graph will appear after the next samples
+              </p>
+            )}
           </div>
 
           <div className="network-meta">

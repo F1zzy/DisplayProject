@@ -1,15 +1,14 @@
-const DEFAULT_BODY_BACKGROUND =
-  'radial-gradient(circle at top, #2a2626 0%, var(--bg-app) 45%)';
+const DEFAULT_BODY_BACKGROUND = 'var(--bg-app)';
 
 /**
  * Build inline background style for the dashboard shell from settings.
- * Returns null for the built-in default gradient (handled by CSS).
+ * Returns null for the built-in default look (handled by CSS).
  */
 export function buildDashboardBackgroundStyle(settings = {}) {
   const mode = settings.backgroundMode || 'default';
 
   if (mode === 'color') {
-    const color = settings.backgroundColor || '#141212';
+    const color = settings.backgroundColor || '#101115';
     return {
       backgroundColor: color,
       backgroundImage: 'none',
@@ -18,7 +17,7 @@ export function buildDashboardBackgroundStyle(settings = {}) {
 
   if (mode === 'image' && settings.backgroundImage) {
     return {
-      backgroundColor: settings.backgroundColor || '#141212',
+      backgroundColor: settings.backgroundColor || '#101115',
       backgroundImage: `url("${settings.backgroundImage.replace(/"/g, '\\"')}")`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',

@@ -1,28 +1,28 @@
 :root {
-  --bg-app: #141212;
-  --bg-panel: #1f1c1c;
-  --bg-panel-elevated: #252323;
-  --bg-card: #2f2b2b;
-  --bg-card-hover: #363131;
-  --accent: #0366d6;
-  --accent-soft: rgba(3, 102, 214, 0.18);
-  --accent-light: #58a6ff;
+  --bg-app: #101115;
+  --bg-panel: #1a1c21;
+  --bg-panel-elevated: #1e2025;
+  --bg-card: #26282e;
+  --bg-card-hover: #2c2e34;
+  --accent: #ff6a1a;
+  --accent-soft: rgba(255, 106, 26, 0.18);
+  --accent-light: #ff8a4a;
   --success: #3ddc97;
   --danger: #ff7b72;
-  --text-primary: #f5f5f5;
-  --text-secondary: #b8bcc4;
-  --text-muted: #8b949e;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --shadow-panel: 0 10px 30px rgba(0, 0, 0, 0.28);
-  --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.18);
+  --text-primary: #e8e8ea;
+  --text-secondary: #b7b8bd;
+  --text-muted: #8a8c92;
+  --border: #2c2e34;
+  --border-strong: #35373d;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --shadow-panel: none;
+  --shadow-card: none;
   --gap-sm: 8px;
   --gap-md: 12px;
   --gap-lg: 16px;
-  --font-display: 'Time-Font', 'Segoe UI', sans-serif;
+  --font-display: 'NothingFont', 'Time-Font', 'Segoe UI', sans-serif;
   --font-body: 'NothingFont', 'Segoe UI', sans-serif;
 }
 
@@ -37,20 +37,21 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-panel);
+  padding: 0;
 }
 
 .panel-title {
   margin: 0 0 var(--gap-md);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
 .stat-card {
-  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-panel-elevated) 100%);
-  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   padding: var(--gap-lg);
   box-shadow: var(--shadow-card);
@@ -63,4 +64,5 @@
   height: 100%;
   color: var(--text-secondary);
   font-size: 1.05rem;
+  letter-spacing: 0.04em;
 }

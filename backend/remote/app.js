@@ -1,4 +1,5 @@
 const statusEl = document.getElementById('status');
+const statusPill = document.getElementById('statusPill');
 const apiKeyInput = document.getElementById('apiKey');
 const serverUrlInput = document.getElementById('serverUrl');
 const lockSection = document.getElementById('lockSection');
@@ -7,6 +8,8 @@ const unlockBtn = document.getElementById('unlockBtn');
 const lockBtn = document.getElementById('lockBtn');
 const widgetButtonsEl = document.getElementById('widgetButtons');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+const saveBtnLabel = document.getElementById('saveBtnLabel');
+const powerStateBadge = document.getElementById('powerStateBadge');
 
 const WIDGET_LABELS = {
   stock: 'Stocks',
@@ -24,7 +27,16 @@ apiKeyInput.value = sessionStorage.getItem(SESSION_API_KEY) || '';
 
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
-  statusEl.className = isError ? 'remote-status remote-status--error' : 'remote-status';
+  statusEl.className = 'remote-status is-updating';
+  if (isError) statusEl.classList.add('remote-status--error');
+  else if (/saved|unlocked|rotated|updated|set to/i.test(message)) {
+    statusEl.classList.add('remote-status--ok');
+  }
+  requestAnimationFrame(() => {
+    statusEl.classList.remove('is-updating');
+    void statusEl.offsetWidth;
+    statusEl.classList.add('is-updating');
+  });
 }
 
 function isUnlocked() {
@@ -44,11 +56,29 @@ function setUnlocked(unlocked) {
 function applyUnlockUi(unlocked) {
   lockSection.hidden = unlocked;
   controlsEl.hidden = !unlocked;
+  lockBtn.hidden = !unlocked;
+  document.body.classList.toggle('is-unlocked', unlocked);
+  statusPill.textContent = unlocked ? 'UNLOCKED' : 'LOCKED';
+
   if (unlocked) {
     setStatus('Unlocked');
+    // restart panel enter animations
+    controlsEl.querySelectorAll('.anim-in').forEach((el) => {
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = '';
+    });
   } else {
     setStatus('Enter API key to unlock');
   }
+}
+
+function flashButton(button) {
+  if (!button) return;
+  button.classList.remove('is-flash', 'is-active');
+  void button.offsetWidth;
+  button.classList.add('is-flash', 'is-active');
+  window.setTimeout(() => button.classList.remove('is-active'), 450);
 }
 
 async function apiRequest(path, options = {}) {
@@ -92,12 +122,14 @@ function rebuildWidgetButtons(enabledWidgets) {
 
   const rotateBtn = document.createElement('button');
   rotateBtn.type = 'button';
+  rotateBtn.className = 'chip';
   rotateBtn.dataset.widget = 'rotate';
   rotateBtn.textContent = 'Next Widget';
   rotateBtn.addEventListener('click', async () => {
     try {
       setStatus('Rotating widget...');
       await apiRequest('/api/display/widgets/rotate', { method: 'POST', body: '{}' });
+      flashButton(rotateBtn);
       setStatus('Widget rotated');
     } catch (error) {
       setStatus(error.message, true);
@@ -108,6 +140,7 @@ function rebuildWidgetButtons(enabledWidgets) {
   (enabledWidgets || []).forEach((key, index) => {
     const button = document.createElement('button');
     button.type = 'button';
+    button.className = 'chip';
     button.dataset.widget = String(index);
     button.textContent = WIDGET_LABELS[key] || key;
     button.addEventListener('click', async () => {
@@ -117,6 +150,7 @@ function rebuildWidgetButtons(enabledWidgets) {
           method: 'POST',
           body: JSON.stringify({ index }),
         });
+        flashButton(button);
         setStatus('Widget updated');
       } catch (error) {
         setStatus(error.message, true);
@@ -141,7 +175,7 @@ function fillSettingsForm(settings) {
   document.getElementById('settingNewsGeneral').checked = settings.newsGeneral !== false;
   document.getElementById('settingNewsTechnology').checked = settings.newsTechnology !== false;
   document.getElementById('settingBackgroundMode').value = settings.backgroundMode || 'default';
-  document.getElementById('settingBackgroundColor').value = settings.backgroundColor || '#141212';
+  document.getElementById('settingBackgroundColor').value = settings.backgroundColor || '#101115';
   document.getElementById('settingBackgroundImage').value = settings.backgroundImage || '';
   syncBackgroundFields();
 
@@ -187,6 +221,7 @@ async function loadSettings() {
 
 async function unlock() {
   try {
+    unlockBtn.classList.add('is-busy');
     setStatus('Unlocking...');
     await apiRequest('/api/display/auth/verify', { method: 'POST', body: '{}' });
     setUnlocked(true);
@@ -197,6 +232,8 @@ async function unlock() {
     setUnlocked(false);
     applyUnlockUi(false);
     setStatus(error.message, true);
+  } finally {
+    unlockBtn.classList.remove('is-busy');
   }
 }
 
@@ -210,12 +247,16 @@ function lock() {
 document.querySelectorAll('[data-action]').forEach((button) => {
   button.addEventListener('click', async () => {
     try {
-      setStatus(`Sending ${button.dataset.action}...`);
+      const action = button.dataset.action;
+      setStatus(`Sending ${action}...`);
       await apiRequest('/api/display/power', {
         method: 'POST',
-        body: JSON.stringify({ action: button.dataset.action }),
+        body: JSON.stringify({ action }),
       });
-      setStatus(`Display set to ${button.dataset.action}`);
+      document.querySelectorAll('[data-action]').forEach((btn) => btn.classList.remove('is-active'));
+      flashButton(button);
+      if (powerStateBadge) powerStateBadge.textContent = action.toUpperCase();
+      setStatus(`Display set to ${action}`);
     } catch (error) {
       setStatus(error.message, true);
     }
@@ -234,15 +275,27 @@ apiKeyInput.addEventListener('keydown', (event) => {
 
 saveSettingsBtn.addEventListener('click', async () => {
   try {
+    saveSettingsBtn.classList.add('is-busy');
+    saveSettingsBtn.classList.remove('is-success');
+    saveBtnLabel.textContent = 'Saving…';
     setStatus('Saving settings...');
     const updated = await apiRequest('/api/settings', {
       method: 'PUT',
       body: JSON.stringify(readSettingsForm()),
     });
     fillSettingsForm(updated);
+    saveSettingsBtn.classList.add('is-success');
+    saveBtnLabel.textContent = 'Saved';
     setStatus('Settings saved');
+    window.setTimeout(() => {
+      saveSettingsBtn.classList.remove('is-success');
+      saveBtnLabel.textContent = 'Save settings';
+    }, 1400);
   } catch (error) {
     setStatus(error.message, true);
+    saveBtnLabel.textContent = 'Save settings';
+  } finally {
+    saveSettingsBtn.classList.remove('is-busy');
   }
 });
 

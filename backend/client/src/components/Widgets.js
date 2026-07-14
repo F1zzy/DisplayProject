@@ -13,6 +13,26 @@ const WIDGET_REGISTRY = {
   network: { key: 'network', label: 'Network', Component: NetworkStats },
 };
 
+function ToolbarContent({ widgets, activeIndex }) {
+  return (
+    <>
+      <h2 className="widget-toolbar-title">Widgets</h2>
+      <div className="widget-tabs" role="tablist" aria-label="Active widget">
+        {widgets.map((widget, index) => (
+          <span
+            key={widget.key}
+            className={`widget-tab ${index === activeIndex ? 'active' : ''}`}
+            role="tab"
+            aria-selected={index === activeIndex}
+          >
+            {widget.label}
+          </span>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function Widgets({ forcedWidget, onWidgetShown }) {
   const { settings } = useSettings();
   const widgets = useMemo(() => {
@@ -25,6 +45,8 @@ function Widgets({ forcedWidget, onWidgetShown }) {
 
   const rotationMs = settings.widgetRotationMs ?? 120000;
   const [currentWidget, setCurrentWidget] = useState(0);
+  const [cycleId, setCycleId] = useState(0);
+  const timerActive = rotationMs > 0 && widgets.length > 1;
 
   useEffect(() => {
     setCurrentWidget((prev) => (prev >= widgets.length ? 0 : prev));
@@ -33,21 +55,23 @@ function Widgets({ forcedWidget, onWidgetShown }) {
   useEffect(() => {
     if (forcedWidget !== null && forcedWidget !== undefined) {
       setCurrentWidget(forcedWidget % widgets.length);
+      setCycleId((id) => id + 1);
       onWidgetShown?.();
     }
   }, [forcedWidget, onWidgetShown, widgets.length]);
 
   useEffect(() => {
-    if (!rotationMs || rotationMs <= 0 || widgets.length < 2) {
+    if (!timerActive) {
       return undefined;
     }
 
-    const interval = setInterval(() => {
+    const timeout = setTimeout(() => {
       setCurrentWidget((prevWidget) => (prevWidget + 1) % widgets.length);
+      setCycleId((id) => id + 1);
     }, rotationMs);
 
-    return () => clearInterval(interval);
-  }, [rotationMs, widgets.length]);
+    return () => clearTimeout(timeout);
+  }, [rotationMs, widgets.length, timerActive, cycleId]);
 
   const activeIndex = currentWidget % widgets.length;
   const { Component, key } = widgets[activeIndex];
@@ -55,17 +79,21 @@ function Widgets({ forcedWidget, onWidgetShown }) {
   return (
     <div className="Wid-container panel">
       <div className="widget-toolbar">
-        <h2 className="widget-toolbar-title">Widgets</h2>
-        <div className="widget-tabs">
-          {widgets.map((widget, index) => (
-            <span
-              key={widget.key}
-              className={`widget-tab ${index === activeIndex ? 'active' : ''}`}
-            >
-              {widget.label}
-            </span>
-          ))}
+        <div className="widget-toolbar-inner">
+          <ToolbarContent widgets={widgets} activeIndex={activeIndex} />
         </div>
+        {timerActive && (
+          <div
+            key={`toolbar-timer-${cycleId}-${rotationMs}`}
+            className="widget-toolbar-fill"
+            style={{ animationDuration: `${rotationMs}ms` }}
+            aria-hidden="true"
+          >
+            <div className="widget-toolbar-inner widget-toolbar-inner--on-fill">
+              <ToolbarContent widgets={widgets} activeIndex={activeIndex} />
+            </div>
+          </div>
+        )}
       </div>
       <div className="widget-display">
         <Component key={key} />

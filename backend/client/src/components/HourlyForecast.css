@@ -44,8 +44,8 @@
   justify-content: flex-start;
   padding-top: 6px;
   box-sizing: border-box;
-  background: linear-gradient(to top, var(--accent-soft), rgba(37, 35, 35, 0.9));
-  border-radius: 4px 4px 0 0;
+  background: var(--accent-soft);
+  border-radius: 0;
   transition: height 0.3s ease-in-out;
   min-height: 18%;
 }

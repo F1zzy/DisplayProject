@@ -9,18 +9,28 @@
 }
 
 .widget-toolbar {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+
+.widget-toolbar-inner {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--gap-md) var(--gap-lg);
-  border-bottom: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.15);
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px 20px;
 }
 
 .widget-toolbar-title {
   margin: 0;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -28,25 +38,74 @@
 
 .widget-tabs {
   display: flex;
-  gap: var(--gap-sm);
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .widget-tab {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-secondary);
-  border-radius: 999px;
-  padding: 6px 14px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border-radius: 0;
+  padding: 8px 14px;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   cursor: default;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
 }
 
 .widget-tab.active {
   background: var(--accent-soft);
-  border-color: rgba(88, 166, 255, 0.45);
-  color: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.widget-toolbar-fill {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--accent);
+  pointer-events: none;
+  animation-name: widgetToolbarFillDrain;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.widget-toolbar-inner--on-fill .widget-toolbar-title {
+  color: #fff;
+}
+
+.widget-toolbar-inner--on-fill .widget-tab {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.45);
+  background: transparent;
+}
+
+.widget-toolbar-inner--on-fill .widget-tab.active {
+  color: #fff;
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Clip from the right so remaining time stays filled on the left with white text. */
+@keyframes widgetToolbarFillDrain {
+  from {
+    clip-path: inset(0 0% 0 0);
+  }
+  to {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .widget-toolbar-fill {
+    animation: none;
+    clip-path: inset(0 0% 0 0);
+    opacity: 0.9;
+  }
 }
 
 .widget-display {

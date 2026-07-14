@@ -3,123 +3,177 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#111827" />
+  <meta name="theme-color" content="#101115" />
   <link rel="manifest" href="/remote/manifest.json" />
   <title>Display Remote</title>
   <link rel="stylesheet" href="/remote/styles.css" />
 </head>
 <body>
-  <main class="remote">
-    <h1>Display Remote</h1>
-    <p class="remote-status" id="status">Enter API key to unlock</p>
-
-    <section class="remote-section" id="lockSection">
-      <h2>Unlock</h2>
-      <label>
-        Server URL
-        <input id="serverUrl" type="text" placeholder="http://localhost:3000" />
-      </label>
-      <label>
-        API Key
-        <input id="apiKey" type="password" placeholder="CONTROL_API_KEY" autocomplete="current-password" />
-      </label>
-      <div class="remote-buttons">
-        <button type="button" id="unlockBtn">Unlock</button>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text">DISPLAY</span>
       </div>
+      <div class="topbar-meta">
+        <span class="status-pill" id="statusPill">LOCKED</span>
+        <button type="button" id="lockBtn" class="icon-box" hidden title="Lock session">⟲</button>
+      </div>
+    </header>
+
+    <p class="remote-status" id="status" role="status">Enter API key to unlock</p>
+
+    <section class="panel panel--lock" id="lockSection">
+      <div class="panel-header">
+        <h2 class="panel-title">Access<br>Control</h2>
+        <span class="panel-badge">SECURE</span>
+      </div>
+      <div class="field-grid">
+        <label class="field">
+          <span class="field-label">Server URL</span>
+          <input id="serverUrl" type="text" placeholder="http://localhost:3000" />
+        </label>
+        <label class="field">
+          <span class="field-label">API Key</span>
+          <input id="apiKey" type="password" placeholder="CONTROL_API_KEY" autocomplete="current-password" />
+        </label>
+      </div>
+      <button type="button" id="unlockBtn" class="btn-primary">
+        <span>Unlock Remote</span>
+        <span class="btn-bolt" aria-hidden="true">→</span>
+      </button>
     </section>
 
     <div id="controls" class="remote-controls" hidden>
-      <div class="remote-toolbar">
-        <button type="button" id="lockBtn" class="remote-lock-btn">Lock</button>
-      </div>
-
-      <section class="remote-section">
-        <h2>Display Power</h2>
-        <div class="remote-buttons">
-          <button type="button" data-action="on">On</button>
-          <button type="button" data-action="sleep">Sleep</button>
-          <button type="button" data-action="off">Off</button>
+      <section class="panel panel--power anim-in" style="--delay: 0ms">
+        <div class="panel-header">
+          <h2 class="panel-title">Display<br>Power</h2>
+          <span class="panel-badge" id="powerStateBadge">READY</span>
+        </div>
+        <div class="power-grid">
+          <button type="button" class="power-btn power-btn--on" data-action="on">
+            <span class="power-ring">⏻</span>
+            <span class="power-caption">On</span>
+          </button>
+          <button type="button" class="power-btn power-btn--sleep" data-action="sleep">
+            <span class="power-ring">☾</span>
+            <span class="power-caption">Sleep</span>
+          </button>
+          <button type="button" class="power-btn power-btn--off" data-action="off">
+            <span class="power-ring">○</span>
+            <span class="power-caption">Off</span>
+          </button>
         </div>
       </section>
 
-      <section class="remote-section">
-        <h2>Widgets</h2>
-        <div class="remote-buttons" id="widgetButtons">
-          <button type="button" data-widget="rotate">Next Widget</button>
+      <section class="panel anim-in" style="--delay: 60ms">
+        <div class="panel-header">
+          <h2 class="panel-title">Widgets</h2>
+          <span class="panel-badge">JUMP</span>
+        </div>
+        <div class="chip-row" id="widgetButtons">
+          <button type="button" data-widget="rotate" class="chip">Next Widget</button>
         </div>
       </section>
 
-      <section class="remote-section">
-        <h2>Dashboard Settings</h2>
-        <label>
-          Location
-          <input id="settingLocation" type="text" placeholder="Nottingham" />
-        </label>
-        <label>
-          Stock symbols (comma-separated)
-          <input id="settingSymbols" type="text" placeholder="AAPL,GOOGL,MSFT" />
-        </label>
-        <label>
-          Widget rotation (seconds, 0 = pause)
-          <input id="settingRotation" type="number" min="0" max="3600" step="1" />
-        </label>
-        <label>
-          Calendar days ahead
-          <input id="settingCalendarDays" type="number" min="1" max="7" step="1" />
-        </label>
-        <label>
-          Forecast days
-          <input id="settingForecastDays" type="number" min="1" max="7" step="1" />
-        </label>
-        <fieldset class="remote-fieldset">
-          <legend>Enabled widgets</legend>
-          <label class="remote-check">
-            <input type="checkbox" name="enabledWidget" value="stock" /> Stocks
+      <section class="panel anim-in" style="--delay: 120ms">
+        <div class="panel-header">
+          <h2 class="panel-title">Dashboard<br>Settings</h2>
+          <span class="panel-badge">LIVE</span>
+        </div>
+
+        <div class="settings-grid">
+          <label class="field">
+            <span class="field-label">Location</span>
+            <input id="settingLocation" type="text" placeholder="Nottingham" />
           </label>
-          <label class="remote-check">
-            <input type="checkbox" name="enabledWidget" value="news" /> News
+          <label class="field">
+            <span class="field-label">Stock symbols</span>
+            <input id="settingSymbols" type="text" placeholder="AAPL,GOOGL,MSFT" />
           </label>
-          <label class="remote-check">
-            <input type="checkbox" name="enabledWidget" value="timetable" /> Schedule
+          <label class="field">
+            <span class="field-label">Rotation (sec)</span>
+            <input id="settingRotation" type="number" min="0" max="3600" step="1" />
           </label>
-          <label class="remote-check">
-            <input type="checkbox" name="enabledWidget" value="network" /> Network
+          <label class="field">
+            <span class="field-label">Calendar days</span>
+            <input id="settingCalendarDays" type="number" min="1" max="7" step="1" />
           </label>
-        </fieldset>
-        <fieldset class="remote-fieldset">
-          <legend>News columns</legend>
-          <label class="remote-check">
-            <input type="checkbox" id="settingNewsGeneral" /> General / BBC
+          <label class="field">
+            <span class="field-label">Forecast days</span>
+            <input id="settingForecastDays" type="number" min="1" max="7" step="1" />
           </label>
-          <label class="remote-check">
-            <input type="checkbox" id="settingNewsTechnology" /> Technology
-          </label>
-        </fieldset>
-        <fieldset class="remote-fieldset">
-          <legend>Background</legend>
-          <label>
-            Mode
+        </div>
+
+        <div class="subpanel">
+          <div class="subpanel-title">Enabled widgets</div>
+          <div class="toggle-list">
+            <label class="toggle-row">
+              <span class="toggle-copy">Stocks <b>Market</b></span>
+              <input type="checkbox" name="enabledWidget" value="stock" class="toggle-input" />
+              <span class="toggle" aria-hidden="true"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-copy">News <b>Headlines</b></span>
+              <input type="checkbox" name="enabledWidget" value="news" class="toggle-input" />
+              <span class="toggle" aria-hidden="true"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-copy">Schedule <b>Calendar</b></span>
+              <input type="checkbox" name="enabledWidget" value="timetable" class="toggle-input" />
+              <span class="toggle" aria-hidden="true"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-copy">Network <b>Stats</b></span>
+              <input type="checkbox" name="enabledWidget" value="network" class="toggle-input" />
+              <span class="toggle" aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="subpanel">
+          <div class="subpanel-title">News columns</div>
+          <div class="toggle-list">
+            <label class="toggle-row">
+              <span class="toggle-copy">General <b>BBC</b></span>
+              <input type="checkbox" id="settingNewsGeneral" class="toggle-input" />
+              <span class="toggle" aria-hidden="true"></span>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-copy">Technology <b>Feed</b></span>
+              <input type="checkbox" id="settingNewsTechnology" class="toggle-input" />
+              <span class="toggle" aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="subpanel">
+          <div class="subpanel-title">Background</div>
+          <label class="field">
+            <span class="field-label">Mode</span>
             <select id="settingBackgroundMode">
-              <option value="default">Default gradient</option>
+              <option value="default">Default</option>
               <option value="color">Solid colour</option>
               <option value="image">Image URL</option>
             </select>
           </label>
-          <label id="settingBackgroundColorRow">
-            Colour
-            <input id="settingBackgroundColor" type="color" value="#141212" />
+          <label class="field field--reveal" id="settingBackgroundColorRow">
+            <span class="field-label">Colour</span>
+            <input id="settingBackgroundColor" type="color" value="#101115" />
           </label>
-          <label id="settingBackgroundImageRow">
-            Image URL
+          <label class="field field--reveal" id="settingBackgroundImageRow">
+            <span class="field-label">Image URL</span>
             <input id="settingBackgroundImage" type="url" placeholder="https://example.com/photo.jpg" />
           </label>
-        </fieldset>
-        <div class="remote-buttons">
-          <button type="button" id="saveSettingsBtn">Save settings</button>
         </div>
+
+        <button type="button" id="saveSettingsBtn" class="btn-primary btn-primary--save">
+          <span id="saveBtnLabel">Save settings</span>
+          <span class="btn-bolt" aria-hidden="true">✓</span>
+        </button>
       </section>
     </div>
-  </main>
+  </div>
   <script src="/remote/app.js"></script>
 </body>
 </html>

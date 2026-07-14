@@ -27,7 +27,7 @@ ChartJS.register(
 );
 
 ChartJS.defaults.font.family = APP_FONT;
-ChartJS.defaults.color = '#b8bcc4';
+ChartJS.defaults.color = '#8a8c92';
 
 function formatPrice(value) {
   return Number.parseFloat(value).toFixed(2);
@@ -99,11 +99,11 @@ function StockMarket() {
         label: 'Close',
         data: prices,
         fill: true,
-        backgroundColor: 'rgba(3, 102, 214, 0.15)',
-        borderColor: '#58a6ff',
+        backgroundColor: 'rgba(255, 106, 26, 0.15)',
+        borderColor: '#ff6a1a',
         borderWidth: 2,
-        pointBackgroundColor: '#58a6ff',
-        pointBorderColor: '#ffffff',
+        pointBackgroundColor: '#ff6a1a',
+        pointBorderColor: '#1a1c21',
         pointRadius: 4,
         pointHoverRadius: 6,
         tension: 0.35,

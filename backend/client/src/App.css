@@ -14,13 +14,17 @@
 
 .App {
   min-height: 100vh;
-  padding: var(--gap-lg);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
   display: grid;
   grid-template-rows: auto auto 1fr;
-  gap: var(--gap-lg);
+  gap: 16px;
   font-family: var(--font-body);
   color: var(--text-primary);
-  background-color: transparent;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
 }
 
 .dashboard-header,
@@ -45,8 +49,8 @@
 
 .time-container {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: var(--gap-lg);
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -56,21 +60,22 @@
   justify-content: center;
   font-family: var(--font-display);
   font-size: clamp(4rem, 12vw, 9rem);
-  font-weight: bold;
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: 0.02em;
-  padding: var(--gap-lg);
-  background: linear-gradient(135deg, rgba(3, 102, 214, 0.22), rgba(37, 35, 35, 0.4));
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 20px;
+  background: var(--bg-panel-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-panel);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .time-container-dateCon {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: var(--gap-md);
+  gap: 12px;
 }
 
 .time-container-weekday,
@@ -84,26 +89,34 @@
 }
 
 .time-container-weekday {
-  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+  font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-align: left;
   line-height: 1.2;
 }
 
 .time-container-weekday div:last-child {
   margin-top: 6px;
-  color: var(--text-secondary);
-  font-size: 0.85em;
+  color: var(--text-muted);
+  font-size: 0.75em;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .time-container-stats-temp {
   font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
-  color: var(--accent-light);
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.02em;
 }
 
 .time-container-stats-humidity {
-  font-size: clamp(1.2rem, 2vw, 1.8rem);
-  color: var(--text-secondary);
+  font-size: clamp(1rem, 1.8vw, 1.4rem);
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .temp-container-stats-weather {
@@ -118,10 +131,16 @@
 .CurrentWeather-Icon img {
   width: clamp(64px, 8vw, 96px);
   height: clamp(64px, 8vw, 96px);
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+  filter: none;
 }
 
 @media (max-width: 900px) {
+  .App {
+    max-width: none;
+    border: none;
+    padding: 16px;
+  }
+
   .time-container {
     grid-template-columns: 1fr;
   }
