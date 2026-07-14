@@ -1,11 +1,49 @@
 const request = require('supertest');
 const { app } = require('../server');
+const calendar = require('../services/calendar');
 
 describe('API routes', () => {
   test('GET /api/health returns ok', async () => {
     const response = await request(app).get('/api/health');
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('ok');
+  });
+});
+
+describe('Calendar API', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('GET /api/calendar/events returns 503 when not configured', async () => {
+    jest.spyOn(calendar, 'isConfigured').mockReturnValue(false);
+
+    const response = await request(app).get('/api/calendar/events');
+    expect(response.status).toBe(503);
+    expect(response.body.configured).toBe(false);
+    expect(response.body.events).toEqual([]);
+    expect(response.body.error).toMatch(/not configured/i);
+  });
+
+  test('GET /api/calendar/events returns events when configured', async () => {
+    jest.spyOn(calendar, 'isConfigured').mockReturnValue(true);
+    jest.spyOn(calendar, 'getUpcomingEvents').mockResolvedValue([
+      {
+        id: '1',
+        time: '09:00',
+        endTime: '09:30',
+        title: 'Standup',
+        location: 'Remote',
+        allDay: false,
+        start: '2026-07-14T09:00:00Z',
+      },
+    ]);
+
+    const response = await request(app).get('/api/calendar/events?days=1');
+    expect(response.status).toBe(200);
+    expect(response.body.configured).toBe(true);
+    expect(response.body.events).toHaveLength(1);
+    expect(response.body.events[0].title).toBe('Standup');
   });
 });
 

@@ -9,6 +9,7 @@ jest.mock('./api/client', () => ({
   getHourlyForecast: () => Promise.resolve([]),
   getStocks: () => Promise.resolve({ symbols: [], data: [] }),
   getNews: () => Promise.resolve([]),
+  getCalendarEvents: () => Promise.resolve({ events: [], configured: false }),
   weatherIconUrl: (icon) => (icon.startsWith('http') ? icon : `https:${icon}`),
 }));
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const api = require('../services/api');
+const calendar = require('../services/calendar');
 
 const router = express.Router();
 
@@ -74,6 +75,32 @@ router.get('/news', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(502).json({ error: 'Failed to fetch news' });
+  }
+});
+
+router.get('/calendar/events', async (req, res) => {
+  try {
+    if (!calendar.isConfigured()) {
+      return res.status(503).json({
+        error: 'Google Calendar is not configured',
+        configured: false,
+        events: [],
+      });
+    }
+
+    const days = Math.min(parseInt(req.query.days, 10) || 1, 7);
+    const events = await calendar.getUpcomingEvents({ days });
+    res.json({ configured: true, events });
+  } catch (error) {
+    console.error(error);
+    if (error.code === 'CALENDAR_NOT_CONFIGURED') {
+      return res.status(503).json({
+        error: 'Google Calendar is not configured',
+        configured: false,
+        events: [],
+      });
+    }
+    res.status(502).json({ error: 'Failed to fetch calendar events', events: [] });
   }
 });
 

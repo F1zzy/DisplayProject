@@ -32,6 +32,23 @@ export function getNews(category = 'general') {
   return request(`/api/news?category=${category}`);
 }
 
+export async function getCalendarEvents(days = 1) {
+  const response = await fetch(
+    `${API_BASE}/api/calendar/events?days=${encodeURIComponent(days)}`
+  );
+  const data = await response.json().catch(() => ({ events: [], configured: false }));
+  if (response.status === 503) {
+    return { configured: false, events: [] };
+  }
+  if (!response.ok) {
+    throw new Error(`API request failed: /api/calendar/events (${response.status})`);
+  }
+  return {
+    configured: data.configured !== false,
+    events: data.events || [],
+  };
+}
+
 export function weatherIconUrl(iconPath) {
   if (!iconPath) return '';
   return iconPath.startsWith('http') ? iconPath : `https:${iconPath}`;

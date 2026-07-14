@@ -1,32 +1,88 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getCalendarEvents } from '../../api/client';
 import './TimeTable.css';
 
-const DEFAULT_SCHEDULE = [
-  { time: '09:00', title: 'Morning standup', location: 'Remote' },
-  { time: '11:30', title: 'Project review', location: 'Office' },
-  { time: '14:00', title: 'Design sync', location: 'Teams' },
-  { time: '16:30', title: 'Wrap-up', location: 'Remote' },
-];
+function isPastEvent(event) {
+  if (!event.start || event.allDay) return false;
+  return new Date(event.start) < new Date();
+}
 
 function Timetable() {
-  const now = new Date();
-  const todayLabel = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [configured, setConfigured] = useState(true);
+  const [error, setError] = useState(null);
+
+  const todayLabel = new Date().toLocaleDateString([], {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const data = await getCalendarEvents(1);
+        if (cancelled) return;
+        setConfigured(data.configured !== false);
+        setEvents(data.events || []);
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) {
+          setError('Unable to load calendar');
+          setEvents([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="widget-content timetable-widget">
       <h3>Today&apos;s Schedule</h3>
       <p className="timetable-date">{todayLabel}</p>
-      <ul className="timetable-list">
-        {DEFAULT_SCHEDULE.map((item) => (
-          <li key={item.time} className="timetable-item">
-            <span className="timetable-time">{item.time}</span>
-            <div>
-              <strong>{item.title}</strong>
-              <span className="timetable-location">{item.location}</span>
-            </div>
-          </li>
-        ))}
-      </ul>
+
+      {loading && <p className="widget-loading">Loading schedule…</p>}
+
+      {!loading && error && <p className="timetable-empty">{error}</p>}
+
+      {!loading && !error && !configured && (
+        <p className="timetable-empty">
+          Connect Google Calendar in the backend <code>.env</code> to show today&apos;s events.
+        </p>
+      )}
+
+      {!loading && !error && configured && events.length === 0 && (
+        <p className="timetable-empty">No more events today.</p>
+      )}
+
+      {!loading && !error && configured && events.length > 0 && (
+        <ul className="timetable-list">
+          {events.map((item) => (
+            <li
+              key={item.id || `${item.time}-${item.title}`}
+              className={`timetable-item${isPastEvent(item) ? ' timetable-item--past' : ''}`}
+            >
+              <span className="timetable-time">{item.time}</span>
+              <div>
+                <strong>{item.title}</strong>
+                {item.location ? (
+                  <span className="timetable-location">{item.location}</span>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

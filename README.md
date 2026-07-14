@@ -6,7 +6,7 @@ Widget-style dashboard for a secondary monitor, with weather, stocks, news, and 
 
 - Live clock and current weather
 - 3-day and hourly forecast views
-- Rotating widgets: stocks, news, timetable
+- Rotating widgets: stocks, news, timetable (Google Calendar)
 - Backend API proxy (API keys stay server-side)
 - Remote control page at `/remote`
 - WebSocket updates for display power and widget rotation
@@ -17,6 +17,7 @@ Widget-style dashboard for a secondary monitor, with weather, stocks, news, and 
 
 - Node.js 18+
 - API keys from [WeatherAPI](https://www.weatherapi.com/), [NewsAPI](https://newsapi.org/), and [Alpha Vantage](https://www.alphavantage.co/)
+- Optional: Google Cloud OAuth client for the Schedule widget (see [Google Calendar](#google-calendar-schedule-widget))
 
 ## Setup
 
@@ -44,6 +45,29 @@ cp .env.example .env          # in backend/client/
 Fill in API keys in `backend/.env`. The client only needs `REACT_APP_LOCATION` (optional).
 
 **Important:** If this repo was ever public with committed keys, rotate them at each provider.
+
+## Google Calendar (Schedule widget)
+
+The Schedule widget loads today’s events from Google Calendar via the backend. Tokens stay server-side.
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create a project (or pick one).
+2. Enable **Google Calendar API**.
+3. Create **OAuth client ID** → application type **Desktop app**.
+4. Copy the Client ID and Client Secret into `backend/.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+5. While the OAuth app is in Testing mode, add your Google account as a test user.
+6. From `backend/`, run the one-time auth script:
+
+```bash
+cd backend
+node scripts/google-calendar-auth.js
+```
+
+7. Open the printed URL, grant **readonly** calendar access, then paste `GOOGLE_REFRESH_TOKEN=...` into `backend/.env`.
+8. Optionally set `GOOGLE_CALENDAR_ID` (default `primary`).
+
+Restart the server. The Schedule widget will show today’s events (or a connect message if env vars are missing).
+
+To force a new refresh token, revoke the app at [Google Account permissions](https://myaccount.google.com/permissions) and run the auth script again.
 
 ## Production run
 
@@ -157,6 +181,7 @@ Install as a PWA on Android for a simple remote control app.
 | `GET /api/weather/hourly` | Hourly forecast |
 | `GET /api/stocks?symbols=AAPL,GOOGL,MSFT` | Stock data (cached, rate-limited) |
 | `GET /api/news?category=general` | News headlines |
+| `GET /api/calendar/events?days=1` | Today’s Google Calendar events (503 if not configured) |
 | `GET /api/display/state` | Display state |
 | `POST /api/display/power` | `{ action: "on" \| "off" \| "sleep" }` (requires `x-api-key`) |
 | `POST /api/display/widgets/rotate` | Next widget (requires `x-api-key`) |
