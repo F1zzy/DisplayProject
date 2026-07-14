@@ -1,8 +1,19 @@
 const DISPLAY_API_URL = process.env.DISPLAY_API_URL;
 const CONTROL_API_KEY = process.env.CONTROL_API_KEY;
 
+function assertConfig() {
+  if (!DISPLAY_API_URL || !CONTROL_API_KEY) {
+    throw new Error(
+      'Missing DISPLAY_API_URL or CONTROL_API_KEY. Set both Lambda environment variables before using the skill.'
+    );
+  }
+}
+
 async function callDisplayApi(path, body) {
-  const response = await fetch(`${DISPLAY_API_URL}${path}`, {
+  assertConfig();
+
+  const baseUrl = DISPLAY_API_URL.replace(/\/$/, '');
+  const response = await fetch(`${baseUrl}${path}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -39,6 +50,14 @@ exports.handler = async (event) => {
       return buildResponse('Display project ready. Say turn on the display or next widget.', false);
     }
 
+    if (event.request.type === 'SessionEndedRequest') {
+      return buildResponse('');
+    }
+
+    if (intent === 'AMAZON.StopIntent' || intent === 'AMAZON.CancelIntent') {
+      return buildResponse('Okay, closing display project.');
+    }
+
     if (intent === 'DisplayPowerIntent') {
       const action = event.request.intent.slots?.Action?.value;
       if (!action || !['on', 'off', 'sleep'].includes(action)) {
@@ -67,6 +86,11 @@ exports.handler = async (event) => {
     return buildResponse('Goodbye.');
   } catch (error) {
     console.error(error);
+    if (String(error.message || '').includes('Missing DISPLAY_API_URL or CONTROL_API_KEY')) {
+      return buildResponse(
+        'Display project is not configured. Please set the server URL and control key on the skill.'
+      );
+    }
     return buildResponse('Sorry, I could not reach the display server.');
   }
 };
