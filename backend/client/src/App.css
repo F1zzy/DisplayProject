@@ -49,7 +49,7 @@
 
 .time-container {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 16px;
   align-items: stretch;
 }
@@ -58,12 +58,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 0;
+  container-type: inline-size;
+  container-name: clock;
   font-family: var(--font-display);
-  font-size: clamp(4rem, 12vw, 9rem);
+  font-size: clamp(2.4rem, 16cqi, 9rem);
   font-weight: 800;
   line-height: 1;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
   padding: 20px;
   background: var(--bg-panel-elevated);
   border: 1px solid var(--border);
@@ -113,10 +118,53 @@
 }
 
 .time-container-stats-humidity {
-  font-size: clamp(1rem, 1.8vw, 1.4rem);
-  color: var(--text-muted);
-  letter-spacing: 0.5px;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.humidity-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.humidity-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
+}
+
+.humidity-value {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+.humidity-unit {
+  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.humidity-meter {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.humidity-meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 100%);
+  transition: width 0.6s ease;
 }
 
 .temp-container-stats-weather {
@@ -146,6 +194,6 @@
   }
 
   .time-container-time {
-    font-size: clamp(3rem, 18vw, 5rem);
+    font-size: clamp(2.4rem, 18cqi, 5rem);
   }
 }

@@ -45,7 +45,36 @@ function TimeDisplay() {
           </div>
         </div>
         <div className="time-container-stats-humidity stat-card">
-          {loading ? 'Humidity —' : current ? `${current.humidity}% humidity` : 'Humidity N/A'}
+          <span className="humidity-label">Humidity</span>
+          <div className="humidity-value-row">
+            <span className="humidity-value">
+              {loading ? '—' : current?.humidity != null ? current.humidity : 'N/A'}
+            </span>
+            {!loading && current?.humidity != null ? (
+              <span className="humidity-unit">%</span>
+            ) : null}
+          </div>
+          <div
+            className="humidity-meter"
+            role="meter"
+            aria-label="Humidity level"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={
+              !loading && current?.humidity != null ? Number(current.humidity) : undefined
+            }
+          >
+            <div
+              className="humidity-meter-fill"
+              style={{
+                width: `${
+                  !loading && current?.humidity != null
+                    ? Math.max(0, Math.min(100, Number(current.humidity)))
+                    : 0
+                }%`,
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
