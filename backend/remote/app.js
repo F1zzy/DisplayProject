@@ -286,6 +286,9 @@ function fillSettingsForm(settings) {
   document.getElementById('settingBackgroundImage').value = settings.backgroundImage || '';
   document.getElementById('settingColorScheme').value = settings.colorScheme || 'orange-dark';
   document.getElementById('settingFontPreset').value = settings.fontPreset || 'nothing';
+  document.getElementById('settingClockAnimation').value = settings.clockAnimation || 'off';
+  document.getElementById('settingWeatherAtmosphere').checked = settings.weatherAtmosphere === true;
+  document.getElementById('settingNightFocusMode').checked = settings.nightFocusMode === true;
   document.getElementById('settingClockSide').value = settings.clockSide || 'left';
   document.getElementById('settingDensity').value = settings.density || 'comfortable';
   syncBackgroundFields();
@@ -326,6 +329,9 @@ function readSettingsForm() {
     backgroundImage: document.getElementById('settingBackgroundImage').value.trim(),
     colorScheme: document.getElementById('settingColorScheme').value,
     fontPreset: document.getElementById('settingFontPreset').value,
+    clockAnimation: document.getElementById('settingClockAnimation').value,
+    weatherAtmosphere: document.getElementById('settingWeatherAtmosphere').checked,
+    nightFocusMode: document.getElementById('settingNightFocusMode').checked,
     sectionOrder: normalizeSectionOrder(sectionOrderState),
     clockSide: document.getElementById('settingClockSide').value,
     density: document.getElementById('settingDensity').value,

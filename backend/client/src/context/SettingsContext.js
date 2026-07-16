@@ -20,6 +20,9 @@ const DEFAULT_SETTINGS = {
   sectionOrder: ['header', 'weather', 'widgets'],
   clockSide: 'left',
   density: 'comfortable',
+  clockAnimation: 'off',
+  weatherAtmosphere: false,
+  nightFocusMode: false,
 };
 
 export function SettingsProvider({ children }) {

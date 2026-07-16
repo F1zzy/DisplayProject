@@ -170,7 +170,7 @@ Disable screen blanking in Pi OS desktop preferences as an extra safeguard again
 2. Open `http://localhost:3000/remote` (or `http://<pi-ip>:3000/remote` from another device)
 3. Enter your `CONTROL_API_KEY` from `backend/.env` and tap **Unlock**
 4. Use On / Sleep / Off and widget buttons
-5. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background (default / colour / image URL), appearance (colour scheme + font), and layout (section order/visibility, clock side, density), then **Save settings** — the kiosk updates live over WebSocket
+5. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background (default / colour / image URL), appearance (colour scheme, font, clock animation, weather atmosphere, night focus), and layout (section order/visibility, clock side, density), then **Save settings** — the kiosk updates live over WebSocket
 
 Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip.
 

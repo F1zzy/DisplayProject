@@ -1,0 +1,136 @@
+.weather-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.App > .dashboard-header,
+.App > .dashboard-weather,
+.App > .dashboard-widgets {
+  position: relative;
+  z-index: 1;
+}
+
+/* Rain */
+.atmosphere-rain {
+  position: absolute;
+  inset: 0;
+}
+
+.atmosphere-rain-drop {
+  position: absolute;
+  top: -12%;
+  width: 1px;
+  height: 14%;
+  background: linear-gradient(to bottom, transparent, rgba(180, 210, 255, 0.55));
+  animation-name: atmosphereRainFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes atmosphereRainFall {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(120vh);
+  }
+}
+
+/* Snow */
+.atmosphere-snow {
+  position: absolute;
+  inset: 0;
+}
+
+.atmosphere-snow-flake {
+  position: absolute;
+  top: -8%;
+  border-radius: 50%;
+  background: rgba(230, 240, 255, 0.7);
+  animation-name: atmosphereSnowFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes atmosphereSnowFall {
+  from {
+    transform: translateY(0) translateX(0);
+  }
+  to {
+    transform: translateY(110vh) translateX(20px);
+  }
+}
+
+/* Clouds */
+.atmosphere-clouds {
+  position: absolute;
+  inset: 0;
+}
+
+.atmosphere-cloud {
+  position: absolute;
+  height: 28%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(160, 170, 190, 0.18) 0%,
+    transparent 70%
+  );
+  filter: blur(8px);
+  animation: atmosphereCloudDrift 48s linear infinite;
+}
+
+.atmosphere-cloud--a {
+  width: 55%;
+  top: 8%;
+  left: -20%;
+  animation-duration: 56s;
+}
+
+.atmosphere-cloud--b {
+  width: 45%;
+  top: 28%;
+  left: 10%;
+  opacity: 0.75;
+  animation-duration: 72s;
+  animation-direction: reverse;
+}
+
+.atmosphere-cloud--c {
+  width: 60%;
+  top: 48%;
+  left: -10%;
+  opacity: 0.55;
+  animation-duration: 64s;
+}
+
+@keyframes atmosphereCloudDrift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(35%);
+  }
+}
+
+/* Clear haze */
+.atmosphere-haze {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 55%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere-rain-drop,
+  .atmosphere-snow-flake,
+  .atmosphere-cloud {
+    animation: none !important;
+  }
+}

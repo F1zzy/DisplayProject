@@ -44,6 +44,8 @@ async function getCurrentWeather(location) {
     humidity: data.current.humidity,
     iconUrl: data.current.condition.icon,
     condition: data.current.condition.text,
+    conditionCode: data.current.condition.code,
+    isDay: data.current.is_day === 1,
   };
 
   cache.set(cacheKey, result, WEATHER_TTL_MS);

@@ -18,6 +18,8 @@ const VALID_CLOCK_SIDES = ['left', 'right'];
 
 const VALID_DENSITIES = ['compact', 'comfortable', 'roomy'];
 
+const VALID_CLOCK_ANIMATIONS = ['off', 'crossfade', 'flip'];
+
 const DEFAULTS = {
   location: process.env.LOCATION || 'Nottingham',
   stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
@@ -35,6 +37,9 @@ const DEFAULTS = {
   sectionOrder: [...VALID_SECTIONS],
   clockSide: 'left',
   density: 'comfortable',
+  clockAnimation: 'off',
+  weatherAtmosphere: false,
+  nightFocusMode: false,
 };
 
 let cache = null;
@@ -144,6 +149,13 @@ function normalize(partial = {}) {
     sectionOrder: sanitizeSectionOrder(merged.sectionOrder),
     clockSide: sanitizeFromList(merged.clockSide, VALID_CLOCK_SIDES, DEFAULTS.clockSide),
     density: sanitizeFromList(merged.density, VALID_DENSITIES, DEFAULTS.density),
+    clockAnimation: sanitizeFromList(
+      merged.clockAnimation,
+      VALID_CLOCK_ANIMATIONS,
+      DEFAULTS.clockAnimation
+    ),
+    weatherAtmosphere: Boolean(merged.weatherAtmosphere),
+    nightFocusMode: Boolean(merged.nightFocusMode),
   };
 }
 
@@ -212,6 +224,7 @@ module.exports = {
   VALID_SECTIONS,
   VALID_CLOCK_SIDES,
   VALID_DENSITIES,
+  VALID_CLOCK_ANIMATIONS,
   DEFAULTS,
   getSettings,
   updateSettings,

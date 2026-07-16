@@ -117,4 +117,24 @@ describe('settings service', () => {
     expect(fallback.density).toBe('comfortable');
     expect(fallback.sectionOrder).toEqual(['header', 'weather', 'widgets']);
   });
+
+  test('clock animation and focus toggles sanitize', () => {
+    const updated = settings.updateSettings({
+      clockAnimation: 'flip',
+      weatherAtmosphere: true,
+      nightFocusMode: true,
+    });
+    expect(updated.clockAnimation).toBe('flip');
+    expect(updated.weatherAtmosphere).toBe(true);
+    expect(updated.nightFocusMode).toBe(true);
+
+    const fallback = settings.updateSettings({
+      clockAnimation: 'bounce',
+      weatherAtmosphere: 0,
+      nightFocusMode: '',
+    });
+    expect(fallback.clockAnimation).toBe('off');
+    expect(fallback.weatherAtmosphere).toBe(false);
+    expect(fallback.nightFocusMode).toBe(false);
+  });
 });

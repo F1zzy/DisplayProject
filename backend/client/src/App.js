@@ -1,7 +1,9 @@
 import './App.css';
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import WeatherBar from './components/WeatherBar';
 import Widgets from './components/Widgets';
+import AnimatedClock from './components/AnimatedClock';
+import WeatherAtmosphere from './components/WeatherAtmosphere';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { WeatherProvider, useWeather } from './context/WeatherContext';
 import { useDisplayControl } from './hooks/useDisplayControl';
@@ -11,6 +13,7 @@ import {
   buildDashboardBackgroundStyle,
 } from './utils/dashboardBackground';
 import { applyDashboardAppearance } from './utils/dashboardAppearance';
+import { isNightTime } from './utils/isNightTime';
 
 const SECTION_COMPONENTS = {
   header: () => (
@@ -33,19 +36,20 @@ const SECTION_COMPONENTS = {
 function TimeDisplay() {
   const [now, setNow] = useState(new Date());
   const { current, loading } = useWeather();
+  const { settings } = useSettings();
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const weekday = now.toLocaleDateString([], { weekday: 'long' });
   const date = now.toLocaleDateString([], { month: 'long', day: 'numeric' });
+  const clockAnimation = settings.clockAnimation || 'off';
 
   return (
     <div className="time-container">
-      <div className="time-container-time">{time}</div>
+      <AnimatedClock now={now} animation={clockAnimation} />
       <div className="time-container-dateCon">
         <div className="time-container-weekday stat-card">
           <div>{weekday}</div>
@@ -103,7 +107,9 @@ function TimeDisplay() {
 function AppContent() {
   const [displayPower, setDisplayPower] = useState('on');
   const [forcedWidget, setForcedWidget] = useState(null);
+  const [now, setNow] = useState(new Date());
   const { settings, applySettings } = useSettings();
+  const { current, forecast } = useWeather();
 
   useEffect(() => {
     applyDocumentBackground(settings);
@@ -116,6 +122,13 @@ function AppContent() {
       });
     };
   }, [settings]);
+
+  useEffect(() => {
+    if (!settings.nightFocusMode) return undefined;
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    setNow(new Date());
+    return () => clearInterval(timer);
+  }, [settings.nightFocusMode]);
 
   const handleDisplayMessage = useCallback(
     (message) => {
@@ -137,6 +150,11 @@ function AppContent() {
 
   useDisplayControl(handleDisplayMessage);
 
+  const nightFocusActive = useMemo(() => {
+    if (!settings.nightFocusMode) return false;
+    return isNightTime(current, forecast, now);
+  }, [settings.nightFocusMode, current, forecast, now]);
+
   if (displayPower === 'off' || displayPower === 'sleep') {
     return <div className={`display-sleep display-sleep--${displayPower}`} />;
   }
@@ -152,11 +170,18 @@ function AppContent() {
     : 'comfortable';
   const clearForcedWidget = () => setForcedWidget(null);
 
+  const appClass = [
+    'App',
+    `clock-side-${clockSide}`,
+    `density-${density}`,
+    nightFocusActive ? 'night-focus' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div
-      className={`App clock-side-${clockSide} density-${density}`}
-      style={backgroundStyle || undefined}
-    >
+    <div className={appClass} style={backgroundStyle || undefined}>
+      <WeatherAtmosphere />
       {sectionOrder.map((id) => {
         const render = SECTION_COMPONENTS[id];
         return render ? render(forcedWidget, clearForcedWidget) : null;
