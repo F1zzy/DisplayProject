@@ -50,6 +50,31 @@ async function getCurrentWeather(location) {
   return result;
 }
 
+async function getLocationCoordinates(location) {
+  const cacheKey = `weather:coords:${location}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  const data = await fetchJson(
+    `${WEATHER_BASE}/current.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(location)}&aqi=no`
+  );
+
+  const result = {
+    name: data.location?.name || location,
+    region: data.location?.region || null,
+    country: data.location?.country || null,
+    latitude: data.location?.lat,
+    longitude: data.location?.lon,
+  };
+
+  if (result.latitude == null || result.longitude == null) {
+    throw new Error(`Unable to resolve coordinates for ${location}`);
+  }
+
+  cache.set(cacheKey, result, WEATHER_TTL_MS);
+  return result;
+}
+
 async function getForecast(location, days = 7) {
   const cacheKey = `weather:forecast:${location}:${days}`;
   const cached = cache.get(cacheKey);
@@ -154,6 +179,7 @@ module.exports = {
   CONTROL_API_KEY,
   getLocation,
   getCurrentWeather,
+  getLocationCoordinates,
   getForecast,
   getHourlyForecast,
   getStock,

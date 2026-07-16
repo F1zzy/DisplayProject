@@ -4,6 +4,7 @@ import News from './WidgetComponents/News';
 import Timetable from './WidgetComponents/TimeTable';
 import StockMarket from './WidgetComponents/StockMarket';
 import NetworkStats from './WidgetComponents/NetworkStats';
+import NightSky from './WidgetComponents/NightSky';
 import { useSettings } from '../context/SettingsContext';
 
 const WIDGET_REGISTRY = {
@@ -11,6 +12,7 @@ const WIDGET_REGISTRY = {
   news: { key: 'news', label: 'News', Component: News },
   timetable: { key: 'timetable', label: 'Schedule', Component: Timetable },
   network: { key: 'network', label: 'Network', Component: NetworkStats },
+  sky: { key: 'sky', label: 'Night Sky', Component: NightSky },
 };
 
 function ToolbarContent({ widgets, activeIndex }) {

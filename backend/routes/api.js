@@ -2,6 +2,7 @@ const express = require('express');
 const api = require('../services/api');
 const calendar = require('../services/calendar');
 const networkStats = require('../services/networkStats');
+const sky = require('../services/sky');
 const settings = require('../services/settings');
 
 const router = express.Router();
@@ -116,6 +117,17 @@ router.get('/network/stats', async (_req, res) => {
   } catch (error) {
     console.error(error);
     res.status(502).json({ error: 'Failed to fetch network stats' });
+  }
+});
+
+router.get('/sky/current', async (req, res) => {
+  try {
+    const location = api.getLocation(req);
+    const data = await sky.getNightSky(location);
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({ error: 'Failed to fetch night sky' });
   }
 });
 

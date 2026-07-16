@@ -16,6 +16,7 @@ const WIDGET_LABELS = {
   news: 'News',
   timetable: 'Schedule',
   network: 'Network',
+  sky: 'Night Sky',
 };
 
 const UNLOCK_KEY = 'displayRemoteUnlocked';

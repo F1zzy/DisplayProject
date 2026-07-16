@@ -2,6 +2,7 @@ const request = require('supertest');
 const { app } = require('../server');
 const calendar = require('../services/calendar');
 const networkStats = require('../services/networkStats');
+const sky = require('../services/sky');
 
 describe('API routes', () => {
   test('GET /api/health returns ok', async () => {
@@ -71,8 +72,33 @@ describe('Network API', () => {
   });
 });
 
+describe('Sky API', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('GET /api/sky/current returns night sky payload', async () => {
+    jest.spyOn(sky, 'getNightSky').mockResolvedValue({
+      location: 'Nottingham',
+      latitude: 52.95,
+      longitude: -1.15,
+      observedAt: '2026-07-14T21:00:00.000Z',
+      chartUrl: 'https://example.com/chart.png',
+      chartStyle: 'navy',
+      bodies: [{ name: 'Moon', altitude: 40, azimuth: 120, magnitude: -10 }],
+      configured: { chart: true, planets: true },
+      errors: { chart: null, planets: null },
+    });
+
+    const response = await request(app).get('/api/sky/current');
+    expect(response.status).toBe(200);
+    expect(response.body.chartUrl).toContain('chart.png');
+    expect(response.body.bodies[0].name).toBe('Moon');
+  });
+});
+
 describe('Display control', () => {
-  const apiKey = process.env.CONTROL_API_KEY || 'display-control-secret-change-me';
+  const apiKey = process.env.CONTROL_API_KEY || 'change-me';
 
   test('GET /api/display/state returns display state', async () => {
     const response = await request(app).get('/api/display/state');
@@ -125,7 +151,7 @@ describe('Display control', () => {
 });
 
 describe('Settings API', () => {
-  const apiKey = process.env.CONTROL_API_KEY || 'display-control-secret-change-me';
+  const apiKey = process.env.CONTROL_API_KEY || 'change-me';
   const settingsService = require('../services/settings');
   const fs = require('fs');
   let backup = null;

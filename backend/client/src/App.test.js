@@ -34,6 +34,14 @@ jest.mock('./api/client', () => ({
       rxBps: null,
       txBps: null,
     }),
+  getSky: () =>
+    Promise.resolve({
+      location: 'Nottingham',
+      chartUrl: null,
+      bodies: [],
+      configured: { chart: false, planets: true },
+      errors: {},
+    }),
   weatherIconUrl: (icon) => (icon.startsWith('http') ? icon : `https:${icon}`),
 }));
 

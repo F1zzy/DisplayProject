@@ -53,6 +53,11 @@ export function getNetworkStats() {
   return request('/api/network/stats');
 }
 
+export function getSky(location) {
+  const query = location ? `?location=${encodeURIComponent(location)}` : '';
+  return request(`/api/sky/current${query}`);
+}
+
 export function getSettings() {
   return request('/api/settings');
 }

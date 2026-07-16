@@ -6,7 +6,7 @@ Widget-style dashboard for a secondary monitor, with weather, stocks, news, and 
 
 - Live clock and current weather
 - 3-day and hourly forecast views
-- Rotating widgets: stocks, news, timetable (Google Calendar), network
+- Rotating widgets: stocks, news, timetable (Google Calendar), network, night sky
 - Backend API proxy (API keys stay server-side)
 - Remote control page at `/remote` (API-key unlock + dashboard settings)
 - WebSocket updates for display power, widgets, and settings
@@ -43,6 +43,8 @@ cp .env.example .env          # in backend/client/
 ```
 
 Fill in API keys in `backend/.env`. The client only needs `REACT_APP_LOCATION` (optional).
+
+For the Night Sky widget, add `ASTRONOMY_APP_ID` and `ASTRONOMY_APP_SECRET` from [AstronomyAPI](https://astronomyapi.com/). The star chart and visible planets/Moon both use AstronomyAPI.
 
 **Important:** If this repo was ever public with committed keys, rotate them at each provider.
 
@@ -170,6 +172,8 @@ Disable screen blanking in Pi OS desktop preferences as an extra safeguard again
 4. Use On / Sleep / Off and widget buttons
 5. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, and background (default / colour / image URL), then **Save settings** — the kiosk updates live over WebSocket
 
+Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip.
+
 The remote page stays locked until the API key is verified. Lock the session when finished. Settings are stored in `backend/data/settings.json` (not committed).
 
 Install as a PWA on Android for a simple remote control app.
@@ -186,6 +190,7 @@ Install as a PWA on Android for a simple remote control app.
 | `GET /api/news?category=general` | News headlines |
 | `GET /api/calendar/events?days=1` | Today’s Google Calendar events (503 if not configured) |
 | `GET /api/network/stats` | Connection latency + local NIC rx/tx rates (light probe, cached ~15s) |
+| `GET /api/sky/current` | Night sky chart URL + bodies above horizon (cached ~45m) |
 | `GET /api/settings` | Dashboard preferences (location, widgets, stocks, etc.) |
 | `PUT /api/settings` | Update preferences (requires `x-api-key`); broadcasts `settings:update` |
 | `GET /api/display/state` | Display state |
