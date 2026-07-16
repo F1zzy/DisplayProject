@@ -5,6 +5,7 @@ import Timetable from './WidgetComponents/TimeTable';
 import StockMarket from './WidgetComponents/StockMarket';
 import NetworkStats from './WidgetComponents/NetworkStats';
 import NightSky from './WidgetComponents/NightSky';
+import SpotifyNow from './WidgetComponents/SpotifyNow';
 import { useSettings } from '../context/SettingsContext';
 
 const WIDGET_REGISTRY = {
@@ -13,12 +14,15 @@ const WIDGET_REGISTRY = {
   timetable: { key: 'timetable', label: 'Schedule', Component: Timetable },
   network: { key: 'network', label: 'Network', Component: NetworkStats },
   sky: { key: 'sky', label: 'Night Sky', Component: NightSky },
+  spotify: { key: 'spotify', label: 'Spotify', Component: SpotifyNow },
 };
 
-function ToolbarContent({ widgets, activeIndex }) {
+function ToolbarContent({ widgets, activeIndex, pinned }) {
   return (
     <>
-      <h2 className="widget-toolbar-title">Widgets</h2>
+      <h2 className="widget-toolbar-title">
+        Widgets{pinned ? <span className="widget-pinned-badge">Pinned</span> : null}
+      </h2>
       <div className="widget-tabs" role="tablist" aria-label="Active widget">
         {widgets.map((widget, index) => (
           <span
@@ -35,7 +39,7 @@ function ToolbarContent({ widgets, activeIndex }) {
   );
 }
 
-function Widgets({ forcedWidget, onWidgetShown }) {
+function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
   const { settings } = useSettings();
   const widgets = useMemo(() => {
     const enabled = Array.isArray(settings.enabledWidgets) ? settings.enabledWidgets : [];
@@ -48,7 +52,7 @@ function Widgets({ forcedWidget, onWidgetShown }) {
   const rotationMs = settings.widgetRotationMs ?? 120000;
   const [currentWidget, setCurrentWidget] = useState(0);
   const [cycleId, setCycleId] = useState(0);
-  const timerActive = rotationMs > 0 && widgets.length > 1;
+  const timerActive = rotationMs > 0 && widgets.length > 1 && !pinned;
 
   useEffect(() => {
     setCurrentWidget((prev) => (prev >= widgets.length ? 0 : prev));
@@ -82,7 +86,7 @@ function Widgets({ forcedWidget, onWidgetShown }) {
     <div className="Wid-container panel">
       <div className="widget-toolbar">
         <div className="widget-toolbar-inner">
-          <ToolbarContent widgets={widgets} activeIndex={activeIndex} />
+          <ToolbarContent widgets={widgets} activeIndex={activeIndex} pinned={pinned} />
         </div>
         {timerActive && (
           <div
@@ -92,7 +96,7 @@ function Widgets({ forcedWidget, onWidgetShown }) {
             aria-hidden="true"
           >
             <div className="widget-toolbar-inner widget-toolbar-inner--on-fill">
-              <ToolbarContent widgets={widgets} activeIndex={activeIndex} />
+              <ToolbarContent widgets={widgets} activeIndex={activeIndex} pinned={pinned} />
             </div>
           </div>
         )}

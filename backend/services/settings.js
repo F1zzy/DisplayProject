@@ -4,7 +4,7 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
 
-const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network', 'sky'];
+const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network', 'sky', 'spotify'];
 
 const VALID_BACKGROUND_MODES = ['default', 'color', 'image'];
 

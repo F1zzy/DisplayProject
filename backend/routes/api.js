@@ -3,9 +3,13 @@ const api = require('../services/api');
 const calendar = require('../services/calendar');
 const networkStats = require('../services/networkStats');
 const sky = require('../services/sky');
+const spotify = require('../services/spotify');
 const settings = require('../services/settings');
+const cache = require('../services/cache');
 
 const router = express.Router();
+
+const SPOTIFY_TTL_MS = 15000;
 
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
@@ -128,6 +132,48 @@ router.get('/sky/current', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(502).json({ error: 'Failed to fetch night sky' });
+  }
+});
+
+router.get('/spotify/now', async (_req, res) => {
+  try {
+    if (!spotify.isConfigured()) {
+      return res.status(503).json({
+        error: 'Spotify is not configured',
+        configured: false,
+        track: null,
+        topTracks: [],
+        playing: false,
+      });
+    }
+
+    const cacheKey = 'spotify:now';
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const data = await spotify.getNowPlayingPayload();
+    cache.set(cacheKey, data, SPOTIFY_TTL_MS);
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    if (error.status === 503 || error.configured === false) {
+      return res.status(503).json({
+        error: 'Spotify is not configured',
+        configured: false,
+        track: null,
+        topTracks: [],
+        playing: false,
+      });
+    }
+    res.status(502).json({
+      error: 'Failed to fetch Spotify data',
+      configured: true,
+      track: null,
+      topTracks: [],
+      playing: false,
+    });
   }
 });
 

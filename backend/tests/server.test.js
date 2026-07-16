@@ -3,6 +3,7 @@ const { app } = require('../server');
 const calendar = require('../services/calendar');
 const networkStats = require('../services/networkStats');
 const sky = require('../services/sky');
+const spotify = require('../services/spotify');
 
 describe('API routes', () => {
   test('GET /api/health returns ok', async () => {
@@ -97,6 +98,46 @@ describe('Sky API', () => {
   });
 });
 
+describe('Spotify API', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('GET /api/spotify/now returns 503 when not configured', async () => {
+    jest.spyOn(spotify, 'isConfigured').mockReturnValue(false);
+
+    const response = await request(app).get('/api/spotify/now');
+    expect(response.status).toBe(503);
+    expect(response.body.configured).toBe(false);
+    expect(response.body.track).toBeNull();
+  });
+
+  test('GET /api/spotify/now returns payload when configured', async () => {
+    jest.spyOn(spotify, 'isConfigured').mockReturnValue(true);
+    jest.spyOn(spotify, 'getNowPlayingPayload').mockResolvedValue({
+      configured: true,
+      playing: true,
+      track: {
+        id: '1',
+        name: 'Test Track',
+        artists: ['Tester'],
+        albumName: 'Demo',
+        albumArt: 'https://example.com/a.jpg',
+        durationMs: 180000,
+        uri: 'spotify:track:1',
+      },
+      progressMs: 30000,
+      topTracks: [],
+      fetchedAt: '2026-07-16T12:00:00.000Z',
+    });
+
+    const response = await request(app).get('/api/spotify/now');
+    expect(response.status).toBe(200);
+    expect(response.body.playing).toBe(true);
+    expect(response.body.track.name).toBe('Test Track');
+  });
+});
+
 describe('Display control', () => {
   const apiKey = process.env.CONTROL_API_KEY || 'change-me';
 
@@ -105,6 +146,7 @@ describe('Display control', () => {
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('power');
     expect(response.body).toHaveProperty('widgetCount');
+    expect(response.body).toHaveProperty('pinned');
   });
 
   test('POST /api/display/auth/verify requires auth', async () => {
@@ -147,6 +189,50 @@ describe('Display control', () => {
       .send({ action: 'on' });
 
     expect(response.status).toBe(200);
+  });
+
+  test('POST /api/display/widgets/pin toggles pin and rotate clears it', async () => {
+    const pinned = await request(app)
+      .post('/api/display/widgets/pin')
+      .set('x-api-key', apiKey)
+      .send({ pinned: true });
+
+    expect(pinned.status).toBe(200);
+    expect(pinned.body.pinned).toBe(true);
+
+    const state = await request(app).get('/api/display/state');
+    expect(state.body.pinned).toBe(true);
+
+    const rotated = await request(app)
+      .post('/api/display/widgets/rotate')
+      .set('x-api-key', apiKey)
+      .send({});
+
+    expect(rotated.status).toBe(200);
+    expect(rotated.body.pinned).toBe(false);
+  });
+
+  test('POST /api/display/widgets/pin can pin a chosen widget index', async () => {
+    const pinned = await request(app)
+      .post('/api/display/widgets/pin')
+      .set('x-api-key', apiKey)
+      .send({ pinned: true, index: 1 });
+
+    expect(pinned.status).toBe(200);
+    expect(pinned.body.pinned).toBe(true);
+    expect(pinned.body.currentWidget).toBe(1);
+
+    const invalid = await request(app)
+      .post('/api/display/widgets/pin')
+      .set('x-api-key', apiKey)
+      .send({ pinned: true, index: 99 });
+
+    expect(invalid.status).toBe(400);
+  });
+
+  test('POST /api/display/widgets/pin requires auth', async () => {
+    const response = await request(app).post('/api/display/widgets/pin').send({ pinned: true });
+    expect(response.status).toBe(401);
   });
 });
 

@@ -6,9 +6,10 @@ Widget-style dashboard for a secondary monitor, with weather, stocks, news, and 
 
 - Live clock and current weather
 - 3-day and hourly forecast views
-- Rotating widgets: stocks, news, timetable (Google Calendar), network, night sky
+- Rotating widgets: stocks, news, timetable (Google Calendar), network, night sky, Spotify
 - Backend API proxy (API keys stay server-side)
 - Remote control page at `/remote` (API-key unlock + dashboard settings)
+- Widget pin from remote (choose a widget and freeze auto-rotation until cleared)
 - WebSocket updates for display power, widgets, and settings
 - Raspberry Pi kiosk install with HDMI power control
 - Alexa skill stub in [`alexa/`](alexa/)
@@ -70,6 +71,23 @@ node scripts/google-calendar-auth.js
 Restart the server. The Schedule widget will show today’s events (or a connect message if env vars are missing).
 
 To force a new refresh token, revoke the app at [Google Account permissions](https://myaccount.google.com/permissions) and run the auth script again.
+
+## Spotify (Now Playing widget)
+
+The Spotify widget shows what is playing now (or the last played track), plus your top 3 short-term tracks (Spotify’s ~4-week window).
+
+1. Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. Add redirect URI `http://localhost:3006/callback`.
+3. Copy Client ID and Client Secret into `backend/.env` as `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`.
+4. From `backend/`, run:
+
+```bash
+cd backend
+node scripts/spotify-auth.js
+```
+
+5. Paste `SPOTIFY_REFRESH_TOKEN=...` into `backend/.env` and restart the server.
+6. Enable **Spotify** under Enabled widgets on the remote.
 
 ## Production run
 
@@ -169,10 +187,10 @@ Disable screen blanking in Pi OS desktop preferences as an extra safeguard again
 1. Start the server
 2. Open `http://localhost:3000/remote` (or `http://<pi-ip>:3000/remote` from another device)
 3. Enter your `CONTROL_API_KEY` from `backend/.env` and tap **Unlock**
-4. Use On / Sleep / Off and widget buttons
+4. Use On / Sleep / Off, widget jump buttons, and **Pin widget** (pick which widget to freeze; **Unpin** or **Next Widget** clears the pin)
 5. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background (default / colour / image URL), appearance (colour scheme, font, clock animation, weather atmosphere, night focus), and layout (section order/visibility, clock side, density), then **Save settings** — the kiosk updates live over WebSocket
 
-Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip.
+Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip. Enable **Spotify** after completing the Spotify setup above.
 
 The remote page stays locked until the API key is verified. Lock the session when finished. Settings are stored in `backend/data/settings.json` (not committed).
 
@@ -191,12 +209,15 @@ Install as a PWA on Android for a simple remote control app.
 | `GET /api/calendar/events?days=1` | Today’s Google Calendar events (503 if not configured) |
 | `GET /api/network/stats` | Connection latency + local NIC rx/tx rates (light probe, cached ~15s) |
 | `GET /api/sky/current` | Night sky chart URL + bodies above horizon (cached ~45m) |
+| `GET /api/spotify/now` | Now playing / last played + top tracks (503 if not configured) |
 | `GET /api/settings` | Dashboard preferences (location, widgets, stocks, etc.) |
 | `PUT /api/settings` | Update preferences (requires `x-api-key`); broadcasts `settings:update` |
-| `GET /api/display/state` | Display state |
+| `GET /api/display/state` | Display state (includes `pinned`) |
 | `POST /api/display/auth/verify` | Validate `CONTROL_API_KEY` for remote unlock |
 | `POST /api/display/power` | `{ action: "on" \| "off" \| "sleep" }` (requires `x-api-key`) |
-| `POST /api/display/widgets/rotate` | Next widget (requires `x-api-key`) |
+| `POST /api/display/widgets/rotate` | Next widget; clears pin (requires `x-api-key`) |
+| `POST /api/display/widgets/set` | Jump to widget index (requires `x-api-key`) |
+| `POST /api/display/widgets/pin` | `{ pinned: true \| false, index? }` freeze rotation on a chosen widget (requires `x-api-key`) |
 | `WS /ws/display` | Real-time display events |
 
 ## Alexa

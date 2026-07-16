@@ -7,7 +7,7 @@ const DEFAULT_SETTINGS = {
   location: process.env.REACT_APP_LOCATION || 'Nottingham',
   stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
   widgetRotationMs: 120000,
-  enabledWidgets: ['stock', 'news', 'timetable', 'network', 'sky'],
+  enabledWidgets: ['stock', 'news', 'timetable', 'network', 'sky', 'spotify'],
   calendarDays: 1,
   newsGeneral: true,
   newsTechnology: true,

@@ -17,6 +17,7 @@ const WIDGET_LABELS = {
   timetable: 'Schedule',
   network: 'Network',
   sky: 'Night Sky',
+  spotify: 'Spotify',
 };
 
 const SECTION_LABELS = {
@@ -129,8 +130,36 @@ async function apiRequest(path, options = {}) {
   return JSON.parse(text);
 }
 
+let remotePinned = false;
+
+function setRemotePinnedUi(pinned, currentWidget) {
+  remotePinned = Boolean(pinned);
+  const pinBtn = document.getElementById('pinWidgetBtn');
+  const unpinBtn = document.getElementById('unpinWidgetBtn');
+  const pinSelect = document.getElementById('pinWidgetSelect');
+  if (pinBtn) pinBtn.hidden = remotePinned;
+  if (unpinBtn) unpinBtn.hidden = !remotePinned;
+  if (pinSelect) {
+    pinSelect.disabled = remotePinned;
+    if (typeof currentWidget === 'number' && !Number.isNaN(currentWidget)) {
+      pinSelect.value = String(currentWidget);
+    }
+  }
+}
+
+async function refreshDisplayState() {
+  try {
+    const state = await apiRequest('/api/display/state');
+    setRemotePinnedUi(state.pinned, state.currentWidget);
+    return state;
+  } catch {
+    return null;
+  }
+}
+
 function rebuildWidgetButtons(enabledWidgets) {
   widgetButtonsEl.innerHTML = '';
+  const widgets = enabledWidgets || [];
 
   const rotateBtn = document.createElement('button');
   rotateBtn.type = 'button';
@@ -140,7 +169,8 @@ function rebuildWidgetButtons(enabledWidgets) {
   rotateBtn.addEventListener('click', async () => {
     try {
       setStatus('Rotating widget...');
-      await apiRequest('/api/display/widgets/rotate', { method: 'POST', body: '{}' });
+      const live = await apiRequest('/api/display/widgets/rotate', { method: 'POST', body: '{}' });
+      setRemotePinnedUi(live?.pinned, live?.currentWidget);
       flashButton(rotateBtn);
       setStatus('Widget rotated');
     } catch (error) {
@@ -149,7 +179,29 @@ function rebuildWidgetButtons(enabledWidgets) {
   });
   widgetButtonsEl.appendChild(rotateBtn);
 
-  (enabledWidgets || []).forEach((key, index) => {
+  const unpinBtn = document.createElement('button');
+  unpinBtn.type = 'button';
+  unpinBtn.id = 'unpinWidgetBtn';
+  unpinBtn.className = 'chip';
+  unpinBtn.textContent = 'Unpin';
+  unpinBtn.hidden = !remotePinned;
+  unpinBtn.addEventListener('click', async () => {
+    try {
+      setStatus('Unpinning widget...');
+      const live = await apiRequest('/api/display/widgets/pin', {
+        method: 'POST',
+        body: JSON.stringify({ pinned: false }),
+      });
+      setRemotePinnedUi(live?.pinned, live?.currentWidget);
+      flashButton(unpinBtn);
+      setStatus('Widget unpinned');
+    } catch (error) {
+      setStatus(error.message, true);
+    }
+  });
+  widgetButtonsEl.appendChild(unpinBtn);
+
+  widgets.forEach((key, index) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'chip';
@@ -158,10 +210,11 @@ function rebuildWidgetButtons(enabledWidgets) {
     button.addEventListener('click', async () => {
       try {
         setStatus(`Switching to ${button.textContent}...`);
-        await apiRequest('/api/display/widgets/set', {
+        const live = await apiRequest('/api/display/widgets/set', {
           method: 'POST',
           body: JSON.stringify({ index }),
         });
+        setRemotePinnedUi(live?.pinned, live?.currentWidget);
         flashButton(button);
         setStatus('Widget updated');
       } catch (error) {
@@ -170,6 +223,57 @@ function rebuildWidgetButtons(enabledWidgets) {
     });
     widgetButtonsEl.appendChild(button);
   });
+
+  const pinRow = document.createElement('div');
+  pinRow.className = 'pin-row';
+  pinRow.id = 'pinWidgetRow';
+
+  const pinLabel = document.createElement('label');
+  pinLabel.className = 'pin-field';
+  pinLabel.htmlFor = 'pinWidgetSelect';
+
+  const pinLabelText = document.createElement('span');
+  pinLabelText.className = 'field-label';
+  pinLabelText.textContent = 'Pin widget';
+  pinLabel.appendChild(pinLabelText);
+
+  const pinSelect = document.createElement('select');
+  pinSelect.id = 'pinWidgetSelect';
+  pinSelect.disabled = remotePinned;
+  widgets.forEach((key, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = WIDGET_LABELS[key] || key;
+    pinSelect.appendChild(option);
+  });
+  pinLabel.appendChild(pinSelect);
+  pinRow.appendChild(pinLabel);
+
+  const pinBtn = document.createElement('button');
+  pinBtn.type = 'button';
+  pinBtn.id = 'pinWidgetBtn';
+  pinBtn.className = 'chip';
+  pinBtn.textContent = 'Pin';
+  pinBtn.hidden = remotePinned;
+  pinBtn.disabled = widgets.length === 0;
+  pinBtn.addEventListener('click', async () => {
+    try {
+      const index = parseInt(pinSelect.value, 10);
+      const label = pinSelect.options[pinSelect.selectedIndex]?.textContent || 'widget';
+      setStatus(`Pinning ${label}...`);
+      const live = await apiRequest('/api/display/widgets/pin', {
+        method: 'POST',
+        body: JSON.stringify({ pinned: true, index }),
+      });
+      setRemotePinnedUi(live?.pinned, live?.currentWidget);
+      flashButton(pinBtn);
+      setStatus(`${label} pinned`);
+    } catch (error) {
+      setStatus(error.message, true);
+    }
+  });
+  pinRow.appendChild(pinBtn);
+  widgetButtonsEl.appendChild(pinRow);
 }
 
 function syncBackgroundFields() {
@@ -302,6 +406,7 @@ function fillSettingsForm(settings) {
   });
 
   rebuildWidgetButtons(settings.enabledWidgets || []);
+  refreshDisplayState();
 }
 
 function readSettingsForm() {

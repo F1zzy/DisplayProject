@@ -33,6 +33,7 @@ describe('settings service', () => {
     expect(result.stockSymbols).toEqual(['AAPL', 'GOOGL', 'MSFT']);
     expect(result.enabledWidgets).toContain('stock');
     expect(result.enabledWidgets).toContain('sky');
+    expect(result.enabledWidgets).toContain('spotify');
     expect(result.widgetRotationMs).toBe(120000);
   });
 

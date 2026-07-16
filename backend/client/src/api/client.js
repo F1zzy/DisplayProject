@@ -58,6 +58,35 @@ export function getSky(location) {
   return request(`/api/sky/current${query}`);
 }
 
+export async function getSpotifyNow() {
+  const response = await fetch(`${API_BASE}/api/spotify/now`);
+  const data = await response.json().catch(() => ({
+    configured: false,
+    track: null,
+    topTracks: [],
+    playing: false,
+  }));
+  if (response.status === 503) {
+    return {
+      configured: false,
+      track: null,
+      topTracks: [],
+      playing: false,
+    };
+  }
+  if (!response.ok) {
+    throw new Error(`API request failed: /api/spotify/now (${response.status})`);
+  }
+  return {
+    configured: data.configured !== false,
+    playing: Boolean(data.playing),
+    track: data.track || null,
+    progressMs: data.progressMs ?? null,
+    topTracks: Array.isArray(data.topTracks) ? data.topTracks : [],
+    fetchedAt: data.fetchedAt || null,
+  };
+}
+
 export function getSettings() {
   return request('/api/settings');
 }

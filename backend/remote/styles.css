@@ -420,6 +420,36 @@ input[type='color'] {
   gap: 10px;
 }
 
+.pin-row {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: min(100%, 180px);
+  flex: 1 1 160px;
+}
+
+.pin-field select {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.pin-field select:disabled {
+  opacity: 0.55;
+}
+
 .chip {
   border: 1px solid var(--border-strong);
   background: var(--bg-card);

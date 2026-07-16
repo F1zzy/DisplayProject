@@ -34,6 +34,18 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.widget-pinned-badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 2px 6px;
+  text-transform: uppercase;
 }
 
 .widget-tabs {

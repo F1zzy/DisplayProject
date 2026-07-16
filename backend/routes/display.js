@@ -9,6 +9,7 @@ function createDisplayRouter(broadcast) {
   let displayState = {
     power: 'on',
     currentWidget: 0,
+    pinned: false,
   };
 
   function requireAuth(req, res, next) {
@@ -30,6 +31,7 @@ function createDisplayRouter(broadcast) {
       power: displayState.power,
       currentWidget,
       widgetCount,
+      pinned: Boolean(displayState.pinned),
     };
   }
 
@@ -58,10 +60,11 @@ function createDisplayRouter(broadcast) {
     const current = getLiveState().currentWidget;
     displayState = {
       ...displayState,
+      pinned: false,
       currentWidget: (current + 1) % widgetCount,
     };
     const live = getLiveState();
-    broadcast({ type: 'widgets:rotate', currentWidget: live.currentWidget });
+    broadcast({ type: 'widgets:rotate', currentWidget: live.currentWidget, pinned: false });
     res.json(live);
   });
 
@@ -74,7 +77,30 @@ function createDisplayRouter(broadcast) {
 
     displayState = { ...displayState, currentWidget: index };
     const live = getLiveState();
-    broadcast({ type: 'widgets:set', currentWidget: index });
+    broadcast({ type: 'widgets:set', currentWidget: index, pinned: live.pinned });
+    res.json(live);
+  });
+
+  router.post('/widgets/pin', requireAuth, (req, res) => {
+    const pinned = Boolean(req.body?.pinned);
+    const widgetCount = getWidgetCount();
+    const nextState = { ...displayState, pinned };
+
+    if (pinned && req.body?.index !== undefined && req.body?.index !== null && req.body?.index !== '') {
+      const index = parseInt(req.body.index, 10);
+      if (Number.isNaN(index) || index < 0 || index >= widgetCount) {
+        return res.status(400).json({ error: 'Invalid widget index' });
+      }
+      nextState.currentWidget = index;
+    }
+
+    displayState = nextState;
+    const live = getLiveState();
+    broadcast({
+      type: 'widgets:pin',
+      pinned: live.pinned,
+      currentWidget: live.currentWidget,
+    });
     res.json(live);
   });
 

@@ -26,9 +26,13 @@ const SECTION_COMPONENTS = {
       <WeatherBar />
     </section>
   ),
-  widgets: (forcedWidget, onWidgetShown) => (
+  widgets: (forcedWidget, onWidgetShown, pinned) => (
     <section className="dashboard-widgets" key="widgets">
-      <Widgets forcedWidget={forcedWidget} onWidgetShown={onWidgetShown} />
+      <Widgets
+        forcedWidget={forcedWidget}
+        onWidgetShown={onWidgetShown}
+        pinned={pinned}
+      />
     </section>
   ),
 };
@@ -107,6 +111,7 @@ function TimeDisplay() {
 function AppContent() {
   const [displayPower, setDisplayPower] = useState('on');
   const [forcedWidget, setForcedWidget] = useState(null);
+  const [widgetPinned, setWidgetPinned] = useState(false);
   const [now, setNow] = useState(new Date());
   const { settings, applySettings } = useSettings();
   const { current, forecast } = useWeather();
@@ -137,9 +142,17 @@ function AppContent() {
       }
       if (message.type === 'widgets:rotate') {
         setForcedWidget(message.currentWidget);
+        setWidgetPinned(false);
       }
       if (message.type === 'widgets:set') {
         setForcedWidget(message.currentWidget);
+        if (typeof message.pinned === 'boolean') setWidgetPinned(message.pinned);
+      }
+      if (message.type === 'widgets:pin') {
+        setWidgetPinned(Boolean(message.pinned));
+        if (message.currentWidget != null) {
+          setForcedWidget(message.currentWidget);
+        }
       }
       if (message.type === 'settings:update') {
         applySettings(message.settings);
@@ -184,7 +197,7 @@ function AppContent() {
       <WeatherAtmosphere />
       {sectionOrder.map((id) => {
         const render = SECTION_COMPONENTS[id];
-        return render ? render(forcedWidget, clearForcedWidget) : null;
+        return render ? render(forcedWidget, clearForcedWidget, widgetPinned) : null;
       })}
     </div>
   );
