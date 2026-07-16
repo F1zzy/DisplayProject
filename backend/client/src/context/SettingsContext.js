@@ -15,6 +15,11 @@ const DEFAULT_SETTINGS = {
   backgroundMode: 'default',
   backgroundColor: '#101115',
   backgroundImage: '',
+  colorScheme: 'orange-dark',
+  fontPreset: 'nothing',
+  sectionOrder: ['header', 'weather', 'widgets'],
+  clockSide: 'left',
+  density: 'comfortable',
 };
 
 export function SettingsProvider({ children }) {
@@ -34,6 +39,9 @@ export function SettingsProvider({ children }) {
       enabledWidgets: Array.isArray(next.enabledWidgets)
         ? next.enabledWidgets
         : prev.enabledWidgets,
+      sectionOrder: Array.isArray(next.sectionOrder)
+        ? next.sectionOrder
+        : prev.sectionOrder,
     }));
   }, []);
 

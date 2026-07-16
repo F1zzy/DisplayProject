@@ -10,6 +10,25 @@ import {
   applyDocumentBackground,
   buildDashboardBackgroundStyle,
 } from './utils/dashboardBackground';
+import { applyDashboardAppearance } from './utils/dashboardAppearance';
+
+const SECTION_COMPONENTS = {
+  header: () => (
+    <header className="dashboard-header" key="header">
+      <TimeDisplay />
+    </header>
+  ),
+  weather: () => (
+    <section className="dashboard-weather" key="weather">
+      <WeatherBar />
+    </section>
+  ),
+  widgets: (forcedWidget, onWidgetShown) => (
+    <section className="dashboard-widgets" key="widgets">
+      <Widgets forcedWidget={forcedWidget} onWidgetShown={onWidgetShown} />
+    </section>
+  ),
+};
 
 function TimeDisplay() {
   const [now, setNow] = useState(new Date());
@@ -88,7 +107,14 @@ function AppContent() {
 
   useEffect(() => {
     applyDocumentBackground(settings);
-    return () => applyDocumentBackground({ backgroundMode: 'default' });
+    applyDashboardAppearance(settings);
+    return () => {
+      applyDocumentBackground({ backgroundMode: 'default' });
+      applyDashboardAppearance({
+        colorScheme: 'orange-dark',
+        fontPreset: 'nothing',
+      });
+    };
   }, [settings]);
 
   const handleDisplayMessage = useCallback(
@@ -116,18 +142,25 @@ function AppContent() {
   }
 
   const backgroundStyle = buildDashboardBackgroundStyle(settings);
+  const sectionOrder =
+    Array.isArray(settings.sectionOrder) && settings.sectionOrder.length > 0
+      ? settings.sectionOrder
+      : ['header', 'weather', 'widgets'];
+  const clockSide = settings.clockSide === 'right' ? 'right' : 'left';
+  const density = ['compact', 'comfortable', 'roomy'].includes(settings.density)
+    ? settings.density
+    : 'comfortable';
+  const clearForcedWidget = () => setForcedWidget(null);
 
   return (
-    <div className="App" style={backgroundStyle || undefined}>
-      <header className="dashboard-header">
-        <TimeDisplay />
-      </header>
-      <section className="dashboard-weather">
-        <WeatherBar />
-      </section>
-      <section className="dashboard-widgets">
-        <Widgets forcedWidget={forcedWidget} onWidgetShown={() => setForcedWidget(null)} />
-      </section>
+    <div
+      className={`App clock-side-${clockSide} density-${density}`}
+      style={backgroundStyle || undefined}
+    >
+      {sectionOrder.map((id) => {
+        const render = SECTION_COMPONENTS[id];
+        return render ? render(forcedWidget, clearForcedWidget) : null;
+      })}
     </div>
   );
 }

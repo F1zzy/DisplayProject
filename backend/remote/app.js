@@ -19,6 +19,17 @@ const WIDGET_LABELS = {
   sky: 'Night Sky',
 };
 
+const SECTION_LABELS = {
+  header: 'Header / clock',
+  weather: 'Weather',
+  widgets: 'Widgets',
+};
+
+const ALL_SECTIONS = ['header', 'weather', 'widgets'];
+
+/** @type {string[]} ordered visible sections; omitted = hidden */
+let sectionOrderState = [...ALL_SECTIONS];
+
 const UNLOCK_KEY = 'displayRemoteUnlocked';
 const SESSION_API_KEY = 'displayControlApiKeySession';
 
@@ -167,6 +178,101 @@ function syncBackgroundFields() {
   document.getElementById('settingBackgroundImageRow').hidden = mode !== 'image';
 }
 
+function normalizeSectionOrder(order) {
+  const seen = new Set();
+  const result = [];
+  for (const id of order || []) {
+    if (ALL_SECTIONS.includes(id) && !seen.has(id)) {
+      seen.add(id);
+      result.push(id);
+    }
+  }
+  return result.length > 0 ? result : [...ALL_SECTIONS];
+}
+
+function renderSectionOrderList() {
+  const list = document.getElementById('sectionOrderList');
+  if (!list) return;
+
+  const visible = new Set(sectionOrderState);
+  const displayOrder = [
+    ...sectionOrderState,
+    ...ALL_SECTIONS.filter((id) => !visible.has(id)),
+  ];
+
+  list.innerHTML = '';
+  displayOrder.forEach((id, index) => {
+    const isVisible = visible.has(id);
+    const row = document.createElement('div');
+    row.className = `section-order-row${isVisible ? '' : ' is-hidden-section'}`;
+    row.dataset.section = id;
+    row.setAttribute('role', 'listitem');
+
+    const label = document.createElement('span');
+    label.className = 'section-order-label';
+    label.textContent = SECTION_LABELS[id] || id;
+
+    const checkLabel = document.createElement('label');
+    checkLabel.className = 'section-order-check';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = isVisible;
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        if (!sectionOrderState.includes(id)) {
+          sectionOrderState = normalizeSectionOrder([...sectionOrderState, id]);
+        }
+      } else if (sectionOrderState.length > 1) {
+        sectionOrderState = sectionOrderState.filter((s) => s !== id);
+      } else {
+        checkbox.checked = true;
+        setStatus('Keep at least one section visible', true);
+        return;
+      }
+      renderSectionOrderList();
+    });
+    checkLabel.appendChild(checkbox);
+    checkLabel.appendChild(document.createTextNode('Show'));
+
+    const moves = document.createElement('div');
+    moves.className = 'section-order-moves';
+
+    const upBtn = document.createElement('button');
+    upBtn.type = 'button';
+    upBtn.textContent = '↑';
+    upBtn.setAttribute('aria-label', `Move ${SECTION_LABELS[id]} up`);
+    upBtn.disabled = index === 0;
+    upBtn.addEventListener('click', () => {
+      if (index === 0) return;
+      const next = [...displayOrder];
+      [next[index - 1], next[index]] = [next[index], next[index - 1]];
+      sectionOrderState = normalizeSectionOrder(next.filter((s) => visible.has(s)));
+      renderSectionOrderList();
+    });
+
+    const downBtn = document.createElement('button');
+    downBtn.type = 'button';
+    downBtn.textContent = '↓';
+    downBtn.setAttribute('aria-label', `Move ${SECTION_LABELS[id]} down`);
+    downBtn.disabled = index === displayOrder.length - 1;
+    downBtn.addEventListener('click', () => {
+      if (index >= displayOrder.length - 1) return;
+      const next = [...displayOrder];
+      [next[index + 1], next[index]] = [next[index], next[index + 1]];
+      sectionOrderState = normalizeSectionOrder(next.filter((s) => visible.has(s)));
+      renderSectionOrderList();
+    });
+
+    moves.appendChild(upBtn);
+    moves.appendChild(downBtn);
+
+    row.appendChild(label);
+    row.appendChild(checkLabel);
+    row.appendChild(moves);
+    list.appendChild(row);
+  });
+}
+
 function fillSettingsForm(settings) {
   document.getElementById('settingLocation').value = settings.location || '';
   document.getElementById('settingSymbols').value = (settings.stockSymbols || []).join(',');
@@ -178,7 +284,14 @@ function fillSettingsForm(settings) {
   document.getElementById('settingBackgroundMode').value = settings.backgroundMode || 'default';
   document.getElementById('settingBackgroundColor').value = settings.backgroundColor || '#101115';
   document.getElementById('settingBackgroundImage').value = settings.backgroundImage || '';
+  document.getElementById('settingColorScheme').value = settings.colorScheme || 'orange-dark';
+  document.getElementById('settingFontPreset').value = settings.fontPreset || 'nothing';
+  document.getElementById('settingClockSide').value = settings.clockSide || 'left';
+  document.getElementById('settingDensity').value = settings.density || 'comfortable';
   syncBackgroundFields();
+
+  sectionOrderState = normalizeSectionOrder(settings.sectionOrder);
+  renderSectionOrderList();
 
   const enabled = new Set(settings.enabledWidgets || []);
   document.querySelectorAll('input[name="enabledWidget"]').forEach((input) => {
@@ -211,6 +324,11 @@ function readSettingsForm() {
     backgroundMode: document.getElementById('settingBackgroundMode').value,
     backgroundColor: document.getElementById('settingBackgroundColor').value,
     backgroundImage: document.getElementById('settingBackgroundImage').value.trim(),
+    colorScheme: document.getElementById('settingColorScheme').value,
+    fontPreset: document.getElementById('settingFontPreset').value,
+    sectionOrder: normalizeSectionOrder(sectionOrderState),
+    clockSide: document.getElementById('settingClockSide').value,
+    density: document.getElementById('settingDensity').value,
   };
 }
 

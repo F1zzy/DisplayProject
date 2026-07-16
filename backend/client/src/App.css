@@ -17,8 +17,8 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px;
-  display: grid;
-  grid-template-rows: auto auto 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   font-family: var(--font-body);
   color: var(--text-primary);
@@ -27,10 +27,50 @@
   box-sizing: border-box;
 }
 
+.App.density-compact {
+  padding: 14px;
+  gap: 10px;
+  --gap-sm: 6px;
+  --gap-md: 8px;
+  --gap-lg: 10px;
+}
+
+.App.density-comfortable {
+  padding: 24px;
+  gap: 16px;
+}
+
+.App.density-roomy {
+  padding: 32px;
+  gap: 24px;
+  --gap-sm: 10px;
+  --gap-md: 16px;
+  --gap-lg: 22px;
+}
+
+.App.density-compact .time-container-weekday,
+.App.density-compact .temp-container-stats-weather,
+.App.density-compact .time-container-stats-humidity,
+.App.density-compact .time-container-stats-temp {
+  min-height: 88px;
+}
+
+.App.density-roomy .time-container-weekday,
+.App.density-roomy .temp-container-stats-weather,
+.App.density-roomy .time-container-stats-humidity,
+.App.density-roomy .time-container-stats-temp {
+  min-height: 148px;
+}
+
 .dashboard-header,
 .dashboard-weather,
 .dashboard-widgets {
   width: 100%;
+}
+
+.dashboard-widgets {
+  flex: 1;
+  min-height: 0;
 }
 
 .display-sleep {
@@ -52,6 +92,26 @@
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 16px;
   align-items: stretch;
+}
+
+.App.clock-side-right .time-container {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+.App.clock-side-right .time-container-time {
+  order: 2;
+}
+
+.App.clock-side-right .time-container-dateCon {
+  order: 1;
+}
+
+.App.density-compact .time-container {
+  gap: 10px;
+}
+
+.App.density-roomy .time-container {
+  gap: 22px;
 }
 
 .time-container-time {

@@ -172,6 +172,50 @@
           </label>
         </div>
 
+        <div class="subpanel">
+          <div class="subpanel-title">Appearance</div>
+          <label class="field">
+            <span class="field-label">Colour scheme</span>
+            <select id="settingColorScheme">
+              <option value="orange-dark">Orange dark</option>
+              <option value="cool-blue">Cool blue</option>
+              <option value="soft-neutral">Soft neutral</option>
+              <option value="forest">Forest</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Font</span>
+            <select id="settingFontPreset">
+              <option value="nothing">Nothing</option>
+              <option value="time-caps">Time Caps</option>
+              <option value="system">System</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="subpanel">
+          <div class="subpanel-title">Layout</div>
+          <div class="field">
+            <span class="field-label">Section order</span>
+            <div id="sectionOrderList" class="section-order-list" role="list"></div>
+          </div>
+          <label class="field">
+            <span class="field-label">Clock side</span>
+            <select id="settingClockSide">
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Density</span>
+            <select id="settingDensity">
+              <option value="compact">Compact</option>
+              <option value="comfortable">Comfortable</option>
+              <option value="roomy">Roomy</option>
+            </select>
+          </label>
+        </div>
+
         <button type="button" id="saveSettingsBtn" class="btn-primary btn-primary--save">
           <span id="saveBtnLabel">Save settings</span>
           <span class="btn-bolt" aria-hidden="true">✓</span>

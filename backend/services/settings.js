@@ -8,6 +8,16 @@ const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network', 'sky'];
 
 const VALID_BACKGROUND_MODES = ['default', 'color', 'image'];
 
+const VALID_COLOR_SCHEMES = ['orange-dark', 'cool-blue', 'soft-neutral', 'forest'];
+
+const VALID_FONT_PRESETS = ['nothing', 'time-caps', 'system'];
+
+const VALID_SECTIONS = ['header', 'weather', 'widgets'];
+
+const VALID_CLOCK_SIDES = ['left', 'right'];
+
+const VALID_DENSITIES = ['compact', 'comfortable', 'roomy'];
+
 const DEFAULTS = {
   location: process.env.LOCATION || 'Nottingham',
   stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
@@ -20,6 +30,11 @@ const DEFAULTS = {
   backgroundMode: 'default',
   backgroundColor: '#101115',
   backgroundImage: '',
+  colorScheme: 'orange-dark',
+  fontPreset: 'nothing',
+  sectionOrder: [...VALID_SECTIONS],
+  clockSide: 'left',
+  density: 'comfortable',
 };
 
 let cache = null;
@@ -90,6 +105,24 @@ function sanitizeBackgroundImage(value) {
   }
 }
 
+function sanitizeFromList(value, allowed, fallback) {
+  const key = String(value || '').toLowerCase();
+  return allowed.includes(key) ? key : fallback;
+}
+
+function sanitizeSectionOrder(input) {
+  if (!Array.isArray(input)) return [...DEFAULTS.sectionOrder];
+  const seen = new Set();
+  const result = [];
+  for (const id of input) {
+    if (VALID_SECTIONS.includes(id) && !seen.has(id)) {
+      seen.add(id);
+      result.push(id);
+    }
+  }
+  return result.length > 0 ? result : [...DEFAULTS.sectionOrder];
+}
+
 function normalize(partial = {}) {
   const merged = { ...DEFAULTS, ...partial };
   const symbols = sanitizeSymbols(merged.stockSymbols);
@@ -106,6 +139,11 @@ function normalize(partial = {}) {
     backgroundMode: sanitizeBackgroundMode(merged.backgroundMode),
     backgroundColor: sanitizeBackgroundColor(merged.backgroundColor),
     backgroundImage: sanitizeBackgroundImage(merged.backgroundImage),
+    colorScheme: sanitizeFromList(merged.colorScheme, VALID_COLOR_SCHEMES, DEFAULTS.colorScheme),
+    fontPreset: sanitizeFromList(merged.fontPreset, VALID_FONT_PRESETS, DEFAULTS.fontPreset),
+    sectionOrder: sanitizeSectionOrder(merged.sectionOrder),
+    clockSide: sanitizeFromList(merged.clockSide, VALID_CLOCK_SIDES, DEFAULTS.clockSide),
+    density: sanitizeFromList(merged.density, VALID_DENSITIES, DEFAULTS.density),
   };
 }
 
@@ -133,7 +171,12 @@ function getSettings() {
   if (!cache) {
     cache = readFromDisk();
   }
-  return { ...cache, stockSymbols: [...cache.stockSymbols], enabledWidgets: [...cache.enabledWidgets] };
+  return {
+    ...cache,
+    stockSymbols: [...cache.stockSymbols],
+    enabledWidgets: [...cache.enabledWidgets],
+    sectionOrder: [...cache.sectionOrder],
+  };
 }
 
 function updateSettings(partial) {
@@ -164,6 +207,11 @@ function resetSettingsCache() {
 module.exports = {
   VALID_WIDGETS,
   VALID_BACKGROUND_MODES,
+  VALID_COLOR_SCHEMES,
+  VALID_FONT_PRESETS,
+  VALID_SECTIONS,
+  VALID_CLOCK_SIDES,
+  VALID_DENSITIES,
   DEFAULTS,
   getSettings,
   updateSettings,

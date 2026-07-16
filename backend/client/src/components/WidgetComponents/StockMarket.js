@@ -12,9 +12,8 @@ import {
 } from 'chart.js';
 import { getStocks } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
+import { getChartFontFamily } from '../../utils/dashboardAppearance';
 import './StockMarket.css';
-
-const APP_FONT = "'NothingFont', 'Segoe UI', sans-serif";
 
 ChartJS.register(
   CategoryScale,
@@ -26,7 +25,6 @@ ChartJS.register(
   Legend
 );
 
-ChartJS.defaults.font.family = APP_FONT;
 ChartJS.defaults.color = '#8a8c92';
 
 function formatPrice(value) {
@@ -110,6 +108,8 @@ function StockMarket() {
       }],
     };
 
+    const chartFont = getChartFontFamily(settings.fontPreset);
+
     const chartOptions = {
       responsive: true,
       maintainAspectRatio: false,
@@ -121,8 +121,8 @@ function StockMarket() {
           bodyColor: '#ddd',
           borderColor: '#444',
           borderWidth: 1,
-          titleFont: { family: APP_FONT },
-          bodyFont: { family: APP_FONT },
+          titleFont: { family: chartFont },
+          bodyFont: { family: chartFont },
           callbacks: {
             label: (context) => `$${context.parsed.y.toFixed(2)}`,
           },
@@ -130,13 +130,13 @@ function StockMarket() {
       },
       scales: {
         x: {
-          ticks: { color: '#aaa', maxRotation: 0, font: { family: APP_FONT } },
+          ticks: { color: '#aaa', maxRotation: 0, font: { family: chartFont } },
           grid: { color: 'rgba(255, 255, 255, 0.06)' },
         },
         y: {
           ticks: {
             color: '#aaa',
-            font: { family: APP_FONT },
+            font: { family: chartFont },
             callback: (value) => `$${value}`,
           },
           grid: { color: 'rgba(255, 255, 255, 0.08)' },

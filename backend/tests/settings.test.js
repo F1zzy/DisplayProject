@@ -88,4 +88,33 @@ describe('settings service', () => {
     expect(cleared.backgroundColor).toBe('#101115');
     expect(cleared.backgroundImage).toBe('');
   });
+
+  test('appearance and layout presets sanitize to allowlists', () => {
+    const updated = settings.updateSettings({
+      colorScheme: 'cool-blue',
+      fontPreset: 'time-caps',
+      clockSide: 'right',
+      density: 'compact',
+      sectionOrder: ['widgets', 'header', 'bogus', 'weather', 'header'],
+    });
+
+    expect(updated.colorScheme).toBe('cool-blue');
+    expect(updated.fontPreset).toBe('time-caps');
+    expect(updated.clockSide).toBe('right');
+    expect(updated.density).toBe('compact');
+    expect(updated.sectionOrder).toEqual(['widgets', 'header', 'weather']);
+
+    const fallback = settings.updateSettings({
+      colorScheme: 'neon',
+      fontPreset: 'comic',
+      clockSide: 'top',
+      density: 'huge',
+      sectionOrder: [],
+    });
+    expect(fallback.colorScheme).toBe('orange-dark');
+    expect(fallback.fontPreset).toBe('nothing');
+    expect(fallback.clockSide).toBe('left');
+    expect(fallback.density).toBe('comfortable');
+    expect(fallback.sectionOrder).toEqual(['header', 'weather', 'widgets']);
+  });
 });

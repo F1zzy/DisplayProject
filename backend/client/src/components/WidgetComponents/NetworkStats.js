@@ -11,9 +11,10 @@ import {
   Legend,
 } from 'chart.js';
 import { getNetworkStats } from '../../api/client';
+import { useSettings } from '../../context/SettingsContext';
+import { getChartFontFamily } from '../../utils/dashboardAppearance';
 import './NetworkStats.css';
 
-const APP_FONT = "'NothingFont', 'Segoe UI', sans-serif";
 const HISTORY_MAX = 24;
 const POLL_MS = 15000;
 
@@ -66,6 +67,7 @@ function formatChartTime(iso) {
 }
 
 function NetworkStats() {
+  const { settings } = useSettings();
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -174,8 +176,9 @@ function NetworkStats() {
     };
   }, [history, showTrafficChart]);
 
-  const chartOptions = useMemo(
-    () => ({
+  const chartOptions = useMemo(() => {
+    const chartFont = getChartFontFamily(settings.fontPreset);
+    return {
       responsive: true,
       maintainAspectRatio: false,
       interaction: {
@@ -192,7 +195,7 @@ function NetworkStats() {
             boxWidth: 10,
             boxHeight: 10,
             padding: 12,
-            font: { family: APP_FONT, size: 11 },
+            font: { family: chartFont, size: 11 },
           },
         },
         tooltip: {
@@ -201,8 +204,8 @@ function NetworkStats() {
           bodyColor: '#ddd',
           borderColor: '#444',
           borderWidth: 1,
-          titleFont: { family: APP_FONT },
-          bodyFont: { family: APP_FONT },
+          titleFont: { family: chartFont },
+          bodyFont: { family: chartFont },
           callbacks: {
             label: (context) => {
               const value = context.parsed.y;
@@ -221,7 +224,7 @@ function NetworkStats() {
             maxRotation: 0,
             autoSkip: true,
             maxTicksLimit: 6,
-            font: { family: APP_FONT, size: 10 },
+            font: { family: chartFont, size: 10 },
           },
           grid: { color: 'rgba(255, 255, 255, 0.06)' },
         },
@@ -229,16 +232,15 @@ function NetworkStats() {
           beginAtZero: true,
           ticks: {
             color: '#8a8c92',
-            font: { family: APP_FONT, size: 10 },
+            font: { family: chartFont, size: 10 },
             callback: (value) =>
               showTrafficChart ? formatRateTick(value) : `${value} ms`,
           },
           grid: { color: 'rgba(255, 255, 255, 0.08)' },
         },
       },
-    }),
-    [showTrafficChart]
-  );
+    };
+  }, [showTrafficChart, settings.fontPreset]);
 
   const online = stats?.online === true;
 
