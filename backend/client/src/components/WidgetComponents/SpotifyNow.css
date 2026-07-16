@@ -5,7 +5,7 @@
   height: 100%;
   min-height: 0;
   padding: var(--gap-lg);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .spotify-widget h3 {

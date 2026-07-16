@@ -4,15 +4,27 @@ html,
 body,
 #root {
   height: 100%;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
-  margin: 0;
   font-family: var(--font-body);
-  background: var(--bg-app);
+  background: #000;
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Non-interactive kiosk surface */
+  cursor: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#root {
+  display: grid;
+  place-items: center;
 }
 
 code {

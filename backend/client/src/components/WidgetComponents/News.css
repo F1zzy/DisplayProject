@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: var(--gap-lg);
   padding: var(--gap-lg);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .news-section {

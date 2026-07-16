@@ -1,6 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import { getSpotifyNow } from '../../api/client';
+import { usePollingFetch } from '../../hooks/usePollingFetch';
+import LoadingState from '../ui/LoadingState';
+import ErrorState from '../ui/ErrorState';
+import EmptyState from '../ui/EmptyState';
 import './SpotifyNow.css';
+
+const SPOTIFY_POLL_MS = 20000;
 
 function formatArtists(artists) {
   if (!Array.isArray(artists) || artists.length === 0) return '—';
@@ -16,34 +22,10 @@ function formatMs(ms) {
 }
 
 function SpotifyNow() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        const next = await getSpotifyNow();
-        if (cancelled) return;
-        setData(next);
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        if (!cancelled) setError('Unable to load Spotify');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    const interval = setInterval(load, 20000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
+  const fetchSpotify = useCallback(() => getSpotifyNow(), []);
+  const { data, loading, error } = usePollingFetch(fetchSpotify, {
+    intervalMs: SPOTIFY_POLL_MS,
+  });
 
   const configured = data?.configured !== false;
   const track = data?.track;
@@ -58,20 +40,20 @@ function SpotifyNow() {
     <div className="widget-content spotify-widget">
       <h3>Spotify</h3>
 
-      {loading && !data && <p className="widget-loading">Loading Spotify…</p>}
+      {loading && !data && <LoadingState>Loading Spotify…</LoadingState>}
 
       {!loading && !configured && (
-        <p className="spotify-empty">
+        <EmptyState className="spotify-empty">
           Add Spotify credentials and run <code>node scripts/spotify-auth.js</code> to connect.
-        </p>
+        </EmptyState>
       )}
 
       {!loading && configured && error && !track && (
-        <p className="spotify-empty">{error}</p>
+        <ErrorState className="spotify-empty">{error || 'Unable to load Spotify'}</ErrorState>
       )}
 
       {!loading && configured && !error && !track && (
-        <p className="spotify-empty">No recent Spotify activity</p>
+        <EmptyState className="spotify-empty">No recent Spotify activity</EmptyState>
       )}
 
       {track && (

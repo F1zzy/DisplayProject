@@ -282,6 +282,24 @@ function syncBackgroundFields() {
   document.getElementById('settingBackgroundImageRow').hidden = mode !== 'image';
 }
 
+function syncNightFocusFields() {
+  const enabled = document.getElementById('settingNightFocusMode').checked;
+  const when = document.getElementById('settingNightFocusWhen').value;
+  const whenRow = document.getElementById('settingNightFocusWhenRow');
+  const startRow = document.getElementById('settingNightFocusStartRow');
+  const endRow = document.getElementById('settingNightFocusEndRow');
+  if (whenRow) whenRow.hidden = !enabled;
+  const showCustom = enabled && when === 'custom';
+  if (startRow) startRow.hidden = !showCustom;
+  if (endRow) endRow.hidden = !showCustom;
+}
+
+function syncBrightnessLabel() {
+  const input = document.getElementById('settingDisplayBrightness');
+  const label = document.getElementById('settingBrightnessValue');
+  if (input && label) label.textContent = String(input.value);
+}
+
 function normalizeSectionOrder(order) {
   const seen = new Set();
   const result = [];
@@ -393,9 +411,18 @@ function fillSettingsForm(settings) {
   document.getElementById('settingClockAnimation').value = settings.clockAnimation || 'off';
   document.getElementById('settingWeatherAtmosphere').checked = settings.weatherAtmosphere === true;
   document.getElementById('settingNightFocusMode').checked = settings.nightFocusMode === true;
+  document.getElementById('settingNightFocusWhen').value = settings.nightFocusWhen || 'auto';
+  document.getElementById('settingNightFocusStartHour').value =
+    settings.nightFocusStartHour != null ? settings.nightFocusStartHour : 20;
+  document.getElementById('settingNightFocusEndHour').value =
+    settings.nightFocusEndHour != null ? settings.nightFocusEndHour : 6;
+  document.getElementById('settingDisplayBrightness').value =
+    settings.displayBrightness != null ? settings.displayBrightness : 100;
   document.getElementById('settingClockSide').value = settings.clockSide || 'left';
   document.getElementById('settingDensity').value = settings.density || 'comfortable';
   syncBackgroundFields();
+  syncNightFocusFields();
+  syncBrightnessLabel();
 
   sectionOrderState = normalizeSectionOrder(settings.sectionOrder);
   renderSectionOrderList();
@@ -437,6 +464,10 @@ function readSettingsForm() {
     clockAnimation: document.getElementById('settingClockAnimation').value,
     weatherAtmosphere: document.getElementById('settingWeatherAtmosphere').checked,
     nightFocusMode: document.getElementById('settingNightFocusMode').checked,
+    nightFocusWhen: document.getElementById('settingNightFocusWhen').value,
+    nightFocusStartHour: parseInt(document.getElementById('settingNightFocusStartHour').value, 10),
+    nightFocusEndHour: parseInt(document.getElementById('settingNightFocusEndHour').value, 10),
+    displayBrightness: parseInt(document.getElementById('settingDisplayBrightness').value, 10),
     sectionOrder: normalizeSectionOrder(sectionOrderState),
     clockSide: document.getElementById('settingClockSide').value,
     density: document.getElementById('settingDensity').value,
@@ -496,6 +527,9 @@ document.querySelectorAll('[data-action]').forEach((button) => {
 unlockBtn.addEventListener('click', unlock);
 lockBtn.addEventListener('click', lock);
 document.getElementById('settingBackgroundMode').addEventListener('change', syncBackgroundFields);
+document.getElementById('settingNightFocusMode').addEventListener('change', syncNightFocusFields);
+document.getElementById('settingNightFocusWhen').addEventListener('change', syncNightFocusFields);
+document.getElementById('settingDisplayBrightness').addEventListener('input', syncBrightnessLabel);
 
 apiKeyInput.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {

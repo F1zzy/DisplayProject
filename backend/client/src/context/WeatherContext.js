@@ -1,52 +1,44 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext } from 'react';
 import { getCurrentWeather, getForecast, getHourlyForecast } from '../api/client';
 import { useSettings } from './SettingsContext';
+import { usePollingFetch } from '../hooks/usePollingFetch';
 
 const WeatherContext = createContext(null);
+const WEATHER_POLL_MS = 12 * 60 * 1000;
 
 export function WeatherProvider({ children }) {
   const { settings } = useSettings();
   const location = settings.location;
   const forecastDays = settings.forecastDays;
 
-  const [current, setCurrent] = useState(null);
-  const [forecast, setForecast] = useState(null);
-  const [hourly, setHourly] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadWeather() {
-      setLoading(true);
-      try {
-        const [currentData, forecastData, hourlyData] = await Promise.all([
-          getCurrentWeather(location),
-          getForecast(location, forecastDays),
-          getHourlyForecast(location),
-        ]);
-        if (cancelled) return;
-        setCurrent(currentData);
-        setForecast(forecastData);
-        setHourly(hourlyData);
-        setError(null);
-      } catch (err) {
-        console.error('Weather load failed:', err);
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadWeather();
-    return () => {
-      cancelled = true;
+  const fetchWeather = useCallback(async () => {
+    const [currentData, forecastData, hourlyData] = await Promise.all([
+      getCurrentWeather(location),
+      getForecast(location, forecastDays),
+      getHourlyForecast(location),
+    ]);
+    return {
+      current: currentData,
+      forecast: forecastData,
+      hourly: hourlyData,
     };
   }, [location, forecastDays]);
 
+  const { data, loading, error } = usePollingFetch(fetchWeather, {
+    intervalMs: WEATHER_POLL_MS,
+    deps: [location, forecastDays],
+  });
+
   return (
-    <WeatherContext.Provider value={{ current, forecast, hourly, loading, error }}>
+    <WeatherContext.Provider
+      value={{
+        current: data?.current ?? null,
+        forecast: data?.forecast ?? null,
+        hourly: data?.hourly ?? null,
+        loading,
+        error,
+      }}
+    >
       {children}
     </WeatherContext.Provider>
   );

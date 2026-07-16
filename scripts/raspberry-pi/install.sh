@@ -56,8 +56,15 @@ if ! grep -q '^DISPLAY_POWER_CMD=' "$APP_DIR/backend/.env"; then
   echo 'DISPLAY_POWER_CMD=/usr/local/bin/displayproject-display-power' >> "$APP_DIR/backend/.env"
 fi
 
+if ! grep -q '^DISPLAY_BRIGHTNESS_CMD=' "$APP_DIR/backend/.env"; then
+  echo 'DISPLAY_BRIGHTNESS_CMD=/usr/local/bin/displayproject-display-brightness' >> "$APP_DIR/backend/.env"
+fi
+
 echo "==> Installing display power script"
 sudo install -m 755 "$SCRIPT_DIR/display-power.sh" /usr/local/bin/displayproject-display-power
+
+echo "==> Installing display brightness script"
+sudo install -m 755 "$SCRIPT_DIR/display-brightness.sh" /usr/local/bin/displayproject-display-brightness
 
 echo "==> Installing systemd service"
 SERVICE_FILE="$(mktemp)"

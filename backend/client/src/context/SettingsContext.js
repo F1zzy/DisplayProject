@@ -23,6 +23,10 @@ const DEFAULT_SETTINGS = {
   clockAnimation: 'off',
   weatherAtmosphere: false,
   nightFocusMode: false,
+  nightFocusWhen: 'auto',
+  nightFocusStartHour: 20,
+  nightFocusEndHour: 6,
+  displayBrightness: 100,
 };
 
 export function SettingsProvider({ children }) {

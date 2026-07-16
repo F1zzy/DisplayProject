@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -9,6 +9,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from 'chart.js';
 import { getStocks } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
@@ -22,10 +23,14 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 ChartJS.defaults.color = '#8a8c92';
+
+/** How long each symbol stays featured before rotating (kiosk, non-interactive). */
+const STOCK_ROTATE_MS = 8000;
 
 function formatPrice(value) {
   return Number.parseFloat(value).toFixed(2);
@@ -40,11 +45,35 @@ function formatChartDate(dateStr) {
   return date.toLocaleDateString([], { weekday: 'short', day: 'numeric' });
 }
 
+function getLatestStats(data) {
+  if (!data) return null;
+  const dates = Object.keys(data);
+  if (dates.length === 0) return null;
+
+  const latestDate = dates[0];
+  const latestInfo = data[latestDate];
+  const previousDate = dates[1];
+  const previousClose = previousDate ? parseFloat(data[previousDate]['4. close']) : null;
+  const latestClose = parseFloat(latestInfo['4. close']);
+  const change = previousClose != null ? latestClose - previousClose : 0;
+  const changePct = previousClose ? (change / previousClose) * 100 : 0;
+
+  return {
+    close: latestClose,
+    high: parseFloat(latestInfo['2. high']),
+    low: parseFloat(latestInfo['3. low']),
+    volume: latestInfo['5. volume'],
+    change,
+    changePct,
+    isUp: change >= 0,
+  };
+}
+
 function StockMarket() {
   const { settings } = useSettings();
   const symbolsKey = (settings.stockSymbols || []).join(',');
   const [stocks, setStocks] = useState([]);
-  const [selectedStockIndex, setSelectedStockIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [symbols, setSymbols] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +91,7 @@ function StockMarket() {
         if (cancelled) return;
         setSymbols(result.symbols);
         setStocks(result.data);
-        setSelectedStockIndex(0);
+        setActiveIndex(0);
       } catch (error) {
         console.error('Error fetching stock data:', error);
       } finally {
@@ -76,140 +105,73 @@ function StockMarket() {
     };
   }, [symbolsKey]);
 
-  const selectedSymbol = symbols[selectedStockIndex];
-  const selectedData = stocks[selectedStockIndex];
+  useEffect(() => {
+    if (symbols.length <= 1) return undefined;
 
-  const renderStockGraph = (data, symbol) => {
-    if (!data) {
-      return (
-        <div className="stock-chart-empty">
-          <p>No chart data for {symbol}</p>
-        </div>
-      );
-    }
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % symbols.length);
+    }, STOCK_ROTATE_MS);
 
-    const dates = Object.keys(data).slice(0, 7).reverse();
-    const prices = dates.map((date) => parseFloat(data[date]['4. close']));
+    return () => clearInterval(timer);
+  }, [symbols.length]);
 
-    const chartData = {
-      labels: dates.map(formatChartDate),
-      datasets: [{
-        label: 'Close',
-        data: prices,
-        fill: true,
-        backgroundColor: 'rgba(255, 106, 26, 0.15)',
-        borderColor: '#ff6a1a',
-        borderWidth: 2,
-        pointBackgroundColor: '#ff6a1a',
-        pointBorderColor: '#1a1c21',
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        tension: 0.35,
-      }],
-    };
+  const selectedSymbol = symbols[activeIndex];
+  const selectedData = stocks[activeIndex];
+  const stats = useMemo(() => getLatestStats(selectedData), [selectedData]);
 
+  const chart = useMemo(() => {
+    if (!selectedData) return null;
+
+    const dates = Object.keys(selectedData).slice(0, 7).reverse();
+    const prices = dates.map((date) => parseFloat(selectedData[date]['4. close']));
     const chartFont = getChartFontFamily(settings.fontPreset);
 
-    const chartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1f1f1f',
-          titleColor: '#fff',
-          bodyColor: '#ddd',
-          borderColor: '#444',
-          borderWidth: 1,
-          titleFont: { family: chartFont },
-          bodyFont: { family: chartFont },
-          callbacks: {
-            label: (context) => `$${context.parsed.y.toFixed(2)}`,
+    return {
+      data: {
+        labels: dates.map(formatChartDate),
+        datasets: [
+          {
+            label: 'Close',
+            data: prices,
+            fill: true,
+            backgroundColor: 'rgba(255, 106, 26, 0.15)',
+            borderColor: '#ff6a1a',
+            borderWidth: 2,
+            pointBackgroundColor: '#ff6a1a',
+            pointBorderColor: '#1a1c21',
+            pointRadius: 3,
+            pointHoverRadius: 3,
+            tension: 0.35,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400 },
+        interaction: { mode: 'nearest', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#aaa', maxRotation: 0, font: { family: chartFont, size: 11 } },
+            grid: { color: 'rgba(255, 255, 255, 0.06)' },
+          },
+          y: {
+            ticks: {
+              color: '#aaa',
+              font: { family: chartFont, size: 11 },
+              callback: (value) => `$${value}`,
+            },
+            grid: { color: 'rgba(255, 255, 255, 0.08)' },
           },
         },
       },
-      scales: {
-        x: {
-          ticks: { color: '#aaa', maxRotation: 0, font: { family: chartFont } },
-          grid: { color: 'rgba(255, 255, 255, 0.06)' },
-        },
-        y: {
-          ticks: {
-            color: '#aaa',
-            font: { family: chartFont },
-            callback: (value) => `$${value}`,
-          },
-          grid: { color: 'rgba(255, 255, 255, 0.08)' },
-        },
-      },
+      lastPrice: prices[prices.length - 1],
     };
-
-    return (
-      <div className="chart-wrapper">
-        <div className="chart-header">
-          <h2 className="chart-title">{symbol} — Last 7 Days</h2>
-          <span className="chart-price">${formatPrice(prices[prices.length - 1])}</span>
-        </div>
-        <div className="chart-container">
-          <Line data={chartData} options={chartOptions} />
-        </div>
-      </div>
-    );
-  };
-
-  const renderStockInfo = (data, symbol, index) => {
-    if (!data) {
-      return (
-        <button
-          type="button"
-          className={`stock-item stock-item--empty ${index === selectedStockIndex ? 'selected' : ''}`}
-          onClick={() => setSelectedStockIndex(index)}
-        >
-          <span className="stock-symbol">{symbol}</span>
-          <span className="stock-unavailable">Unavailable</span>
-        </button>
-      );
-    }
-
-    const latestDate = Object.keys(data)[0];
-    const latestInfo = data[latestDate];
-    const previousDate = Object.keys(data)[1];
-    const previousClose = previousDate ? parseFloat(data[previousDate]['4. close']) : null;
-    const latestClose = parseFloat(latestInfo['4. close']);
-    const change = previousClose ? latestClose - previousClose : 0;
-    const changePct = previousClose ? (change / previousClose) * 100 : 0;
-    const isUp = change >= 0;
-
-    return (
-      <button
-        type="button"
-        className={`stock-item ${index === selectedStockIndex ? 'selected' : ''}`}
-        onClick={() => setSelectedStockIndex(index)}
-      >
-        <div className="stock-item-header">
-          <span className="stock-symbol">{symbol}</span>
-          <span className={`stock-change ${isUp ? 'stock-change--up' : 'stock-change--down'}`}>
-            {isUp ? '+' : ''}{changePct.toFixed(2)}%
-          </span>
-        </div>
-        <div className="stock-price">${formatPrice(latestInfo['4. close'])}</div>
-        <div className="stock-stats">
-          <div className="stock-stat">
-            <span className="stock-stat-label">High</span>
-            <span className="stock-stat-value">${formatPrice(latestInfo['2. high'])}</span>
-          </div>
-          <div className="stock-stat">
-            <span className="stock-stat-label">Low</span>
-            <span className="stock-stat-value">${formatPrice(latestInfo['3. low'])}</span>
-          </div>
-          <div className="stock-stat stock-stat--wide">
-            <span className="stock-stat-label">Volume</span>
-            <span className="stock-stat-value">{formatVolume(latestInfo['5. volume'])}</span>
-          </div>
-        </div>
-      </button>
-    );
-  };
+  }, [selectedData, settings.fontPreset]);
 
   if (loading) {
     return (
@@ -219,19 +181,113 @@ function StockMarket() {
     );
   }
 
+  if (!symbols.length) {
+    return (
+      <div className="stock-market-widget stock-market-widget--loading">
+        <div className="stock-loading">No stocks configured</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="stock-market-widget">
-      <aside className="stock-list">
-        <h2 className="stock-list-title">Markets</h2>
-        {stocks.map((stock, index) => (
-          <div key={symbols[index]}>
-            {renderStockInfo(stock, symbols[index], index)}
+    <div className="stock-market-widget" aria-live="polite">
+      <div className="stock-ticker" role="list" aria-label="Stock symbols">
+        {symbols.map((symbol, index) => {
+          const itemStats = getLatestStats(stocks[index]);
+          const isActive = index === activeIndex;
+          return (
+            <div
+              key={symbol}
+              role="listitem"
+              className={`stock-ticker-item${isActive ? ' stock-ticker-item--active' : ''}${
+                !itemStats ? ' stock-ticker-item--empty' : ''
+              }`}
+            >
+              <span className="stock-ticker-symbol">{symbol}</span>
+              {itemStats ? (
+                <span
+                  className={`stock-ticker-change ${
+                    itemStats.isUp ? 'stock-ticker-change--up' : 'stock-ticker-change--down'
+                  }`}
+                >
+                  {itemStats.isUp ? '+' : ''}
+                  {itemStats.changePct.toFixed(1)}%
+                </span>
+              ) : (
+                <span className="stock-ticker-change">—</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="stock-featured">
+        <div className="stock-featured-meta">
+          <div className="stock-featured-heading">
+            <h2 className="stock-featured-symbol">{selectedSymbol}</h2>
+            {stats ? (
+              <span
+                className={`stock-featured-change ${
+                  stats.isUp ? 'stock-featured-change--up' : 'stock-featured-change--down'
+                }`}
+              >
+                {stats.isUp ? '+' : ''}
+                {stats.changePct.toFixed(2)}%
+              </span>
+            ) : null}
           </div>
-        ))}
-      </aside>
-      <section className="stock-graph">
-        {renderStockGraph(selectedData, selectedSymbol)}
-      </section>
+
+          {stats ? (
+            <>
+              <div className="stock-featured-price">${formatPrice(stats.close)}</div>
+              <div className="stock-featured-stats">
+                <div className="stock-featured-stat">
+                  <span className="stock-featured-stat-label">High</span>
+                  <span className="stock-featured-stat-value">${formatPrice(stats.high)}</span>
+                </div>
+                <div className="stock-featured-stat">
+                  <span className="stock-featured-stat-label">Low</span>
+                  <span className="stock-featured-stat-value">${formatPrice(stats.low)}</span>
+                </div>
+                <div className="stock-featured-stat">
+                  <span className="stock-featured-stat-label">Volume</span>
+                  <span className="stock-featured-stat-value">{formatVolume(stats.volume)}</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="stock-featured-unavailable">Unavailable</div>
+          )}
+
+          {symbols.length > 1 ? (
+            <div className="stock-rotate-progress" aria-hidden="true">
+              <div
+                key={activeIndex}
+                className="stock-rotate-progress-fill"
+                style={{ animationDuration: `${STOCK_ROTATE_MS}ms` }}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <section className="stock-graph">
+          {chart ? (
+            <div className="chart-wrapper">
+              <div className="chart-header">
+                <h3 className="chart-title">Last 7 Days</h3>
+                <span className="chart-price">${formatPrice(chart.lastPrice)}</span>
+              </div>
+              <div className="chart-container">
+                <Line data={chart.data} options={chart.options} />
+              </div>
+            </div>
+          ) : (
+            <div className="stock-chart-empty">
+              <p>No chart data for {selectedSymbol}</p>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

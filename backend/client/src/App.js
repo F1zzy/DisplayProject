@@ -4,6 +4,7 @@ import WeatherBar from './components/WeatherBar';
 import Widgets from './components/Widgets';
 import AnimatedClock from './components/AnimatedClock';
 import WeatherAtmosphere from './components/WeatherAtmosphere';
+import ErrorBoundary from './components/ErrorBoundary';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { WeatherProvider, useWeather } from './context/WeatherContext';
 import { useDisplayControl } from './hooks/useDisplayControl';
@@ -13,26 +14,32 @@ import {
   buildDashboardBackgroundStyle,
 } from './utils/dashboardBackground';
 import { applyDashboardAppearance } from './utils/dashboardAppearance';
-import { isNightTime } from './utils/isNightTime';
+import { shouldActivateNightFocus } from './utils/isNightTime';
 
 const SECTION_COMPONENTS = {
   header: () => (
     <header className="dashboard-header" key="header">
-      <TimeDisplay />
+      <ErrorBoundary label="header" title="Clock unavailable">
+        <TimeDisplay />
+      </ErrorBoundary>
     </header>
   ),
   weather: () => (
     <section className="dashboard-weather" key="weather">
-      <WeatherBar />
+      <ErrorBoundary label="weather" title="Weather unavailable">
+        <WeatherBar />
+      </ErrorBoundary>
     </section>
   ),
   widgets: (forcedWidget, onWidgetShown, pinned) => (
     <section className="dashboard-widgets" key="widgets">
-      <Widgets
-        forcedWidget={forcedWidget}
-        onWidgetShown={onWidgetShown}
-        pinned={pinned}
-      />
+      <ErrorBoundary label="widgets" title="Widgets unavailable">
+        <Widgets
+          forcedWidget={forcedWidget}
+          onWidgetShown={onWidgetShown}
+          pinned={pinned}
+        />
+      </ErrorBoundary>
     </section>
   ),
 };
@@ -164,9 +171,8 @@ function AppContent() {
   useDisplayControl(handleDisplayMessage);
 
   const nightFocusActive = useMemo(() => {
-    if (!settings.nightFocusMode) return false;
-    return isNightTime(current, forecast, now);
-  }, [settings.nightFocusMode, current, forecast, now]);
+    return shouldActivateNightFocus(settings, current, forecast, now);
+  }, [settings, current, forecast, now]);
 
   if (displayPower === 'off' || displayPower === 'sleep') {
     return <div className={`display-sleep display-sleep--${displayPower}`} />;
@@ -207,7 +213,9 @@ function App() {
   return (
     <SettingsProvider>
       <WeatherProvider>
-        <AppContent />
+        <ErrorBoundary label="app" title="Display unavailable" message="Reload the page to recover the dashboard.">
+          <AppContent />
+        </ErrorBoundary>
       </WeatherProvider>
     </SettingsProvider>
   );

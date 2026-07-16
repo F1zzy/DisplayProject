@@ -20,6 +20,8 @@ const VALID_DENSITIES = ['compact', 'comfortable', 'roomy'];
 
 const VALID_CLOCK_ANIMATIONS = ['off', 'crossfade', 'flip'];
 
+const VALID_NIGHT_FOCUS_WHEN = ['auto', 'always', 'custom'];
+
 const DEFAULTS = {
   location: process.env.LOCATION || 'Nottingham',
   stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
@@ -40,6 +42,10 @@ const DEFAULTS = {
   clockAnimation: 'off',
   weatherAtmosphere: false,
   nightFocusMode: false,
+  nightFocusWhen: 'auto',
+  nightFocusStartHour: 20,
+  nightFocusEndHour: 6,
+  displayBrightness: 100,
 };
 
 let cache = null;
@@ -156,6 +162,14 @@ function normalize(partial = {}) {
     ),
     weatherAtmosphere: Boolean(merged.weatherAtmosphere),
     nightFocusMode: Boolean(merged.nightFocusMode),
+    nightFocusWhen: sanitizeFromList(
+      merged.nightFocusWhen,
+      VALID_NIGHT_FOCUS_WHEN,
+      DEFAULTS.nightFocusWhen
+    ),
+    nightFocusStartHour: clampInt(merged.nightFocusStartHour, 0, 23, DEFAULTS.nightFocusStartHour),
+    nightFocusEndHour: clampInt(merged.nightFocusEndHour, 0, 23, DEFAULTS.nightFocusEndHour),
+    displayBrightness: clampInt(merged.displayBrightness, 10, 100, DEFAULTS.displayBrightness),
   };
 }
 
@@ -225,6 +239,7 @@ module.exports = {
   VALID_CLOCK_SIDES,
   VALID_DENSITIES,
   VALID_CLOCK_ANIMATIONS,
+  VALID_NIGHT_FOCUS_WHEN,
   DEFAULTS,
   getSettings,
   updateSettings,

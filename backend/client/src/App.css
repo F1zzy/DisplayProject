@@ -13,65 +13,79 @@
 }
 
 .App {
-  position: relative;
-  min-height: 100vh;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
+  /* Exact 16:9 frame — letterboxed on non-16:9 screens */
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  max-width: none;
+  margin: 0;
+  padding: clamp(12px, 1.6vh, 24px);
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: clamp(8px, 1.2vh, 16px);
+  overflow: hidden;
   font-family: var(--font-body);
   color: var(--text-primary);
   background-color: var(--bg-panel);
   border: 1px solid var(--border);
-  box-sizing: border-box;
+  pointer-events: none;
+  container-type: size;
+  container-name: dashboard;
 }
 
 .App.density-compact {
-  padding: 14px;
-  gap: 10px;
+  padding: clamp(8px, 1.2vh, 14px);
+  gap: clamp(6px, 1vh, 10px);
   --gap-sm: 6px;
   --gap-md: 8px;
   --gap-lg: 10px;
 }
 
 .App.density-comfortable {
-  padding: 24px;
-  gap: 16px;
+  padding: clamp(12px, 1.6vh, 24px);
+  gap: clamp(8px, 1.2vh, 16px);
 }
 
 .App.density-roomy {
-  padding: 32px;
-  gap: 24px;
+  padding: clamp(16px, 2vh, 28px);
+  gap: clamp(12px, 1.6vh, 22px);
   --gap-sm: 10px;
-  --gap-md: 16px;
-  --gap-lg: 22px;
+  --gap-md: 14px;
+  --gap-lg: 18px;
 }
 
 .App.density-compact .time-container-weekday,
 .App.density-compact .temp-container-stats-weather,
 .App.density-compact .time-container-stats-humidity,
-.App.density-compact .time-container-stats-temp {
-  min-height: 88px;
-}
-
+.App.density-compact .time-container-stats-temp,
 .App.density-roomy .time-container-weekday,
 .App.density-roomy .temp-container-stats-weather,
 .App.density-roomy .time-container-stats-humidity,
 .App.density-roomy .time-container-stats-temp {
-  min-height: 148px;
+  min-height: 0;
 }
 
-.dashboard-header,
-.dashboard-weather,
+.dashboard-header {
+  width: 100%;
+  flex: 0 0 auto;
+  max-height: 32%;
+  min-height: 0;
+}
+
+.dashboard-weather {
+  width: 100%;
+  flex: 0 0 auto;
+  height: clamp(140px, 26cqh, 280px);
+  max-height: 30%;
+  min-height: 0;
+}
+
 .dashboard-widgets {
   width: 100%;
-}
-
-.dashboard-widgets {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .display-sleep {
@@ -91,8 +105,10 @@
 .time-container {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 16px;
+  gap: clamp(8px, 1.2vh, 16px);
   align-items: stretch;
+  height: 100%;
+  max-height: 100%;
 }
 
 .App.clock-side-right .time-container {
@@ -108,11 +124,11 @@
 }
 
 .App.density-compact .time-container {
-  gap: 10px;
+  gap: clamp(6px, 1vh, 10px);
 }
 
 .App.density-roomy .time-container {
-  gap: 22px;
+  gap: clamp(10px, 1.4vh, 18px);
 }
 
 .time-container-time {
@@ -120,17 +136,18 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
+  min-height: 0;
   container-type: inline-size;
   container-name: clock;
   font-family: var(--font-display);
-  font-size: clamp(2.4rem, 16cqi, 9rem);
+  font-size: clamp(2rem, 14cqi, 8rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
-  padding: 20px;
+  padding: clamp(10px, 1.5vh, 20px);
   background: var(--bg-panel-elevated);
   border: 1px solid var(--border);
   border-radius: 0;
@@ -141,7 +158,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 12px;
+  gap: clamp(6px, 1vh, 12px);
+  min-height: 0;
 }
 
 .time-container-weekday,
@@ -151,11 +169,12 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 120px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .time-container-weekday {
-  font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+  font-size: clamp(1rem, 2vw, 1.8rem);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -172,7 +191,7 @@
 }
 
 .time-container-stats-temp {
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(1.5rem, 3.5vw, 3rem);
   font-weight: 800;
   color: var(--accent);
   letter-spacing: 0.02em;
@@ -180,9 +199,9 @@
 
 .time-container-stats-humidity {
   justify-content: space-between;
-  gap: 10px;
-  padding-top: 14px;
-  padding-bottom: 14px;
+  gap: 8px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .humidity-label {
@@ -202,14 +221,14 @@
 
 .humidity-value {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-size: clamp(1.5rem, 3.5vw, 2.75rem);
   font-weight: 800;
   letter-spacing: 0.02em;
   color: var(--text-primary);
 }
 
 .humidity-unit {
-  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+  font-size: clamp(0.85rem, 1.4vw, 1.15rem);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
@@ -238,25 +257,9 @@
 }
 
 .CurrentWeather-Icon img {
-  width: clamp(64px, 8vw, 96px);
-  height: clamp(64px, 8vw, 96px);
+  width: clamp(48px, 6vw, 96px);
+  height: clamp(48px, 6vw, 96px);
   filter: none;
-}
-
-@media (max-width: 900px) {
-  .App {
-    max-width: none;
-    border: none;
-    padding: 16px;
-  }
-
-  .time-container {
-    grid-template-columns: 1fr;
-  }
-
-  .time-container-time {
-    font-size: clamp(2.4rem, 18cqi, 5rem);
-  }
 }
 
 /* Soft night focus: dim everything except the clock digits */

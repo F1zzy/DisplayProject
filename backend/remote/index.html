@@ -216,6 +216,26 @@
               <span class="toggle" aria-hidden="true"></span>
             </label>
           </div>
+          <label class="field" id="settingNightFocusWhenRow">
+            <span class="field-label">Focus when</span>
+            <select id="settingNightFocusWhen">
+              <option value="auto">Auto (sunset–sunrise)</option>
+              <option value="always">Always on</option>
+              <option value="custom">Custom hours</option>
+            </select>
+          </label>
+          <label class="field field--reveal" id="settingNightFocusStartRow">
+            <span class="field-label">Focus start hour</span>
+            <input id="settingNightFocusStartHour" type="number" min="0" max="23" step="1" />
+          </label>
+          <label class="field field--reveal" id="settingNightFocusEndRow">
+            <span class="field-label">Focus end hour</span>
+            <input id="settingNightFocusEndHour" type="number" min="0" max="23" step="1" />
+          </label>
+          <label class="field">
+            <span class="field-label">Brightness (<span id="settingBrightnessValue">100</span>%)</span>
+            <input id="settingDisplayBrightness" type="range" min="10" max="100" step="5" />
+          </label>
         </div>
 
         <div class="subpanel">

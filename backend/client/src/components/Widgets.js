@@ -1,20 +1,40 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
 import './Widgets.css';
-import News from './WidgetComponents/News';
-import Timetable from './WidgetComponents/TimeTable';
-import StockMarket from './WidgetComponents/StockMarket';
-import NetworkStats from './WidgetComponents/NetworkStats';
-import NightSky from './WidgetComponents/NightSky';
-import SpotifyNow from './WidgetComponents/SpotifyNow';
+import ErrorBoundary from './ErrorBoundary';
+import LoadingState from './ui/LoadingState';
 import { useSettings } from '../context/SettingsContext';
 
 const WIDGET_REGISTRY = {
-  stock: { key: 'stock', label: 'Stocks', Component: StockMarket },
-  news: { key: 'news', label: 'News', Component: News },
-  timetable: { key: 'timetable', label: 'Schedule', Component: Timetable },
-  network: { key: 'network', label: 'Network', Component: NetworkStats },
-  sky: { key: 'sky', label: 'Night Sky', Component: NightSky },
-  spotify: { key: 'spotify', label: 'Spotify', Component: SpotifyNow },
+  stock: {
+    key: 'stock',
+    label: 'Stocks',
+    Component: lazy(() => import('./WidgetComponents/StockMarket')),
+  },
+  news: {
+    key: 'news',
+    label: 'News',
+    Component: lazy(() => import('./WidgetComponents/News')),
+  },
+  timetable: {
+    key: 'timetable',
+    label: 'Schedule',
+    Component: lazy(() => import('./WidgetComponents/TimeTable')),
+  },
+  network: {
+    key: 'network',
+    label: 'Network',
+    Component: lazy(() => import('./WidgetComponents/NetworkStats')),
+  },
+  sky: {
+    key: 'sky',
+    label: 'Night Sky',
+    Component: lazy(() => import('./WidgetComponents/NightSky')),
+  },
+  spotify: {
+    key: 'spotify',
+    label: 'Spotify',
+    Component: lazy(() => import('./WidgetComponents/SpotifyNow')),
+  },
 };
 
 function ToolbarContent({ widgets, activeIndex, pinned }) {
@@ -23,7 +43,7 @@ function ToolbarContent({ widgets, activeIndex, pinned }) {
       <h2 className="widget-toolbar-title">
         Widgets{pinned ? <span className="widget-pinned-badge">Pinned</span> : null}
       </h2>
-      <div className="widget-tabs" role="tablist" aria-label="Active widget">
+      <div className="widget-tabs" role="tablist" aria-label="Active widget" aria-hidden="true">
         {widgets.map((widget, index) => (
           <span
             key={widget.key}
@@ -43,9 +63,7 @@ function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
   const { settings } = useSettings();
   const widgets = useMemo(() => {
     const enabled = Array.isArray(settings.enabledWidgets) ? settings.enabledWidgets : [];
-    const list = enabled
-      .map((key) => WIDGET_REGISTRY[key])
-      .filter(Boolean);
+    const list = enabled.map((key) => WIDGET_REGISTRY[key]).filter(Boolean);
     return list.length > 0 ? list : Object.values(WIDGET_REGISTRY);
   }, [settings.enabledWidgets]);
 
@@ -80,7 +98,7 @@ function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
   }, [rotationMs, widgets.length, timerActive, cycleId]);
 
   const activeIndex = currentWidget % widgets.length;
-  const { Component, key } = widgets[activeIndex];
+  const { Component, key, label } = widgets[activeIndex];
 
   return (
     <div className="Wid-container panel">
@@ -101,8 +119,22 @@ function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
           </div>
         )}
       </div>
-      <div className="widget-display">
-        <Component key={key} />
+      <div
+        className="widget-display"
+        role="region"
+        aria-live="polite"
+        aria-label={`${label} widget`}
+      >
+        <ErrorBoundary
+          key={key}
+          label={`widget:${key}`}
+          title={`${label} unavailable`}
+          message="This widget failed. Rotation and other widgets keep working."
+        >
+          <Suspense fallback={<LoadingState>Loading widget…</LoadingState>}>
+            <Component key={key} />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </div>
   );

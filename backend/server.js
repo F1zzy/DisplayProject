@@ -80,6 +80,14 @@ if (require.main === module) {
       console.log(`LAN access: http://${lanAddress}:${port}`);
       console.log(`Remote control: http://${lanAddress}:${port}/remote`);
     }
+
+    try {
+      const settings = require('./services/settings');
+      const { setDisplayBrightness } = require('./services/displayBrightness');
+      setDisplayBrightness(settings.getSettings().displayBrightness);
+    } catch (error) {
+      console.error('Failed to apply display brightness on startup:', error.message);
+    }
   });
 }
 

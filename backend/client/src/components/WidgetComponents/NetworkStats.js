@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -13,6 +13,9 @@ import {
 import { getNetworkStats } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
 import { getChartFontFamily } from '../../utils/dashboardAppearance';
+import { usePollingFetch } from '../../hooks/usePollingFetch';
+import LoadingState from '../ui/LoadingState';
+import ErrorState from '../ui/ErrorState';
 import './NetworkStats.css';
 
 const HISTORY_MAX = 24;
@@ -68,49 +71,28 @@ function formatChartTime(iso) {
 
 function NetworkStats() {
   const { settings } = useSettings();
-  const [stats, setStats] = useState(null);
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const fetchStats = useCallback(() => getNetworkStats(), []);
+  const { data: stats, loading, error } = usePollingFetch(fetchStats, {
+    intervalMs: POLL_MS,
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        const data = await getNetworkStats();
-        if (cancelled) return;
-        setStats(data);
-        setError(null);
-        setHistory((prev) => {
-          const point = {
-            at: data.checkedAt || new Date().toISOString(),
-            rxBps: data.rxBps,
-            txBps: data.txBps,
-            latencyMs: data.latencyMs,
-          };
-          const last = prev[prev.length - 1];
-          if (last && last.at === point.at) {
-            return prev;
-          }
-          return [...prev, point].slice(-HISTORY_MAX);
-        });
-      } catch (err) {
-        console.error(err);
-        if (!cancelled) setError('Unable to load network stats');
-      } finally {
-        if (!cancelled) setLoading(false);
+    if (!stats) return;
+    setHistory((prev) => {
+      const point = {
+        at: stats.checkedAt || new Date().toISOString(),
+        rxBps: stats.rxBps,
+        txBps: stats.txBps,
+        latencyMs: stats.latencyMs,
+      };
+      const last = prev[prev.length - 1];
+      if (last && last.at === point.at) {
+        return prev;
       }
-    }
-
-    load();
-    const interval = setInterval(load, POLL_MS);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
+      return [...prev, point].slice(-HISTORY_MAX);
+    });
+  }, [stats]);
 
   const hasRateHistory = history.some(
     (point) => point.rxBps != null || point.txBps != null
@@ -248,11 +230,13 @@ function NetworkStats() {
     <div className="widget-content network-stats-widget">
       <h3>Network</h3>
 
-      {loading && <p className="widget-loading">Checking connection…</p>}
+      {loading && !stats && <LoadingState>Checking connection…</LoadingState>}
 
-      {!loading && error && <p className="network-empty">{error}</p>}
+      {!loading && error && !stats && (
+        <ErrorState className="network-empty">{error || 'Unable to load network stats'}</ErrorState>
+      )}
 
-      {!loading && !error && stats && (
+      {!loading && stats && (
         <>
           <div className="network-status-row">
             <span

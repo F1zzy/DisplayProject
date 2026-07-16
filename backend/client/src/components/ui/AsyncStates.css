@@ -1,0 +1,21 @@
+.async-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 4rem;
+  margin: 0;
+  padding: var(--gap-md, 12px);
+  text-align: center;
+  color: var(--text-secondary, #b7b8bd);
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+
+.async-state--error {
+  color: var(--danger, #ff7b72);
+}
+
+.async-state--empty {
+  color: var(--text-muted, #8a8c92);
+}

@@ -42,6 +42,13 @@ jest.mock('./api/client', () => ({
       configured: { chart: false, planets: true },
       errors: {},
     }),
+  getSpotifyNow: () =>
+    Promise.resolve({
+      configured: false,
+      playing: false,
+      track: null,
+      topTracks: [],
+    }),
   weatherIconUrl: (icon) => (icon.startsWith('http') ? icon : `https:${icon}`),
 }));
 

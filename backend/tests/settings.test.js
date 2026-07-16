@@ -119,23 +119,39 @@ describe('settings service', () => {
     expect(fallback.sectionOrder).toEqual(['header', 'weather', 'widgets']);
   });
 
-  test('clock animation and focus toggles sanitize', () => {
+  test('clock animation, focus schedule, and brightness sanitize', () => {
     const updated = settings.updateSettings({
       clockAnimation: 'flip',
       weatherAtmosphere: true,
       nightFocusMode: true,
+      nightFocusWhen: 'custom',
+      nightFocusStartHour: 21,
+      nightFocusEndHour: 7,
+      displayBrightness: 70,
     });
     expect(updated.clockAnimation).toBe('flip');
     expect(updated.weatherAtmosphere).toBe(true);
     expect(updated.nightFocusMode).toBe(true);
+    expect(updated.nightFocusWhen).toBe('custom');
+    expect(updated.nightFocusStartHour).toBe(21);
+    expect(updated.nightFocusEndHour).toBe(7);
+    expect(updated.displayBrightness).toBe(70);
 
     const fallback = settings.updateSettings({
       clockAnimation: 'bounce',
       weatherAtmosphere: 0,
       nightFocusMode: '',
+      nightFocusWhen: 'sometime',
+      nightFocusStartHour: 99,
+      nightFocusEndHour: -3,
+      displayBrightness: 5,
     });
     expect(fallback.clockAnimation).toBe('off');
     expect(fallback.weatherAtmosphere).toBe(false);
     expect(fallback.nightFocusMode).toBe(false);
+    expect(fallback.nightFocusWhen).toBe('auto');
+    expect(fallback.nightFocusStartHour).toBe(23);
+    expect(fallback.nightFocusEndHour).toBe(0);
+    expect(fallback.displayBrightness).toBe(10);
   });
 });

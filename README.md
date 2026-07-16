@@ -141,6 +141,7 @@ The installer will:
 - Install production backend dependencies and build the React client
 - Enable a `displayproject` systemd service (auto-restart on boot)
 - Install HDMI power control at `/usr/local/bin/displayproject-display-power`
+- Install brightness control at `/usr/local/bin/displayproject-display-brightness`
 - Add a desktop autostart entry that launches Chromium in kiosk mode
 
 ### After reboot
@@ -178,6 +179,7 @@ cd backend && npm run build:client
 | Health check | `curl http://127.0.0.1:3000/api/health` |
 | Kiosk not opening | Log out/in or reboot; check `~/.config/autostart/displayproject-kiosk.desktop` |
 | HDMI won't wake | `displayproject-display-power on` |
+| Brightness unchanged | `displayproject-display-brightness 70`; for HDMI monitors install `ddcutil`; ensure `DISPLAY=:0` for xrandr |
 | Phone can't connect | Confirm Pi IP, same network, and `HOST=0.0.0.0` in `backend/.env` |
 
 Disable screen blanking in Pi OS desktop preferences as an extra safeguard against the monitor sleeping.
@@ -188,7 +190,7 @@ Disable screen blanking in Pi OS desktop preferences as an extra safeguard again
 2. Open `http://localhost:3000/remote` (or `http://<pi-ip>:3000/remote` from another device)
 3. Enter your `CONTROL_API_KEY` from `backend/.env` and tap **Unlock**
 4. Use On / Sleep / Off, widget jump buttons, and **Pin widget** (pick which widget to freeze; **Unpin** or **Next Widget** clears the pin)
-5. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background (default / colour / image URL), appearance (colour scheme, font, clock animation, weather atmosphere, night focus), and layout (section order/visibility, clock side, density), then **Save settings** — the kiosk updates live over WebSocket
+5. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background, appearance (including night focus schedule and **display brightness** — on a Raspberry Pi this drives the panel/HDMI backlight via `displayproject-display-brightness`), and layout, then **Save settings**
 
 Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip. Enable **Spotify** after completing the Spotify setup above.
 
