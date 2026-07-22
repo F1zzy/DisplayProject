@@ -1,16 +1,18 @@
 .weather-atmosphere {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 9999;
   pointer-events: none;
   overflow: hidden;
+  isolation: isolate;
 }
 
+/* Keep panels below the atmosphere overlay */
 .App > .dashboard-header,
 .App > .dashboard-weather,
 .App > .dashboard-widgets {
   position: relative;
-  z-index: 1;
+  z-index: 0;
 }
 
 /* Rain */
@@ -21,21 +23,22 @@
 
 .atmosphere-rain-drop {
   position: absolute;
-  top: -12%;
-  width: 1px;
-  height: 14%;
-  background: linear-gradient(to bottom, transparent, rgba(180, 210, 255, 0.55));
+  top: -14%;
+  width: 1.5px;
+  height: 12%;
+  background: linear-gradient(to bottom, transparent, rgba(180, 210, 255, 0.75));
   animation-name: atmosphereRainFall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
+  will-change: top;
 }
 
 @keyframes atmosphereRainFall {
   from {
-    transform: translateY(0);
+    top: -14%;
   }
   to {
-    transform: translateY(120vh);
+    top: 110%;
   }
 }
 
@@ -53,14 +56,15 @@
   animation-name: atmosphereSnowFall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
+  will-change: top, left;
 }
 
 @keyframes atmosphereSnowFall {
   from {
-    transform: translateY(0) translateX(0);
+    top: -8%;
   }
   to {
-    transform: translateY(110vh) translateX(20px);
+    top: 110%;
   }
 }
 

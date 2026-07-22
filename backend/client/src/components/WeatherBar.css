@@ -10,7 +10,7 @@
   transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
   position: absolute;
   inset: 0;
-  padding: var(--gap-lg);
+  padding: clamp(8px, 1.2vh, 14px) clamp(10px, 1.2vw, 16px);
   box-sizing: border-box;
 }
 
@@ -18,13 +18,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  gap: clamp(4px, 0.8vh, 8px);
 }
 
 .forecast-content h2,
 .hourly-content h2 {
-  margin: 0 0 var(--gap-md);
+  margin: 0;
   flex-shrink: 0;
-  font-size: 1rem;
+  font-size: clamp(0.75rem, 1.2vh, 0.95rem);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -35,6 +36,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  gap: clamp(4px, 0.8vh, 8px);
 }
 
 .hidden {
@@ -51,21 +53,22 @@
 .forecast-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--gap-md);
+  gap: clamp(6px, 1vw, 12px);
   flex: 1;
   min-height: 0;
 }
 
 .forecast-item {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(4px, 0.8vh, 8px);
   min-height: 0;
-  padding: var(--gap-lg);
+  padding: clamp(8px, 1.2vh, 14px);
   border: 1px solid var(--border);
   border-radius: 0;
   background: var(--bg-card);
   text-align: center;
+  overflow: hidden;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
@@ -79,18 +82,28 @@
 .forecast-item-header {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 2px;
+  flex-shrink: 0;
+  min-width: 0;
+  z-index: 1;
 }
 
 .forecast-day-name {
-  font-size: 1.05rem;
+  font-size: clamp(0.8rem, 1.6vh, 1.05rem);
   font-weight: 700;
   color: var(--text-primary);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .forecast-day-date {
-  font-size: 0.82rem;
+  font-size: clamp(0.7rem, 1.2vh, 0.82rem);
   color: var(--text-muted);
+  line-height: 1.2;
 }
 
 .forecast-item.highlighted .forecast-day-name,
@@ -106,28 +119,30 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--gap-sm);
-  flex: 1;
   justify-content: center;
+  gap: clamp(2px, 0.5vh, 6px);
   min-height: 0;
-  padding: var(--gap-sm) 0;
+  overflow: hidden;
 }
 
 .forecast-icon {
-  width: 64px;
-  height: 64px;
+  width: clamp(28px, 6vh, 56px);
+  height: clamp(28px, 6vh, 56px);
+  flex-shrink: 1;
+  object-fit: contain;
   filter: none;
 }
 
 .forecast-condition {
   margin: 0;
-  font-size: 0.88rem;
-  line-height: 1.35;
+  font-size: clamp(0.68rem, 1.2vh, 0.85rem);
+  line-height: 1.25;
   color: var(--text-secondary);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  max-width: 100%;
 }
 
 .forecast-item.highlighted .forecast-condition {
@@ -136,8 +151,9 @@
 
 .forecast-details {
   position: relative;
-  min-height: 72px;
+  min-height: clamp(40px, 7vh, 64px);
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .forecast-details-block {
@@ -146,9 +162,9 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: var(--gap-sm);
+  gap: 2px;
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(4px);
   transition: opacity 0.6s ease, transform 0.6s ease;
   pointer-events: none;
 }
@@ -163,11 +179,11 @@
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .forecast-stat-label {
-  font-size: 0.72rem;
+  font-size: clamp(0.6rem, 1vh, 0.72rem);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -175,13 +191,13 @@
 }
 
 .forecast-stat-value {
-  font-size: 1rem;
+  font-size: clamp(0.8rem, 1.4vh, 1rem);
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .forecast-stat--secondary .forecast-stat-value {
-  font-size: 0.88rem;
+  font-size: clamp(0.72rem, 1.2vh, 0.88rem);
   font-weight: 600;
 }
 

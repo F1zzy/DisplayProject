@@ -59,12 +59,12 @@ export function resolveAtmosphereEffect(conditionCode, conditionText = '') {
 function RainDrops() {
   const drops = useMemo(
     () =>
-      Array.from({ length: 28 }, (_, i) => ({
+      Array.from({ length: 48 }, (_, i) => ({
         id: i,
         left: `${(i * 37) % 100}%`,
-        delay: `${(i % 10) * 0.18}s`,
-        duration: `${0.7 + (i % 5) * 0.15}s`,
-        opacity: 0.25 + (i % 4) * 0.1,
+        delay: `${(i % 12) * 0.14}s`,
+        duration: `${0.65 + (i % 5) * 0.12}s`,
+        opacity: 0.3 + (i % 4) * 0.12,
       })),
     []
   );

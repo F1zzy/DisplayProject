@@ -200,11 +200,12 @@ function AppContent() {
 
   return (
     <div className={appClass} style={backgroundStyle || undefined}>
-      <WeatherAtmosphere />
       {sectionOrder.map((id) => {
         const render = SECTION_COMPONENTS[id];
         return render ? render(forcedWidget, clearForcedWidget, widgetPinned) : null;
       })}
+      {/* Render last so rain/snow paint above all dashboard panels */}
+      <WeatherAtmosphere />
     </div>
   );
 }

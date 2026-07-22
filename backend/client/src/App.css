@@ -14,6 +14,7 @@
 
 .App {
   /* Exact 16:9 frame — letterboxed on non-16:9 screens */
+  position: relative;
   width: min(100vw, calc(100vh * 16 / 9));
   height: min(100vh, calc(100vw * 9 / 16));
   max-width: none;
@@ -275,7 +276,7 @@
   opacity: 1;
   filter: none;
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 .App:not(.night-focus) .dashboard-weather,
