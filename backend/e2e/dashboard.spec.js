@@ -44,9 +44,30 @@ test.describe('Dashboard', () => {
       data: { index },
     });
 
-    await expect(page.locator('.f1-widget')).toBeVisible();
-    await expect(page.getByText('Constructors', { exact: true })).toBeVisible();
-    await expect(page.locator('.f1-widget').getByText('ANT')).toBeVisible();
+    const widget = page.locator('.f1-widget');
+    await expect(widget).toBeVisible();
+    await expect(page.getByText('Constructor', { exact: true })).toBeVisible();
+    await expect(widget.locator('.f1-code').first()).toHaveText('ANT');
+    await expect(widget.locator('.f1-row--driver').first()).toContainText('Antonelli');
+
+    await expect(widget.locator('.f1-next')).toContainText('Dutch Grand Prix');
+    await expect(widget.locator('.f1-next')).toContainText('Zandvoort');
+
+    // Gained a place, lost a place, and unchanged all render distinctly.
+    await expect(widget.locator('.f1-delta--up').first()).toBeVisible();
+    await expect(widget.locator('.f1-delta--down').first()).toBeVisible();
+
+    // A broken image still lays out, so assert the bytes actually decoded.
+    for (const selector of [
+      '.f1-row--team img.f1-logo',
+      '.f1-row:not(.f1-row--team) img.f1-logo',
+      '.f1-next img.f1-flag',
+      '.f1-next img.f1-circuit',
+    ]) {
+      const image = widget.locator(selector).first();
+      await expect(image).toBeVisible();
+      expect(await image.evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
+    }
   });
 
   test('sleep from remote blanks the dashboard', async ({ browser }) => {

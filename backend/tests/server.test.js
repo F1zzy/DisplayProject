@@ -6,6 +6,8 @@ const sky = require('../services/sky');
 const spotify = require('../services/spotify');
 const f1Standings = require('../services/f1Standings');
 const f1Live = require('../services/f1Live');
+const f1Logos = require('../services/f1Logos');
+const f1Media = require('../services/f1Media');
 
 describe('API routes', () => {
   test('GET /api/health returns ok', async () => {
@@ -156,7 +158,20 @@ describe('Formula 1 API', () => {
         wins: 6,
       },
     ],
-    constructors: [{ position: 1, constructorId: 'mercedes', name: 'Mercedes', points: 379, wins: 7 }],
+    constructors: [
+      { position: 1, constructorId: 'mercedes', name: 'Mercedes', points: 379, wins: 7 },
+    ],
+    nextRace: {
+      round: 12,
+      raceName: 'Dutch Grand Prix',
+      circuitId: 'zandvoort',
+      circuitName: 'Circuit Park Zandvoort',
+      locality: 'Zandvoort',
+      country: 'Netherlands',
+      startsAt: '2026-08-23T13:00:00.000Z',
+      qualifying: '2026-08-22T14:00:00.000Z',
+      sprint: null,
+    },
     fetchedAt: '2026-07-26T12:00:00.000Z',
   };
 
@@ -174,6 +189,11 @@ describe('Formula 1 API', () => {
     expect(response.body.drivers[0].code).toBe('ANT');
     expect(response.body.constructors[0].name).toBe('Mercedes');
     expect(response.body.live.active).toBe(false);
+    expect(response.body.nextRace).toMatchObject({
+      raceName: 'Dutch Grand Prix',
+      locality: 'Zandvoort',
+      startsAt: '2026-08-23T13:00:00.000Z',
+    });
   });
 
   test('GET /api/f1/standings includes live race order during a session', async () => {
@@ -203,6 +223,118 @@ describe('Formula 1 API', () => {
     const response = await request(app).get('/api/f1/standings');
     expect(response.status).toBe(502);
     expect(response.body.error).toMatch(/F1 standings/i);
+  });
+});
+
+describe('Formula 1 constructor logos', () => {
+  const PNG = Buffer.from('89504e470d0a1a0a', 'hex');
+
+  function mockLogoResponse({ ok = true, status = 200 } = {}) {
+    return jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok,
+      status,
+      arrayBuffer: async () => PNG,
+      headers: new Map([['content-type', 'image/webp']]),
+    });
+  }
+
+  beforeEach(() => {
+    f1Logos.resetLogoCache();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('GET /api/f1/logo/:id serves the image with a long cache window', async () => {
+    mockLogoResponse();
+
+    const response = await request(app).get('/api/f1/logo/mercedes');
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toMatch(/image\/webp/);
+    expect(response.headers['cache-control']).toMatch(/max-age=604800/);
+    expect(response.body).toEqual(PNG);
+  });
+
+  test('serves a repeat request from cache without refetching', async () => {
+    const fetchSpy = mockLogoResponse();
+
+    await request(app).get('/api/f1/logo/ferrari');
+    await request(app).get('/api/f1/logo/ferrari');
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('maps constructor ids that differ from F1 slugs', async () => {
+    const fetchSpy = mockLogoResponse();
+
+    await request(app).get('/api/f1/logo/red_bull');
+
+    expect(fetchSpy.mock.calls[0][0]).toContain('redbullracing');
+  });
+
+  test('returns 404 when the upstream has no logo', async () => {
+    mockLogoResponse({ ok: false, status: 404 });
+
+    const response = await request(app).get('/api/f1/logo/not-a-team');
+    expect(response.status).toBe(404);
+  });
+});
+
+describe('Formula 1 circuit maps and flags', () => {
+  const PNG = Buffer.from('89504e470d0a1a0a', 'hex');
+
+  function mockImageResponse({ ok = true, status = 200 } = {}) {
+    return jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok,
+      status,
+      arrayBuffer: async () => PNG,
+      headers: new Map([['content-type', 'image/png']]),
+    });
+  }
+
+  beforeEach(() => {
+    f1Media.resetMediaCache();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('GET /api/f1/circuit/:id serves the track map', async () => {
+    const fetchSpy = mockImageResponse();
+
+    const response = await request(app).get('/api/f1/circuit/zandvoort');
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toMatch(/image\/png/);
+    expect(response.headers['cache-control']).toMatch(/max-age=604800/);
+    expect(fetchSpy.mock.calls[0][0]).toContain('Netherlands_Circuit.png');
+  });
+
+  test('GET /api/f1/flag/:country serves the country flag', async () => {
+    const fetchSpy = mockImageResponse();
+
+    const response = await request(app).get('/api/f1/flag/Netherlands');
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toMatch(/image\/png/);
+    expect(fetchSpy.mock.calls[0][0]).toContain('flagcdn.com/w40/nl.png');
+  });
+
+  test('caches circuit maps on a second hit', async () => {
+    const fetchSpy = mockImageResponse();
+
+    await request(app).get('/api/f1/circuit/silverstone');
+    await request(app).get('/api/f1/circuit/silverstone');
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('returns 404 for an unknown circuit or country', async () => {
+    const response = await request(app).get('/api/f1/circuit/not_a_track');
+    expect(response.status).toBe(404);
+
+    const flag = await request(app).get('/api/f1/flag/Narnia');
+    expect(flag.status).toBe(404);
   });
 });
 

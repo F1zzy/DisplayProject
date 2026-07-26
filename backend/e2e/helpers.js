@@ -62,8 +62,10 @@ const STUB_F1 = {
       givenName: 'Andrea Kimi',
       familyName: 'Antonelli',
       constructor: 'Mercedes',
+      constructorId: 'mercedes',
       points: 219,
       wins: 6,
+      positionChange: 1,
     },
     {
       position: 2,
@@ -72,17 +74,51 @@ const STUB_F1 = {
       givenName: 'Lewis',
       familyName: 'Hamilton',
       constructor: 'Ferrari',
+      constructorId: 'ferrari',
       points: 169,
       wins: 1,
+      positionChange: -1,
     },
   ],
   constructors: [
-    { position: 1, constructorId: 'mercedes', name: 'Mercedes', points: 379, wins: 7 },
-    { position: 2, constructorId: 'ferrari', name: 'Ferrari', points: 288, wins: 2 },
+    {
+      position: 1,
+      constructorId: 'mercedes',
+      name: 'Mercedes',
+      points: 379,
+      wins: 7,
+      positionChange: 0,
+    },
+    {
+      position: 2,
+      constructorId: 'ferrari',
+      name: 'Ferrari',
+      points: 288,
+      wins: 2,
+      positionChange: null,
+    },
   ],
+  nextRace: {
+    round: 12,
+    raceName: 'Dutch Grand Prix',
+    circuitId: 'zandvoort',
+    circuitName: 'Circuit Park Zandvoort',
+    locality: 'Zandvoort',
+    country: 'Netherlands',
+    // Kept relative so the countdown never renders as a past race.
+    startsAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    qualifying: null,
+    sprint: null,
+  },
   fetchedAt: new Date().toISOString(),
   live: { active: false, order: [] },
 };
+
+/** 1x1 transparent PNG, so the logo route never reaches F1's CDN in tests. */
+const STUB_LOGO = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYGD4DwABBAEAX+xLzwAAAABJRU5ErkJggg==',
+  'base64'
+);
 
 /**
  * Stub flaky third-party-backed API routes so E2E does not need live keys.
@@ -159,6 +195,28 @@ async function stubApis(page) {
       body: JSON.stringify(STUB_F1),
     });
   });
+  // Registered after the catch-all above, which Playwright resolves last-first.
+  await page.route('**/api/f1/logo/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: STUB_LOGO,
+    });
+  });
+  await page.route('**/api/f1/circuit/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: STUB_LOGO,
+    });
+  });
+  await page.route('**/api/f1/flag/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      body: STUB_LOGO,
+    });
+  });
 }
 
 /**
@@ -205,4 +263,5 @@ module.exports = {
   ensureDisplayOn,
   STUB_WEATHER_CURRENT,
   STUB_F1,
+  STUB_LOGO,
 };

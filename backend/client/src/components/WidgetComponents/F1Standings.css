@@ -8,22 +8,52 @@
   overflow: hidden;
 }
 
-.f1-widget h3 {
+/* Header: identity on the left, next race or live status on the right. */
+.f1-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-lg);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-strong);
+  min-width: 0;
+}
+
+.f1-brand {
   display: flex;
   align-items: baseline;
   gap: var(--gap-sm);
+  flex-shrink: 0;
+}
+
+.f1-mark {
+  align-self: center;
+  width: 4px;
+  height: 0.95rem;
+  background: #e10600;
+}
+
+.f1-widget h3 {
   margin: 0;
   font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-primary);
 }
 
 .f1-season {
-  font-size: 0.7rem;
-  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   color: var(--accent);
+}
+
+.f1-round {
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .f1-empty {
@@ -32,64 +62,101 @@
   font-size: 0.95rem;
 }
 
-.f1-columns {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  gap: var(--gap-lg);
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.f1-panel {
+/* Next race / live status strip */
+.f1-next,
+.f1-live {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  border-left: 2px solid transparent;
-  padding-left: var(--gap-sm);
-  transition: border-color 0.4s ease;
-}
-
-.f1-track--yellow {
-  border-left-color: #f5c518;
-}
-
-.f1-track--safety {
-  border-left-color: #f59e0b;
-}
-
-.f1-track--red {
-  border-left-color: #ef4444;
-}
-
-.f1-panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: baseline;
   gap: var(--gap-sm);
+  min-width: 0;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-.f1-panel-title {
-  font-size: 0.7rem;
+.f1-next-label {
+  font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-secondary);
-}
-
-.f1-panel-meta {
-  font-size: 0.65rem;
-  letter-spacing: 0.06em;
   color: var(--text-muted);
 }
 
-.f1-live-badge {
+.f1-next-round {
   font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  padding: 1px 4px;
+}
+
+.f1-next-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.f1-next-where {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.f1-flag {
+  width: 1.15rem;
+  height: 0.8rem;
+  object-fit: cover;
+  border-radius: 1px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.f1-flag--empty {
+  display: inline-block;
+}
+
+.f1-circuit {
+  width: 4.25rem;
+  height: 1.55rem;
+  object-fit: contain;
+  object-position: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  filter: brightness(0) invert(0.85);
+  opacity: 0.9;
+}
+
+.f1-next-when {
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Circuit already consumes the free space on the right when present. */
+.f1-circuit + .f1-next-when {
+  margin-left: 0;
+}
+
+.f1-next-count {
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid var(--border-strong);
+  padding-left: var(--gap-sm);
+}
+
+.f1-live-badge {
+  align-self: center;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #fff;
   background: #e10600;
@@ -108,19 +175,18 @@
   }
 }
 
-.f1-live-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-sm);
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
 .f1-live-meeting {
+  font-weight: 700;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.f1-live-session {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.62rem;
 }
 
 .f1-live-lap {
@@ -129,9 +195,74 @@
 }
 
 .f1-live-flag {
+  font-weight: 700;
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  font-size: 0.62rem;
+}
+
+/* Two standings tables side by side */
+.f1-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: var(--gap-lg);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.f1-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-left: 2px solid transparent;
+  padding-left: var(--gap-md);
+  transition: border-color 0.4s ease;
+}
+
+.f1-track--yellow {
+  border-left-color: #f5c518;
+}
+
+.f1-track--safety {
+  border-left-color: #f59e0b;
+}
+
+.f1-track--red {
+  border-left-color: #ef4444;
+}
+
+/* Column headings share each table's grid so labels sit over their data. */
+.f1-colhead,
+.f1-row {
+  display: grid;
+  align-items: center;
+  gap: var(--gap-sm);
+}
+
+.f1-colhead--driver,
+.f1-row--driver {
+  grid-template-columns:
+    1.5rem 3px 1.35rem 2.7rem minmax(0, 1fr)
+    minmax(5rem, 9rem) 1.9rem 3.4rem;
+}
+
+.f1-colhead--team,
+.f1-row--team {
+  grid-template-columns: 1.5rem 3px 1.35rem minmax(0, 1fr) 1.9rem 2.8rem 3.4rem;
+}
+
+.f1-colhead {
+  padding: 0 0 4px;
+  border-bottom: 1px solid var(--border-strong);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .f1-list {
@@ -140,20 +271,17 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
 .f1-row {
-  display: grid;
-  grid-template-columns: 1.6rem 3rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--gap-sm);
-  padding: 3px 0;
+  position: relative;
+  padding: 4px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 0.82rem;
-  line-height: 1.2;
+  font-size: 0.8rem;
+  line-height: 1.15;
 }
 
 .f1-row:last-child {
@@ -168,24 +296,40 @@
   color: #f5c518;
 }
 
+/* Points bar drawn behind the row, so the width doubles as the chart. */
+.f1-fill {
+  position: absolute;
+  left: 0;
+  top: 1px;
+  bottom: 1px;
+  background: var(--team, var(--accent));
+  opacity: 0.14;
+  transition: width 0.6s ease;
+}
+
+.f1-row > *:not(.f1-fill) {
+  position: relative;
+}
+
 .f1-pos {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.f1-team-bar {
+.f1-accent {
   width: 3px;
-  height: 1rem;
+  height: 1.05rem;
   justify-self: start;
-  background: var(--border);
+  background: var(--team, var(--border-strong));
 }
 
+.f1-code,
 .f1-name {
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -193,11 +337,17 @@
 }
 
 .f1-name--team {
-  font-weight: 600;
   letter-spacing: 0.01em;
 }
 
-.f1-sub {
+.f1-full {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.f1-team {
   font-size: 0.68rem;
   color: var(--text-muted);
   white-space: nowrap;
@@ -205,9 +355,8 @@
   text-overflow: ellipsis;
 }
 
-.f1-gap,
-.f1-points {
-  font-size: 0.72rem;
+.f1-num {
+  font-size: 0.74rem;
   font-variant-numeric: tabular-nums;
   color: var(--text-secondary);
   text-align: right;
@@ -219,25 +368,47 @@
   color: var(--accent);
 }
 
-.f1-row--live {
-  grid-template-columns: 1.6rem 3px minmax(0, 1fr) auto;
+.f1-wins {
+  color: var(--text-muted);
 }
 
-.f1-row--team {
-  grid-template-columns: 1.6rem minmax(0, 1fr) 3.5rem auto;
+.f1-delta {
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  text-align: right;
+  color: var(--text-muted);
 }
 
-.f1-bar {
+.f1-delta--up {
+  color: #22c55e;
+}
+
+.f1-delta--down {
+  color: #ef4444;
+}
+
+.f1-logo {
+  width: 1.35rem;
+  height: 1.05rem;
+  object-fit: contain;
+  object-position: left center;
+  justify-self: start;
+}
+
+.f1-logo--empty {
   display: block;
-  height: 4px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  overflow: hidden;
 }
 
-.f1-bar-fill {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  transition: width 0.6s ease;
+/* Drop the full name first when the widget is squeezed. */
+@media (max-width: 1100px) {
+  .f1-hide-narrow {
+    display: none;
+  }
+
+  .f1-colhead--driver,
+  .f1-row--driver {
+    grid-template-columns: 1.5rem 3px 1.35rem 2.7rem minmax(0, 1fr) 1.9rem 3.4rem;
+  }
 }

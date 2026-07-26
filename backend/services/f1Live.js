@@ -3,6 +3,7 @@ require('dotenv').config();
 const WebSocket = require('ws');
 
 const f1Token = require('./f1Token');
+const f1Logos = require('./f1Logos');
 
 /**
  * Client for the (unofficial) F1 live timing feed.
@@ -24,6 +25,8 @@ const TOPICS = [
   'LapCount',
   'DriverList',
   'TimingData',
+  // Carries GridPos, which gives places gained or lost since the start.
+  'TimingAppData',
 ];
 
 /** SignalR Core delimits messages with the ASCII record separator. */
@@ -147,23 +150,29 @@ function buildSnapshot(feed, { connected = false } = {}) {
   const lapCount = feed?.LapCount || {};
   const driverList = feed?.DriverList || {};
   const lines = feed?.TimingData?.Lines || {};
+  const appLines = feed?.TimingAppData?.Lines || {};
 
   const order = Object.entries(lines)
     .map(([number, line]) => {
       const driver = driverList[number] || {};
       const position = toNumber(line?.Position);
       const interval = line?.IntervalToPositionAhead?.Value ?? null;
+      // GridPos is 0 for a pit-lane start, which is not a real grid slot.
+      const gridPosition = toNumber(appLines[number]?.GridPos) || null;
       return {
         position,
         number: toNumber(number),
         code: driver.Tla || null,
         name: driver.FullName || driver.BroadcastName || null,
         team: driver.TeamName || null,
+        constructorId: f1Logos.resolveConstructorId(driver.TeamName),
         teamColour: driver.TeamColour ? `#${String(driver.TeamColour).replace(/^#/, '')}` : null,
         gapToLeader: line?.GapToLeader ?? null,
         interval: interval || null,
         inPit: Boolean(line?.InPit),
         retired: Boolean(line?.Retired || line?.Stopped),
+        gridPosition,
+        positionChange: gridPosition != null && position != null ? gridPosition - position : null,
       };
     })
     .filter((entry) => entry.position != null)

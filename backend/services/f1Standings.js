@@ -60,6 +60,62 @@ function mapConstructorStandings(payload) {
   }));
 }
 
+/** Combine an Ergast date + time pair into an ISO instant. */
+function toInstant(date, time) {
+  if (!date) return null;
+  const iso = time ? `${date}T${time.replace(/Z?$/, 'Z')}` : `${date}T00:00:00Z`;
+  const parsed = new Date(iso);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+/**
+ * Flatten an Ergast/Jolpica race into the next-race summary.
+ * @param {object} payload Parsed `/current/next.json` body.
+ */
+function mapNextRace(payload) {
+  const race = payload?.MRData?.RaceTable?.Races?.[0];
+  if (!race) return null;
+
+  const location = race?.Circuit?.Location || {};
+
+  return {
+    round: toNumber(race.round),
+    raceName: race.raceName || null,
+    circuitId: race?.Circuit?.circuitId || null,
+    circuitName: race?.Circuit?.circuitName || null,
+    locality: location.locality || null,
+    country: location.country || null,
+    startsAt: toInstant(race.date, race.time),
+    qualifying: toInstant(race?.Qualifying?.date, race?.Qualifying?.time),
+    sprint: toInstant(race?.Sprint?.date, race?.Sprint?.time),
+  };
+}
+
+/**
+ * Annotate standings rows with movement since the previous round.
+ * Positive means places gained; null when the entry is new or has no history.
+ */
+function applyPositionChanges(rows, previousRows, idKey) {
+  if (!Array.isArray(rows)) return [];
+
+  const previous = new Map();
+  if (Array.isArray(previousRows)) {
+    for (const row of previousRows) {
+      const id = row?.[idKey];
+      if (id && row.position != null) previous.set(id, row.position);
+    }
+  }
+
+  return rows.map((row) => {
+    const was = previous.get(row?.[idKey]);
+    return {
+      ...row,
+      positionChange:
+        was != null && row.position != null ? was - row.position : null,
+    };
+  });
+}
+
 function readSeasonMeta(payload) {
   const table = payload?.MRData?.StandingsTable;
   const list = table?.StandingsLists?.[0];
@@ -83,19 +139,59 @@ async function fetchJson(path) {
   return response.json();
 }
 
+/** Standings after the previous round, used only for movement arrows. */
+async function loadPreviousRound(round) {
+  if (!Number.isFinite(round) || round <= 1) {
+    return { drivers: [], constructors: [] };
+  }
+
+  const previous = round - 1;
+
+  try {
+    const [driversPayload, constructorsPayload] = await Promise.all([
+      fetchJson(`/current/${previous}/driverstandings.json?limit=30`),
+      fetchJson(`/current/${previous}/constructorstandings.json?limit=30`),
+    ]);
+
+    return {
+      drivers: mapDriverStandings(driversPayload),
+      constructors: mapConstructorStandings(constructorsPayload),
+    };
+  } catch (error) {
+    // Movement arrows are a nicety; never fail the whole payload for them.
+    console.error('F1 previous-round standings unavailable:', error.message);
+    return { drivers: [], constructors: [] };
+  }
+}
+
 async function loadChampionships() {
-  const [driversPayload, constructorsPayload] = await Promise.all([
+  const [driversPayload, constructorsPayload, nextRacePayload] = await Promise.all([
     fetchJson('/current/driverstandings.json?limit=30'),
     fetchJson('/current/constructorstandings.json?limit=30'),
+    fetchJson('/current/next.json').catch((error) => {
+      // Between the last race and the next season there is no "next" race.
+      console.error('F1 next race unavailable:', error.message);
+      return null;
+    }),
   ]);
 
   const meta = readSeasonMeta(driversPayload);
+  const previous = await loadPreviousRound(meta.round);
 
   return {
     season: meta.season,
     round: meta.round,
-    drivers: mapDriverStandings(driversPayload),
-    constructors: mapConstructorStandings(constructorsPayload),
+    drivers: applyPositionChanges(
+      mapDriverStandings(driversPayload),
+      previous.drivers,
+      'driverId'
+    ),
+    constructors: applyPositionChanges(
+      mapConstructorStandings(constructorsPayload),
+      previous.constructors,
+      'constructorId'
+    ),
+    nextRace: nextRacePayload ? mapNextRace(nextRacePayload) : null,
     fetchedAt: new Date().toISOString(),
   };
 }
@@ -122,5 +218,7 @@ module.exports = {
   getChampionships,
   mapDriverStandings,
   mapConstructorStandings,
+  mapNextRace,
+  applyPositionChanges,
   readSeasonMeta,
 };

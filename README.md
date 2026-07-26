@@ -91,7 +91,9 @@ node scripts/spotify-auth.js
 
 ## Formula 1 (championship + live timing)
 
-The Formula 1 widget shows the driver and constructor championships side by side. While a session is running, the left column switches to the live race order with gaps, lap count, and track status.
+The Formula 1 widget shows the driver and constructor championships side by side, under a strip naming the next race and how far away it is. That strip also shows the host country's flag and a small circuit outline. Arrows mark movement since the previous round, and constructor rows carry team logos. While a session is running, the left column switches to the live race order with gaps, lap count, and track status, and the arrows show places gained or lost against the starting grid.
+
+Team logos, circuit maps, and flags are proxied through `/api/f1/logo/:constructorId`, `/api/f1/circuit/:circuitId`, and `/api/f1/flag/:country` and cached in memory for a week, so the display keeps working if an upstream path moves; a missing asset simply leaves that slot empty.
 
 **Championship standings need no configuration.** They come from [Jolpica](https://github.com/jolpica/jolpica-f1), the community-maintained successor to the Ergast API, and are cached for 30 minutes to stay well inside its rate limit.
 
@@ -264,7 +266,10 @@ Install as a PWA on Android for a simple remote control app.
 | `GET /api/network/stats` | Connection latency + local NIC rx/tx rates (light probe, cached ~15s) |
 | `GET /api/sky/current` | Night sky chart URL + bodies above horizon (cached ~45m) |
 | `GET /api/spotify/now` | Now playing / last played + top tracks (503 if not configured) |
-| `GET /api/f1/standings` | F1 driver + constructor championships, plus live race order when a session is running |
+| `GET /api/f1/standings` | F1 driver + constructor championships with round-over-round movement, next race, plus live race order when a session is running |
+| `GET /api/f1/logo/:constructorId` | Constructor logo, proxied from F1's media CDN and cached for 7 days (404 if unknown) |
+| `GET /api/f1/circuit/:circuitId` | Next-race circuit map outline, proxied from F1's media CDN and cached for 7 days |
+| `GET /api/f1/flag/:country` | Country flag for the next race (Jolpica country name), proxied from flagcdn and cached for 7 days |
 | `GET /api/settings` | Dashboard preferences (location, widgets, stocks, etc.) |
 | `PUT /api/settings` | Update preferences (requires `x-api-key`); broadcasts `settings:update` |
 | `GET /api/display/state` | Display state (includes `pinned`) |

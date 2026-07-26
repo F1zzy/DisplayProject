@@ -6,6 +6,8 @@ const sky = require('../services/sky');
 const spotify = require('../services/spotify');
 const f1Standings = require('../services/f1Standings');
 const f1Live = require('../services/f1Live');
+const f1Logos = require('../services/f1Logos');
+const f1Media = require('../services/f1Media');
 const settings = require('../services/settings');
 const cache = require('../services/cache');
 
@@ -144,6 +146,54 @@ router.get('/f1/standings', async (_req, res) => {
   } catch (error) {
     console.error(error);
     res.status(502).json({ error: 'Failed to fetch F1 standings' });
+  }
+});
+
+router.get('/f1/logo/:constructorId', async (req, res) => {
+  try {
+    const logo = await f1Logos.getLogo(req.params.constructorId, req.query.season);
+    if (!logo) {
+      return res.status(404).json({ error: 'Unknown constructor logo' });
+    }
+
+    res.set('Content-Type', logo.contentType);
+    res.set('Cache-Control', 'public, max-age=604800');
+    return res.send(logo.body);
+  } catch (error) {
+    console.error(error);
+    return res.status(502).json({ error: 'Failed to fetch constructor logo' });
+  }
+});
+
+router.get('/f1/circuit/:circuitId', async (req, res) => {
+  try {
+    const map = await f1Media.getCircuitMap(req.params.circuitId);
+    if (!map) {
+      return res.status(404).json({ error: 'Unknown circuit map' });
+    }
+
+    res.set('Content-Type', map.contentType);
+    res.set('Cache-Control', 'public, max-age=604800');
+    return res.send(map.body);
+  } catch (error) {
+    console.error(error);
+    return res.status(502).json({ error: 'Failed to fetch circuit map' });
+  }
+});
+
+router.get('/f1/flag/:country', async (req, res) => {
+  try {
+    const flag = await f1Media.getCountryFlag(decodeURIComponent(req.params.country));
+    if (!flag) {
+      return res.status(404).json({ error: 'Unknown country flag' });
+    }
+
+    res.set('Content-Type', flag.contentType);
+    res.set('Cache-Control', 'public, max-age=604800');
+    return res.send(flag.body);
+  } catch (error) {
+    console.error(error);
+    return res.status(502).json({ error: 'Failed to fetch country flag' });
   }
 });
 

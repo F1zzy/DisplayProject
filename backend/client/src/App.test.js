@@ -55,6 +55,7 @@ jest.mock('./api/client', () => ({
       round: 11,
       drivers: [],
       constructors: [],
+      nextRace: null,
       live: { active: false, order: [] },
     }),
   weatherIconUrl: (icon) => (icon.startsWith('http') ? icon : `https:${icon}`),
