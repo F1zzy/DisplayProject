@@ -36,6 +36,10 @@ jest.mock('./WidgetComponents/SpotifyNow', () => ({
   __esModule: true,
   default: () => <div>Spotify widget</div>,
 }));
+jest.mock('./WidgetComponents/F1Standings', () => ({
+  __esModule: true,
+  default: () => <div>Formula 1 widget</div>,
+}));
 
 function renderWidgets(props = {}) {
   return render(<Widgets {...props} />);

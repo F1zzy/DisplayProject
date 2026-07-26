@@ -1,0 +1,243 @@
+.f1-widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+  height: 100%;
+  min-height: 0;
+  padding: var(--gap-lg);
+  overflow: hidden;
+}
+
+.f1-widget h3 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gap-sm);
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.f1-season {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.f1-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.f1-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: var(--gap-lg);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.f1-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-left: 2px solid transparent;
+  padding-left: var(--gap-sm);
+  transition: border-color 0.4s ease;
+}
+
+.f1-track--yellow {
+  border-left-color: #f5c518;
+}
+
+.f1-track--safety {
+  border-left-color: #f59e0b;
+}
+
+.f1-track--red {
+  border-left-color: #ef4444;
+}
+
+.f1-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+}
+
+.f1-panel-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.f1-panel-meta {
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.f1-live-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #e10600;
+  padding: 2px 7px;
+  border-radius: 2px;
+  animation: f1-live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes f1-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.f1-live-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.f1-live-meeting {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.f1-live-lap {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.f1-live-flag {
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.f1-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.f1-row {
+  display: grid;
+  grid-template-columns: 1.6rem 3rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.f1-row:last-child {
+  border-bottom: none;
+}
+
+.f1-row.is-out {
+  opacity: 0.45;
+}
+
+.f1-row.is-pit .f1-gap {
+  color: #f5c518;
+}
+
+.f1-pos {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.f1-team-bar {
+  width: 3px;
+  height: 1rem;
+  justify-self: start;
+  background: var(--border);
+}
+
+.f1-name {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.f1-name--team {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.f1-sub {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.f1-gap,
+.f1-points {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.f1-points {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.f1-row--live {
+  grid-template-columns: 1.6rem 3px minmax(0, 1fr) auto;
+}
+
+.f1-row--team {
+  grid-template-columns: 1.6rem minmax(0, 1fr) 3.5rem auto;
+}
+
+.f1-bar {
+  display: block;
+  height: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.f1-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.6s ease;
+}

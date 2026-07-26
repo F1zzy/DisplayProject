@@ -7,7 +7,7 @@ const SETTINGS_PATH = process.env.DISPLAY_SETTINGS_PATH
   ? path.resolve(process.env.DISPLAY_SETTINGS_PATH)
   : path.join(DATA_DIR, 'settings.json');
 
-const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network', 'sky', 'spotify'];
+const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network', 'sky', 'spotify', 'f1'];
 
 const VALID_BACKGROUND_MODES = ['default', 'color', 'image'];
 

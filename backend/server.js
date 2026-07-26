@@ -88,6 +88,12 @@ if (require.main === module) {
     } catch (error) {
       console.error('Failed to apply display brightness on startup:', error.message);
     }
+
+    try {
+      require('./services/f1Live').start();
+    } catch (error) {
+      console.error('Failed to start F1 live timing client:', error.message);
+    }
   });
 }
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Refresh the DisplayProject F1 live timing token daily
+
+[Timer]
+# Tokens last about four days, so a daily attempt leaves plenty of slack for
+# failed runs. Persistent catches up after the Pi has been powered off.
+OnCalendar=daily
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -35,6 +35,11 @@ const WIDGET_REGISTRY = {
     label: 'Spotify',
     Component: lazy(() => import('./WidgetComponents/SpotifyNow')),
   },
+  f1: {
+    key: 'f1',
+    label: 'Formula 1',
+    Component: lazy(() => import('./WidgetComponents/F1Standings')),
+  },
 };
 
 function ToolbarContent({ widgets, activeIndex, pinned }) {

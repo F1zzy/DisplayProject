@@ -18,6 +18,7 @@ const WIDGET_LABELS = {
   network: 'Network',
   sky: 'Night Sky',
   spotify: 'Spotify',
+  f1: 'Formula 1',
 };
 
 const SECTION_LABELS = {

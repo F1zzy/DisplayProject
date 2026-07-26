@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh the DisplayProject F1 live timing token
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+WorkingDirectory=__APP_DIR__/backend
+EnvironmentFile=__APP_DIR__/backend/.env
+ExecStart=/usr/bin/node scripts/f1-auth.js --refresh

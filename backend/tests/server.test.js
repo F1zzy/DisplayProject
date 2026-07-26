@@ -4,6 +4,8 @@ const calendar = require('../services/calendar');
 const networkStats = require('../services/networkStats');
 const sky = require('../services/sky');
 const spotify = require('../services/spotify');
+const f1Standings = require('../services/f1Standings');
+const f1Live = require('../services/f1Live');
 
 describe('API routes', () => {
   test('GET /api/health returns ok', async () => {
@@ -135,6 +137,72 @@ describe('Spotify API', () => {
     expect(response.status).toBe(200);
     expect(response.body.playing).toBe(true);
     expect(response.body.track.name).toBe('Test Track');
+  });
+});
+
+describe('Formula 1 API', () => {
+  const CHAMPIONSHIP = {
+    season: '2026',
+    round: 11,
+    drivers: [
+      {
+        position: 1,
+        driverId: 'antonelli',
+        code: 'ANT',
+        givenName: 'Andrea Kimi',
+        familyName: 'Antonelli',
+        constructor: 'Mercedes',
+        points: 219,
+        wins: 6,
+      },
+    ],
+    constructors: [{ position: 1, constructorId: 'mercedes', name: 'Mercedes', points: 379, wins: 7 }],
+    fetchedAt: '2026-07-26T12:00:00.000Z',
+  };
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('GET /api/f1/standings returns championships with an idle live block', async () => {
+    jest.spyOn(f1Standings, 'getChampionships').mockResolvedValue(CHAMPIONSHIP);
+    jest.spyOn(f1Live, 'getLiveSnapshot').mockReturnValue({ active: false, order: [] });
+
+    const response = await request(app).get('/api/f1/standings');
+    expect(response.status).toBe(200);
+    expect(response.body.season).toBe('2026');
+    expect(response.body.drivers[0].code).toBe('ANT');
+    expect(response.body.constructors[0].name).toBe('Mercedes');
+    expect(response.body.live.active).toBe(false);
+  });
+
+  test('GET /api/f1/standings includes live race order during a session', async () => {
+    jest.spyOn(f1Standings, 'getChampionships').mockResolvedValue(CHAMPIONSHIP);
+    jest.spyOn(f1Live, 'getLiveSnapshot').mockReturnValue({
+      active: true,
+      sessionName: 'Race',
+      meetingName: 'British Grand Prix',
+      trackStatus: 'Green',
+      trackStatusCode: 1,
+      lap: 23,
+      totalLaps: 52,
+      order: [{ position: 1, number: 44, code: 'HAM', gapToLeader: '', interval: null }],
+    });
+
+    const response = await request(app).get('/api/f1/standings');
+    expect(response.status).toBe(200);
+    expect(response.body.live.active).toBe(true);
+    expect(response.body.live.lap).toBe(23);
+    expect(response.body.live.order[0].code).toBe('HAM');
+  });
+
+  test('GET /api/f1/standings returns 502 when the upstream fails', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(f1Standings, 'getChampionships').mockRejectedValue(new Error('jolpica down'));
+
+    const response = await request(app).get('/api/f1/standings');
+    expect(response.status).toBe(502);
+    expect(response.body.error).toMatch(/F1 standings/i);
   });
 });
 

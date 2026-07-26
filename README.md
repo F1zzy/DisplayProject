@@ -6,7 +6,7 @@ Widget-style dashboard for a secondary monitor, with weather, stocks, news, and 
 
 - Live clock and current weather
 - 3-day and hourly forecast views
-- Rotating widgets: stocks, news, timetable (Google Calendar), network, night sky, Spotify
+- Rotating widgets: stocks, news, timetable (Google Calendar), network, night sky, Spotify, Formula 1
 - Backend API proxy (API keys stay server-side)
 - Remote control page at `/remote` (API-key unlock + dashboard settings)
 - Widget pin from remote (choose a widget and freeze auto-rotation until cleared)
@@ -88,6 +88,58 @@ node scripts/spotify-auth.js
 
 5. Paste `SPOTIFY_REFRESH_TOKEN=...` into `backend/.env` and restart the server.
 6. Enable **Spotify** under Enabled widgets on the remote.
+
+## Formula 1 (championship + live timing)
+
+The Formula 1 widget shows the driver and constructor championships side by side. While a session is running, the left column switches to the live race order with gaps, lap count, and track status.
+
+**Championship standings need no configuration.** They come from [Jolpica](https://github.com/jolpica/jolpica-f1), the community-maintained successor to the Ergast API, and are cached for 30 minutes to stay well inside its rate limit.
+
+**Live timing is an unofficial feed** and is best-effort. The backend watches `livetiming.formula1.com/static/StreamingStatus.json` and only opens a connection while a session is actually live. Two optional settings in `backend/.env`:
+
+- `F1_LIVE_ENABLED=false` disables the live feed entirely; the widget then only ever shows championships.
+- An F1 account token. F1 moved this feed to SignalR Core and it usually expects one; without a token the feed may return partial data or nothing at all. See [Getting an F1 live token](#getting-an-f1-live-token) below.
+
+If the live feed is unavailable for any reason, the widget silently falls back to championship standings — no configuration is required for it to be useful.
+
+### Getting an F1 live token
+
+A **free F1 account is enough** — an F1 TV subscription is only needed for car telemetry streams, which this dashboard does not use.
+
+F1's sign-in is anti-bot protected, so there is no headless username/password flow. What does work is signing in once in a real browser and keeping that browser profile: F1 keeps the session alive far longer than the ~4 day token inside it, so re-opening the site with the same profile mints a fresh token.
+
+Sign in once (opens a visible browser; complete the login there):
+
+```bash
+cd backend
+npm install --no-save playwright   # Playwright drives the browser
+node scripts/f1-auth.js --login
+```
+
+From then on, renew without any interaction:
+
+```bash
+node scripts/f1-auth.js --refresh
+```
+
+The token is written to `backend/data/f1-token.json`, which a running server re-reads on its next connection attempt — **no restart needed**. `--status` prints the current expiry, and `--refresh` exits non-zero when the saved session has lapsed and you need to run `--login` again.
+
+Both files are gitignored: the token is a credential, and the browser profile holds a live F1 session.
+
+To renew automatically on a Raspberry Pi, install the daily timer (it uses the system Chromium the kiosk already has, since Playwright ships no Raspberry Pi browser build):
+
+```bash
+bash scripts/raspberry-pi/install.sh --with-f1-token-refresh
+cd ~/DisplayProject/backend && node scripts/f1-auth.js --login   # once, on the Pi desktop
+```
+
+Check on it with `systemctl list-timers displayproject-f1-token` and `journalctl -u displayproject-f1-token`.
+
+**Without a browser**, paste the cookie by hand instead: sign in at [formula1.com](https://www.formula1.com), open DevTools → Application → Cookies → `https://www.formula1.com`, copy the value of the `login-session` cookie, and run `node scripts/f1-auth.js` with no arguments. It extracts `data.subscriptionToken` and stores it the same way; a bare JWT can be pasted instead of the cookie. You can also set `F1_LIVE_TOKEN` in `backend/.env`, which is used as a fallback when no token file exists.
+
+**Tokens last roughly four days.** When one lapses, the negotiate call fails, the server logs it once, and the widget falls back to championship standings until a fresh token appears.
+
+Enable **Formula 1** under Enabled widgets on the remote.
 
 ## Production run
 
@@ -192,7 +244,7 @@ Disable screen blanking in Pi OS desktop preferences as an extra safeguard again
 4. Use On / Sleep / Off, widget jump buttons, and **Pin widget** (pick which widget to freeze; **Unpin** or **Next Widget** clears the pin)
 5. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background, appearance (including night focus schedule and **display brightness** — on a Raspberry Pi this drives the panel/HDMI backlight via `displayproject-display-brightness`), and layout, then **Save settings**
 
-Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip. Enable **Spotify** after completing the Spotify setup above.
+Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip. Enable **Spotify** after completing the Spotify setup above. Enable **Formula 1** for championship standings and live race order.
 
 The remote page stays locked until the API key is verified. Lock the session when finished. Settings are stored in `backend/data/settings.json` (not committed).
 
@@ -212,6 +264,7 @@ Install as a PWA on Android for a simple remote control app.
 | `GET /api/network/stats` | Connection latency + local NIC rx/tx rates (light probe, cached ~15s) |
 | `GET /api/sky/current` | Night sky chart URL + bodies above horizon (cached ~45m) |
 | `GET /api/spotify/now` | Now playing / last played + top tracks (503 if not configured) |
+| `GET /api/f1/standings` | F1 driver + constructor championships, plus live race order when a session is running |
 | `GET /api/settings` | Dashboard preferences (location, widgets, stocks, etc.) |
 | `PUT /api/settings` | Update preferences (requires `x-api-key`); broadcasts `settings:update` |
 | `GET /api/display/state` | Display state (includes `pinned`) |

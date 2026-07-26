@@ -51,6 +51,39 @@ const STUB_HOURLY = {
   })),
 };
 
+const STUB_F1 = {
+  season: '2026',
+  round: 11,
+  drivers: [
+    {
+      position: 1,
+      driverId: 'antonelli',
+      code: 'ANT',
+      givenName: 'Andrea Kimi',
+      familyName: 'Antonelli',
+      constructor: 'Mercedes',
+      points: 219,
+      wins: 6,
+    },
+    {
+      position: 2,
+      driverId: 'hamilton',
+      code: 'HAM',
+      givenName: 'Lewis',
+      familyName: 'Hamilton',
+      constructor: 'Ferrari',
+      points: 169,
+      wins: 1,
+    },
+  ],
+  constructors: [
+    { position: 1, constructorId: 'mercedes', name: 'Mercedes', points: 379, wins: 7 },
+    { position: 2, constructorId: 'ferrari', name: 'Ferrari', points: 288, wins: 2 },
+  ],
+  fetchedAt: new Date().toISOString(),
+  live: { active: false, order: [] },
+};
+
 /**
  * Stub flaky third-party-backed API routes so E2E does not need live keys.
  * @param {import('@playwright/test').Page} page
@@ -119,6 +152,13 @@ async function stubApis(page) {
       body: JSON.stringify({ error: 'Spotify not configured' }),
     });
   });
+  await page.route('**/api/f1/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(STUB_F1),
+    });
+  });
 }
 
 /**
@@ -164,4 +204,5 @@ module.exports = {
   expectUnlocked,
   ensureDisplayOn,
   STUB_WEATHER_CURRENT,
+  STUB_F1,
 };

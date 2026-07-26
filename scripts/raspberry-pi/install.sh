@@ -4,15 +4,21 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+WITH_F1_TOKEN_REFRESH=0
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --app-dir)
       APP_DIR="$(cd "$2" && pwd)"
       shift 2
       ;;
+    --with-f1-token-refresh)
+      WITH_F1_TOKEN_REFRESH=1
+      shift
+      ;;
     *)
       echo "Unknown option: $1" >&2
-      echo "Usage: $0 [--app-dir /path/to/DisplayProject]" >&2
+      echo "Usage: $0 [--app-dir /path/to/DisplayProject] [--with-f1-token-refresh]" >&2
       exit 1
       ;;
   esac
@@ -75,6 +81,38 @@ rm -f "$SERVICE_FILE"
 sudo systemctl daemon-reload
 sudo systemctl enable displayproject.service
 sudo systemctl restart displayproject.service
+
+if [[ "$WITH_F1_TOKEN_REFRESH" -eq 1 ]]; then
+  echo "==> Installing F1 token refresh timer"
+
+  CHROMIUM_BIN="$(command -v chromium-browser || command -v chromium || true)"
+  if [[ -z "$CHROMIUM_BIN" ]]; then
+    echo "Chromium was not found; install it with: sudo apt install chromium-browser" >&2
+    exit 1
+  fi
+
+  # playwright-core drives the system Chromium, avoiding a browser download
+  # that has no Raspberry Pi build.
+  (cd "$APP_DIR/backend" && npm install --no-save playwright-core)
+
+  if ! grep -q '^F1_BROWSER_PATH=' "$APP_DIR/backend/.env"; then
+    echo "F1_BROWSER_PATH=${CHROMIUM_BIN}" >> "$APP_DIR/backend/.env"
+  fi
+
+  F1_UNIT="$(mktemp)"
+  RUN_AS="${USER:-$(id -un)}"
+  sed -e "s|__APP_DIR__|${APP_DIR}|g" -e "s|__USER__|${RUN_AS}|g" \
+    "$SCRIPT_DIR/displayproject-f1-token.service" > "$F1_UNIT"
+  sudo cp "$F1_UNIT" /etc/systemd/system/displayproject-f1-token.service
+  sudo cp "$SCRIPT_DIR/displayproject-f1-token.timer" /etc/systemd/system/displayproject-f1-token.timer
+  rm -f "$F1_UNIT"
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now displayproject-f1-token.timer
+
+  echo "Sign in once before the timer can renew anything:"
+  echo "  cd $APP_DIR/backend && node scripts/f1-auth.js --login"
+fi
 
 echo "==> Installing kiosk autostart"
 chmod +x "$SCRIPT_DIR/kiosk.sh"

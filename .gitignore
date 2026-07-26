@@ -31,6 +31,10 @@ coverage/
 # Runtime settings (defaults applied if missing)
 backend/data/settings.json
 
+# F1 live timing credentials and the browser profile that renews them
+backend/data/f1-token.json
+backend/data/f1-profile/
+
 # Playwright E2E
 backend/e2e/.tmp/
 backend/playwright-report/

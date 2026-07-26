@@ -4,6 +4,8 @@ const calendar = require('../services/calendar');
 const networkStats = require('../services/networkStats');
 const sky = require('../services/sky');
 const spotify = require('../services/spotify');
+const f1Standings = require('../services/f1Standings');
+const f1Live = require('../services/f1Live');
 const settings = require('../services/settings');
 const cache = require('../services/cache');
 
@@ -132,6 +134,16 @@ router.get('/sky/current', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(502).json({ error: 'Failed to fetch night sky' });
+  }
+});
+
+router.get('/f1/standings', async (_req, res) => {
+  try {
+    const championship = await f1Standings.getChampionships();
+    res.json({ ...championship, live: f1Live.getLiveSnapshot() });
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({ error: 'Failed to fetch F1 standings' });
   }
 });
 

@@ -53,6 +53,10 @@ export function getNetworkStats() {
   return request('/api/network/stats');
 }
 
+export function getF1Standings() {
+  return request('/api/f1/standings');
+}
+
 export function getSky(location) {
   const query = location ? `?location=${encodeURIComponent(location)}` : '';
   return request(`/api/sky/current${query}`);

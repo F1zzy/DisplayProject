@@ -49,6 +49,14 @@ jest.mock('./api/client', () => ({
       track: null,
       topTracks: [],
     }),
+  getF1Standings: () =>
+    Promise.resolve({
+      season: '2026',
+      round: 11,
+      drivers: [],
+      constructors: [],
+      live: { active: false, order: [] },
+    }),
   weatherIconUrl: (icon) => (icon.startsWith('http') ? icon : `https:${icon}`),
 }));
 
