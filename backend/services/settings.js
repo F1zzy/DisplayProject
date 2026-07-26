@@ -2,7 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
-const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
+/** Override with DISPLAY_SETTINGS_PATH for isolated E2E / test runs. */
+const SETTINGS_PATH = process.env.DISPLAY_SETTINGS_PATH
+  ? path.resolve(process.env.DISPLAY_SETTINGS_PATH)
+  : path.join(DATA_DIR, 'settings.json');
 
 const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network', 'sky', 'spotify'];
 
@@ -51,8 +54,9 @@ const DEFAULTS = {
 let cache = null;
 
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  const dir = path.dirname(SETTINGS_PATH);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
 }
 

@@ -30,3 +30,9 @@ coverage/
 
 # Runtime settings (defaults applied if missing)
 backend/data/settings.json
+
+# Playwright E2E
+backend/e2e/.tmp/
+backend/playwright-report/
+backend/test-results/
+backend/blob-report/

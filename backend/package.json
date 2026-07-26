@@ -9,6 +9,8 @@
     "build:client": "npm run build --prefix client",
     "dev": "npm run build:client && npm start",
     "test": "jest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "lint": "eslint ."
   },
   "keywords": [],
@@ -22,6 +24,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.1",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",

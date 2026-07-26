@@ -232,3 +232,14 @@ See [`alexa/README.md`](alexa/README.md) for skill setup.
 cd backend && npm test
 cd backend/client && npm test
 ```
+
+### E2E (Playwright)
+
+```bash
+cd backend
+npm run build:client   # once / after UI changes
+npx playwright install chromium
+npm run test:e2e
+```
+
+Uses an isolated settings file (`DISPLAY_SETTINGS_PATH`) and stubs weather/stocks/news so live API keys are not required. In CI, Chromium is installed with OS deps and the client is already built before `npm run test:e2e`.

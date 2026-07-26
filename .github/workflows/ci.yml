@@ -52,3 +52,17 @@ jobs:
       - name: Build client
         working-directory: backend/client
         run: npm run build
+
+      - name: Install Playwright Chromium
+        working-directory: backend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        working-directory: backend
+        run: npm run test:e2e
+        env:
+          CI: true
+          CONTROL_API_KEY: test-control-key
+          WEATHER_API_KEY: test
+          NEWS_API_KEY: test
+          STOCK_API_KEY: test

@@ -9,5 +9,14 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'script',
   },
-  ignorePatterns: ['client/build/', 'client/node_modules/', 'node_modules/', 'remote/'],
+  ignorePatterns: [
+    'client/build/',
+    'client/node_modules/',
+    'node_modules/',
+    'remote/',
+    'e2e/',
+    'playwright.config.js',
+    'playwright-report/',
+    'test-results/',
+  ],
 };
