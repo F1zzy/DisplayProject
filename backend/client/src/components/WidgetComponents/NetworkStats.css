@@ -2,8 +2,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: var(--gap-lg);
-  gap: var(--gap-md);
+  padding: clamp(14px, 1.8cqh, 24px);
+  gap: clamp(14px, 1.6cqh, 22px);
 }
 
 .network-stats-widget h3 {
@@ -25,7 +25,7 @@
 .network-badge {
   display: inline-block;
   font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-size: clamp(2rem, 6cqi, 2.75rem);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -124,4 +124,15 @@
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   color: var(--text-muted);
+}
+
+@media (orientation: landscape) {
+  .network-stats-widget {
+    padding: var(--gap-lg);
+    gap: var(--gap-md);
+  }
+
+  .network-badge {
+    font-size: 1.75rem;
+  }
 }

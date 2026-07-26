@@ -29,6 +29,8 @@ module.exports = defineConfig({
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     ...devices['Desktop Chrome'],
+    // Primary target: portrait 9:16 (rotated 1920×1080 panel).
+    viewport: { width: 1080, height: 1920 },
   },
   webServer: {
     command: process.env.CI ? 'npm start' : 'npm run build:client && npm start',

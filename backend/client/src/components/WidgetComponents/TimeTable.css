@@ -2,8 +2,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: var(--gap-lg);
-  gap: var(--gap-md);
+  padding: clamp(14px, 1.8cqh, 24px);
+  gap: clamp(12px, 1.4cqh, 18px);
 }
 
 .timetable-widget h3 {
@@ -17,7 +17,7 @@
 
 .timetable-date {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: clamp(1.4rem, 3.5cqi, 1.85rem);
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -35,8 +35,8 @@
 
 .timetable-item {
   display: grid;
-  grid-template-columns: 88px 1fr;
-  gap: var(--gap-md);
+  grid-template-columns: 110px 1fr;
+  gap: clamp(12px, 1.5cqi, 20px);
   align-items: center;
   padding: var(--gap-md) var(--gap-lg);
   border: 1px solid var(--border);
@@ -77,4 +77,20 @@
 .timetable-empty code {
   font-size: 0.9em;
   color: var(--accent);
+}
+
+@media (orientation: landscape) {
+  .timetable-widget {
+    padding: var(--gap-lg);
+    gap: var(--gap-md);
+  }
+
+  .timetable-date {
+    font-size: 1.35rem;
+  }
+
+  .timetable-item {
+    grid-template-columns: 88px 1fr;
+    gap: var(--gap-md);
+  }
 }

@@ -2,8 +2,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: var(--gap-lg);
-  gap: var(--gap-md);
+  padding: clamp(14px, 1.8cqh, 24px);
+  gap: clamp(12px, 1.4cqh, 18px);
   min-height: 0;
   background: transparent;
 }
@@ -34,7 +34,7 @@
 .night-sky-chart {
   position: relative;
   flex: 1 1 auto;
-  min-height: 160px;
+  min-height: clamp(220px, 28cqh, 420px);
   overflow: hidden;
   background: transparent;
 }
@@ -62,8 +62,8 @@
 
 .night-sky-bodies {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--gap-md);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 1.2cqh, 16px);
   flex: 0 0 auto;
 }
 
@@ -89,7 +89,7 @@
 .night-sky-body-value {
   display: block;
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: clamp(1.3rem, 3.2cqi, 1.6rem);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -107,5 +107,25 @@
 @media (prefers-reduced-motion: reduce) {
   .night-sky-chart-sway {
     animation: none;
+  }
+}
+
+@media (orientation: landscape) {
+  .night-sky-widget {
+    padding: var(--gap-lg);
+    gap: var(--gap-md);
+  }
+
+  .night-sky-chart {
+    min-height: 160px;
+  }
+
+  .night-sky-bodies {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--gap-md);
+  }
+
+  .night-sky-body-value {
+    font-size: 1.25rem;
   }
 }

@@ -1,20 +1,21 @@
 .f1-widget {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-md);
+  gap: clamp(10px, 1.2cqh, 16px);
   height: 100%;
   min-height: 0;
-  padding: var(--gap-lg);
+  padding: clamp(14px, 1.8cqh, 22px);
   overflow: hidden;
 }
 
-/* Header: identity on the left, next race or live status on the right. */
+/* Header stacked for the tall portrait frame. */
 .f1-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--gap-lg);
-  padding-bottom: 6px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: clamp(8px, 1cqh, 12px);
+  padding-bottom: clamp(8px, 1cqh, 12px);
   border-bottom: 1px solid var(--border-strong);
   min-width: 0;
 }
@@ -22,7 +23,7 @@
 .f1-brand {
   display: flex;
   align-items: baseline;
-  gap: var(--gap-sm);
+  gap: var(--gap-md);
   flex-shrink: 0;
 }
 
@@ -35,7 +36,7 @@
 
 .f1-widget h3 {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -43,7 +44,7 @@
 }
 
 .f1-season {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--accent);
@@ -67,15 +68,20 @@
 .f1-live {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: var(--gap-sm);
+  row-gap: 4px;
   min-width: 0;
-  font-size: 0.72rem;
-  white-space: nowrap;
+  font-size: 0.8rem;
+  white-space: normal;
   overflow: hidden;
+  padding: 8px 10px;
+  background: var(--bg-panel-elevated);
+  border: 1px solid var(--border);
 }
 
 .f1-next-label {
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -110,8 +116,8 @@
 }
 
 .f1-flag {
-  width: 1.15rem;
-  height: 0.8rem;
+  width: 1.4rem;
+  height: 0.95rem;
   object-fit: cover;
   border-radius: 1px;
   flex-shrink: 0;
@@ -123,8 +129,8 @@
 }
 
 .f1-circuit {
-  width: 4.25rem;
-  height: 1.55rem;
+  width: 6.5rem;
+  height: 2.35rem;
   object-fit: contain;
   object-position: center;
   flex-shrink: 0;
@@ -202,11 +208,12 @@
   font-size: 0.62rem;
 }
 
-/* Two standings tables side by side */
+/* Stacked championship tables for the tall portrait frame. */
 .f1-columns {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: var(--gap-lg);
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: clamp(12px, 1.5cqh, 20px);
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -218,21 +225,21 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border-left: 2px solid transparent;
-  padding-left: var(--gap-md);
+  border-top: 2px solid transparent;
+  padding-top: 4px;
   transition: border-color 0.4s ease;
 }
 
 .f1-track--yellow {
-  border-left-color: #f5c518;
+  border-top-color: #f5c518;
 }
 
 .f1-track--safety {
-  border-left-color: #f59e0b;
+  border-top-color: #f59e0b;
 }
 
 .f1-track--red {
-  border-left-color: #ef4444;
+  border-top-color: #ef4444;
 }
 
 /* Column headings share each table's grid so labels sit over their data. */
@@ -246,19 +253,19 @@
 .f1-colhead--driver,
 .f1-row--driver {
   grid-template-columns:
-    1.5rem 3px 1.35rem 2.7rem minmax(0, 1fr)
-    minmax(5rem, 9rem) 1.9rem 3.4rem;
+    1.6rem 3px 1.5rem 2.8rem minmax(0, 1.15fr)
+    minmax(0, 1fr) 2rem 3.6rem;
 }
 
 .f1-colhead--team,
 .f1-row--team {
-  grid-template-columns: 1.5rem 3px 1.35rem minmax(0, 1fr) 1.9rem 2.8rem 3.4rem;
+  grid-template-columns: 1.6rem 3px 1.5rem minmax(0, 1fr) 2rem 3rem 3.6rem;
 }
 
 .f1-colhead {
-  padding: 0 0 4px;
+  padding: 0 0 6px;
   border-bottom: 1px solid var(--border-strong);
-  font-size: 0.56rem;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -278,9 +285,9 @@
 
 .f1-row {
   position: relative;
-  padding: 4px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   line-height: 1.15;
 }
 
@@ -312,7 +319,7 @@
 }
 
 .f1-pos {
-  font-size: 0.68rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
@@ -348,7 +355,7 @@
 }
 
 .f1-team {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -356,7 +363,7 @@
 }
 
 .f1-num {
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
   color: var(--text-secondary);
   text-align: right;
@@ -390,8 +397,8 @@
 }
 
 .f1-logo {
-  width: 1.35rem;
-  height: 1.05rem;
+  width: 1.55rem;
+  height: 1.2rem;
   object-fit: contain;
   object-position: left center;
   justify-self: start;
@@ -401,8 +408,126 @@
   display: block;
 }
 
-/* Drop the full name first when the widget is squeezed. */
-@media (max-width: 1100px) {
+/* Secondary: landscape side-by-side standings. */
+@media (orientation: landscape) {
+  .f1-widget {
+    gap: var(--gap-md);
+    padding: var(--gap-lg);
+  }
+
+  .f1-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-lg);
+    padding-bottom: 6px;
+  }
+
+  .f1-brand {
+    gap: var(--gap-sm);
+  }
+
+  .f1-widget h3 {
+    font-size: 0.85rem;
+  }
+
+  .f1-season {
+    font-size: 0.72rem;
+  }
+
+  .f1-next,
+  .f1-live {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    font-size: 0.72rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+  }
+
+  .f1-next-label {
+    font-size: 0.58rem;
+  }
+
+  .f1-flag {
+    width: 1.15rem;
+    height: 0.8rem;
+  }
+
+  .f1-circuit {
+    width: 4.25rem;
+    height: 1.55rem;
+  }
+
+  .f1-columns {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: var(--gap-lg);
+  }
+
+  .f1-panel {
+    border-top: none;
+    padding-top: 0;
+    border-left: 2px solid transparent;
+    padding-left: var(--gap-md);
+  }
+
+  .f1-track--yellow {
+    border-top-color: transparent;
+    border-left-color: #f5c518;
+  }
+
+  .f1-track--safety {
+    border-top-color: transparent;
+    border-left-color: #f59e0b;
+  }
+
+  .f1-track--red {
+    border-top-color: transparent;
+    border-left-color: #ef4444;
+  }
+
+  .f1-colhead {
+    font-size: 0.56rem;
+    padding-bottom: 4px;
+  }
+
+  .f1-row {
+    padding: 4px 0;
+    font-size: 0.8rem;
+  }
+
+  .f1-pos {
+    font-size: 0.68rem;
+  }
+
+  .f1-team {
+    font-size: 0.68rem;
+  }
+
+  .f1-num {
+    font-size: 0.74rem;
+  }
+
+  .f1-logo {
+    width: 1.35rem;
+    height: 1.05rem;
+  }
+
+  .f1-colhead--driver,
+  .f1-row--driver {
+    grid-template-columns:
+      1.5rem 3px 1.35rem 2.7rem minmax(0, 1fr)
+      minmax(5rem, 9rem) 1.9rem 3.4rem;
+  }
+
+  .f1-colhead--team,
+  .f1-row--team {
+    grid-template-columns: 1.5rem 3px 1.35rem minmax(0, 1fr) 1.9rem 2.8rem 3.4rem;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 1100px) {
   .f1-hide-narrow {
     display: none;
   }

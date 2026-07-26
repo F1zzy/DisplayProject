@@ -224,6 +224,16 @@ body.is-unlocked .status-pill {
   color: var(--text-muted);
 }
 
+.field-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 input,
 select {
   width: 100%;

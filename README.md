@@ -1,6 +1,6 @@
 # DisplayProject
 
-Widget-style dashboard for a secondary monitor, with weather, stocks, news, and a daily timetable. Controlled remotely via a web PWA and Alexa skill.
+Widget-style dashboard for a **portrait 9:16** secondary monitor (1080×1920 — a rotated 16:9 / 1920×1080 panel), with weather, stocks, news, and a daily timetable. Controlled remotely via a web PWA and Alexa skill.
 
 ## Features
 
@@ -17,6 +17,7 @@ Widget-style dashboard for a secondary monitor, with weather, stocks, news, and 
 ## Prerequisites
 
 - Node.js 18+
+- A portrait **1080×1920** display (rotated 16:9). Landscape still letterboxes as a fallback for development.
 - API keys from [WeatherAPI](https://www.weatherapi.com/), [NewsAPI](https://newsapi.org/), and [Alpha Vantage](https://www.alphavantage.co/)
 - Optional: Google Cloud OAuth client for the Schedule widget (see [Google Calendar](#google-calendar-schedule-widget))
 

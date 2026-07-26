@@ -7,8 +7,29 @@ import './F1Standings.css';
 
 const LIVE_POLL_MS = 5000;
 const IDLE_POLL_MS = 5 * 60 * 1000;
-const MAX_DRIVER_ROWS = 12;
+/** Primary target is portrait 1080×1920; trim rows only on landscape fallback. */
+const MAX_DRIVER_ROWS = 20;
+const MAX_DRIVER_ROWS_LANDSCAPE = 12;
 const MAX_CONSTRUCTOR_ROWS = 11;
+
+function useLandscape() {
+  const [landscape, setLandscape] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(orientation: landscape)').matches
+      : false
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const media = window.matchMedia('(orientation: landscape)');
+    const onChange = () => setLandscape(media.matches);
+    onChange();
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
+
+  return landscape;
+}
 
 /** Track status codes that should tint the live panel. */
 const TRACK_STATUS_CLASS = {
@@ -206,6 +227,9 @@ function F1Standings() {
   // Poll hard only while a session is running; the hook re-arms on interval change.
   const [pollMs, setPollMs] = useState(IDLE_POLL_MS);
   const { data, loading, error } = usePollingFetch(fetchF1, { intervalMs: pollMs });
+  const landscape = useLandscape();
+  const maxDrivers = landscape ? MAX_DRIVER_ROWS_LANDSCAPE : MAX_DRIVER_ROWS;
+  const maxConstructors = MAX_CONSTRUCTOR_ROWS;
 
   const sessionActive = data?.live?.active === true;
   useEffect(() => {
@@ -259,7 +283,7 @@ function F1Standings() {
 
             <ol className="f1-list">
               {isLive
-                ? liveOrder.slice(0, MAX_DRIVER_ROWS).map((entry) => (
+                ? liveOrder.slice(0, maxDrivers).map((entry) => (
                     <li
                       key={entry.number ?? entry.position}
                       className={`f1-row f1-row--driver ${entry.retired ? 'is-out' : ''} ${
@@ -279,7 +303,7 @@ function F1Standings() {
                       <span className="f1-num f1-gap">{formatGap(entry)}</span>
                     </li>
                   ))
-                : drivers.slice(0, MAX_DRIVER_ROWS).map((driver) => (
+                : drivers.slice(0, maxDrivers).map((driver) => (
                     <li
                       key={driver.driverId || driver.position}
                       className="f1-row f1-row--driver"
@@ -315,7 +339,7 @@ function F1Standings() {
             </div>
 
             <ol className="f1-list">
-              {constructors.slice(0, MAX_CONSTRUCTOR_ROWS).map((team) => (
+              {constructors.slice(0, maxConstructors).map((team) => (
                 <li
                   key={team.constructorId || team.position}
                   className="f1-row f1-row--team"
