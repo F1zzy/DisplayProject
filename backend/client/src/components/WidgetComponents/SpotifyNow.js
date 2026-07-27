@@ -77,9 +77,11 @@ function SpotifyNow() {
   const nowPlayingStyle =
     albumArtUrl && dominantColor
       ? {
-          background: `linear-gradient(165deg, ${dominantColor} 0%, var(--bg-panel-elevated) 70%)`,
+          background: `linear-gradient(180deg, ${dominantColor} 0%, var(--bg-panel-elevated) 100%)`,
         }
       : undefined;
+
+  const showMain = Boolean(track) || (configured && topTracks.length > 0);
 
   return (
     <div className="widget-content spotify-widget">
@@ -101,56 +103,60 @@ function SpotifyNow() {
         <EmptyState className="spotify-empty">No recent Spotify activity</EmptyState>
       )}
 
-      {track && (
-        <div className="spotify-now" style={nowPlayingStyle}>
-          <div className="spotify-now-art">
-            {track.albumArt ? (
-              <img src={track.albumArt} alt="" crossOrigin="anonymous" />
-            ) : (
-              <div className="spotify-now-art-placeholder" />
-            )}
-          </div>
-          <div className="spotify-now-meta">
-            <span className={`spotify-badge ${playing ? 'is-playing' : ''}`}>
-              {playing ? 'Playing' : 'Last played'}
-            </span>
-            <div className="spotify-track-name">{track.name}</div>
-            <div className="spotify-track-artists">{formatArtists(track.artists)}</div>
-            {track.albumName ? <div className="spotify-track-album">{track.albumName}</div> : null}
-            {playing && track.durationMs != null ? (
-              <div className="spotify-progress" aria-hidden="true">
-                <div className="spotify-progress-bar">
-                  <div className="spotify-progress-fill" style={{ width: `${progress}%` }} />
-                </div>
-                <div className="spotify-progress-times">
-                  <span>{formatMs(liveProgressMs)}</span>
-                  <span>{formatMs(track.durationMs)}</span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      )}
-
-      {configured && topTracks.length > 0 && (
-        <div className="spotify-top">
-          <div className="spotify-top-title">Top tracks</div>
-          <ul className="spotify-top-list">
-            {topTracks.map((item, index) => (
-              <li key={item.id || `${item.name}-${index}`} className="spotify-top-item">
-                <span className="spotify-top-rank">{index + 1}</span>
-                {item.albumArt ? (
-                  <img src={item.albumArt} alt="" className="spotify-top-art" />
+      {showMain && (
+        <div className="spotify-main" style={nowPlayingStyle}>
+          {track && (
+            <div className="spotify-now">
+              <div className="spotify-now-art">
+                {track.albumArt ? (
+                  <img src={track.albumArt} alt="" crossOrigin="anonymous" />
                 ) : (
-                  <span className="spotify-top-art spotify-top-art--empty" />
+                  <div className="spotify-now-art-placeholder" />
                 )}
-                <div className="spotify-top-meta">
-                  <div className="spotify-top-name">{item.name}</div>
-                  <div className="spotify-top-artists">{formatArtists(item.artists)}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+              <div className="spotify-now-meta">
+                <span className={`spotify-badge ${playing ? 'is-playing' : ''}`}>
+                  {playing ? 'Playing' : 'Last played'}
+                </span>
+                <div className="spotify-track-name">{track.name}</div>
+                <div className="spotify-track-artists">{formatArtists(track.artists)}</div>
+                {track.albumName ? <div className="spotify-track-album">{track.albumName}</div> : null}
+                {playing && track.durationMs != null ? (
+                  <div className="spotify-progress" aria-hidden="true">
+                    <div className="spotify-progress-bar">
+                      <div className="spotify-progress-fill" style={{ width: `${progress}%` }} />
+                    </div>
+                    <div className="spotify-progress-times">
+                      <span>{formatMs(liveProgressMs)}</span>
+                      <span>{formatMs(track.durationMs)}</span>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          )}
+
+          {configured && topTracks.length > 0 && (
+            <div className="spotify-top">
+              <div className="spotify-top-title">Top tracks</div>
+              <ul className="spotify-top-list">
+                {topTracks.map((item, index) => (
+                  <li key={item.id || `${item.name}-${index}`} className="spotify-top-item">
+                    <span className="spotify-top-rank">{index + 1}</span>
+                    {item.albumArt ? (
+                      <img src={item.albumArt} alt="" className="spotify-top-art" />
+                    ) : (
+                      <span className="spotify-top-art spotify-top-art--empty" />
+                    )}
+                    <div className="spotify-top-meta">
+                      <div className="spotify-top-name">{item.name}</div>
+                      <div className="spotify-top-artists">{formatArtists(item.artists)}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
