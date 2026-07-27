@@ -13,25 +13,25 @@
 }
 
 /*
- * Target display: portrait 9:16 (1080×1920 — a rotated 16:9 panel).
- * Letterboxed on non-matching viewports. Landscape is a secondary fallback.
+ * Primary: portrait kiosk — fill the full viewport (e.g. 1080×1920).
+ * Landscape keeps a 16:9 letterboxed frame as a secondary layout.
  */
 .App {
   position: relative;
-  width: min(100vw, calc(100vh * 9 / 16));
-  height: min(100vh, calc(100vw * 16 / 9));
+  width: 100vw;
+  height: 100vh;
   max-width: none;
   margin: 0;
-  padding: clamp(16px, 2cqh, 28px);
+  padding: clamp(12px, 1.4cqh, 20px);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: clamp(12px, 1.5cqh, 20px);
+  gap: clamp(8px, 1cqh, 14px);
   overflow: hidden;
   font-family: var(--font-body);
   color: var(--text-primary);
   background-color: var(--bg-panel);
-  border: 1px solid var(--border);
+  border: none;
   pointer-events: none;
   container-type: size;
   container-name: dashboard;
@@ -73,21 +73,26 @@
   width: 100%;
   flex: 0 0 auto;
   min-height: 0;
+  /* Keep the chrome compact so the widget stage owns the tall frame. */
+  max-height: 28%;
 }
 
 .dashboard-weather {
   width: 100%;
   flex: 0 0 auto;
-  height: clamp(220px, 24cqh, 380px);
+  height: clamp(160px, 16cqh, 260px);
   min-height: 0;
 }
 
 .dashboard-widgets {
   width: 100%;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  background: var(--bg-panel-elevated);
+  border: 1px solid var(--border);
+  overflow: hidden;
 }
 
 .display-sleep {
@@ -108,8 +113,8 @@
 .time-container {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: auto auto;
-  gap: clamp(10px, 1.3cqh, 16px);
+  grid-template-rows: minmax(0, 1.2fr) minmax(0, 0.85fr);
+  gap: clamp(8px, 1cqh, 12px);
   align-items: stretch;
   height: 100%;
   max-height: 100%;
@@ -128,18 +133,18 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  min-height: clamp(130px, 15cqh, 220px);
+  min-height: 0;
   container-type: inline-size;
   container-name: clock;
   font-family: var(--font-display);
-  font-size: clamp(3.25rem, 20cqi, 7.5rem);
+  font-size: clamp(2.75rem, 16cqi, 5.75rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
-  padding: clamp(18px, 2.4cqh, 32px);
+  padding: clamp(12px, 1.6cqh, 22px);
   background: var(--bg-panel-elevated);
   border: 1px solid var(--border);
   border-radius: 0;
@@ -150,8 +155,8 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: 1fr;
-  gap: clamp(8px, 1cqh, 12px);
-  min-height: clamp(96px, 11cqh, 140px);
+  gap: clamp(6px, 0.8cqh, 10px);
+  min-height: 0;
 }
 
 .time-container-weekday,
@@ -163,7 +168,7 @@
   justify-content: center;
   min-height: 0;
   overflow: hidden;
-  padding: clamp(10px, 1.2cqh, 16px);
+  padding: clamp(8px, 1cqh, 12px);
   background: var(--bg-panel-elevated);
   border: 1px solid var(--border);
 }
@@ -330,6 +335,10 @@
     height: 100%;
     max-height: none;
     min-height: 0;
+  }
+
+  .dashboard-widgets {
+    background: var(--bg-panel-elevated);
   }
 
   .dashboard-widgets {

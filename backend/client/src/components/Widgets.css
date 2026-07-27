@@ -2,11 +2,11 @@
   width: 100%;
   height: 100%;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   position: relative;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .widget-toolbar {
@@ -14,7 +14,7 @@
   overflow: hidden;
   flex: 0 0 auto;
   border-bottom: 1px solid var(--border);
-  background: transparent;
+  background: var(--bg-panel);
 }
 
 .widget-toolbar-inner {
@@ -26,7 +26,7 @@
   gap: 12px;
   width: 100%;
   box-sizing: border-box;
-  padding: clamp(12px, 1.4cqh, 18px) clamp(14px, 1.6cqi, 22px);
+  padding: clamp(8px, 1cqh, 12px) clamp(12px, 1.4cqi, 18px);
 }
 
 .widget-toolbar-title {
@@ -123,10 +123,21 @@
 }
 
 .widget-display {
-  flex: 1;
   min-height: 0;
   width: 100%;
+  height: 100%;
   overflow: hidden;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* Fill the stage so widgets can stretch rows/content to the available height. */
+.widget-display > .widget-content,
+.widget-display > .error-boundary-fallback {
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 @media (orientation: landscape) {

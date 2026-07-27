@@ -241,6 +241,10 @@ function F1Standings() {
   const live = data?.live;
   const isLive = sessionActive;
   const liveOrder = Array.isArray(live?.order) ? live.order : [];
+  const driverRows = isLive
+    ? liveOrder.slice(0, maxDrivers)
+    : drivers.slice(0, maxDrivers);
+  const constructorRows = constructors.slice(0, maxConstructors);
 
   // Points bars are drawn relative to whoever leads each championship.
   const driverLead = drivers[0]?.points || 0;
@@ -281,9 +285,12 @@ function F1Standings() {
               <span className="f1-num">{isLive ? 'Gap' : 'Pts'}</span>
             </div>
 
-            <ol className="f1-list">
+            <ol
+              className="f1-list"
+              style={{ '--f1-rows': Math.max(driverRows.length, 1) }}
+            >
               {isLive
-                ? liveOrder.slice(0, maxDrivers).map((entry) => (
+                ? driverRows.map((entry) => (
                     <li
                       key={entry.number ?? entry.position}
                       className={`f1-row f1-row--driver ${entry.retired ? 'is-out' : ''} ${
@@ -303,7 +310,7 @@ function F1Standings() {
                       <span className="f1-num f1-gap">{formatGap(entry)}</span>
                     </li>
                   ))
-                : drivers.slice(0, maxDrivers).map((driver) => (
+                : driverRows.map((driver) => (
                     <li
                       key={driver.driverId || driver.position}
                       className="f1-row f1-row--driver"
@@ -338,8 +345,11 @@ function F1Standings() {
               <span className="f1-num">Pts</span>
             </div>
 
-            <ol className="f1-list">
-              {constructors.slice(0, maxConstructors).map((team) => (
+            <ol
+              className="f1-list"
+              style={{ '--f1-rows': Math.max(constructorRows.length, 1) }}
+            >
+              {constructorRows.map((team) => (
                 <li
                   key={team.constructorId || team.position}
                   className="f1-row f1-row--team"
