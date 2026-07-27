@@ -527,6 +527,8 @@ function fillSettingsForm(settings) {
   document.getElementById('settingClockAnimation').value = settings.clockAnimation || 'off';
   document.getElementById('settingWeatherAtmosphere').checked = settings.weatherAtmosphere === true;
   document.getElementById('settingNightFocusMode').checked = settings.nightFocusMode === true;
+  document.getElementById('settingSpotifyLyricsBackground').checked =
+    settings.spotifyLyricsBackground !== false;
   document.getElementById('settingNightFocusWhen').value = settings.nightFocusWhen || 'auto';
   document.getElementById('settingNightFocusStartHour').value =
     settings.nightFocusStartHour != null ? settings.nightFocusStartHour : 20;
@@ -580,6 +582,7 @@ function readSettingsForm() {
     clockAnimation: document.getElementById('settingClockAnimation').value,
     weatherAtmosphere: document.getElementById('settingWeatherAtmosphere').checked,
     nightFocusMode: document.getElementById('settingNightFocusMode').checked,
+    spotifyLyricsBackground: document.getElementById('settingSpotifyLyricsBackground').checked,
     nightFocusWhen: document.getElementById('settingNightFocusWhen').value,
     nightFocusStartHour: parseInt(document.getElementById('settingNightFocusStartHour').value, 10),
     nightFocusEndHour: parseInt(document.getElementById('settingNightFocusEndHour').value, 10),

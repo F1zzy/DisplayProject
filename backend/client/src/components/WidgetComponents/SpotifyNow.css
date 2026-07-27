@@ -36,6 +36,11 @@
   align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
+  overflow: hidden;
+  border-radius: 4px;
+  padding: clamp(12px, 1.5cqi, 18px);
+  background: var(--bg-panel-elevated);
+  transition: background 0.45s ease;
 }
 
 .spotify-now-art,
@@ -54,6 +59,13 @@
   flex-direction: column;
   justify-content: center;
   gap: 8px;
+  padding: 8px 10px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(16, 17, 21, 0.35) 0%,
+    rgba(16, 17, 21, 0.18) 100%
+  );
 }
 
 .spotify-badge {

@@ -49,6 +49,7 @@ const DEFAULTS = {
   nightFocusStartHour: 20,
   nightFocusEndHour: 6,
   displayBrightness: 100,
+  spotifyLyricsBackground: true,
 };
 
 let cache = null;
@@ -174,6 +175,10 @@ function normalize(partial = {}) {
     nightFocusStartHour: clampInt(merged.nightFocusStartHour, 0, 23, DEFAULTS.nightFocusStartHour),
     nightFocusEndHour: clampInt(merged.nightFocusEndHour, 0, 23, DEFAULTS.nightFocusEndHour),
     displayBrightness: clampInt(merged.displayBrightness, 10, 100, DEFAULTS.displayBrightness),
+    spotifyLyricsBackground:
+      merged.spotifyLyricsBackground === undefined
+        ? DEFAULTS.spotifyLyricsBackground
+        : Boolean(merged.spotifyLyricsBackground),
   };
 }
 

@@ -13,7 +13,7 @@ const cache = require('../services/cache');
 
 const router = express.Router();
 
-const SPOTIFY_TTL_MS = 15000;
+const SPOTIFY_TTL_MS = 4000;
 
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });

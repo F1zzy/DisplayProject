@@ -1,0 +1,75 @@
+.spotify-lyrics-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: clamp(24px, 6vh, 80px) clamp(20px, 5vw, 64px) clamp(48px, 12vh, 160px);
+  overflow: hidden;
+}
+
+.spotify-lyrics-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(16, 17, 21, 0.72) 0%,
+    rgba(16, 17, 21, 0.28) 42%,
+    transparent 72%
+  );
+}
+
+.spotify-lyrics-stack {
+  position: relative;
+  z-index: 1;
+  width: min(920px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.6vh, 22px);
+  text-align: center;
+}
+
+.spotify-lyrics-line {
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  transition: opacity 0.35s ease, transform 0.35s ease, color 0.35s ease, filter 0.35s ease;
+}
+
+.spotify-lyrics-line.is-prev,
+.spotify-lyrics-line.is-next {
+  font-size: clamp(1rem, 2.4vw, 1.55rem);
+  color: var(--text-muted, #8a8c92);
+  opacity: 0.45;
+}
+
+.spotify-lyrics-line.is-current {
+  font-size: clamp(1.45rem, 4.2vw, 2.6rem);
+  color: var(--text-primary, #e8e8ea);
+  opacity: 0.92;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+}
+
+.spotify-lyrics-line.is-prev {
+  transform: translateY(4px);
+}
+
+.spotify-lyrics-line.is-next {
+  transform: translateY(-4px);
+}
+
+.App > .dashboard-header,
+.App > .dashboard-weather,
+.App > .dashboard-widgets {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotify-lyrics-line {
+    transition: none;
+  }
+}

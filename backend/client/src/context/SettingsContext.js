@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS = {
   nightFocusStartHour: 20,
   nightFocusEndHour: 6,
   displayBrightness: 100,
+  spotifyLyricsBackground: true,
 };
 
 export function SettingsProvider({ children }) {

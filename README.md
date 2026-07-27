@@ -90,6 +90,8 @@ node scripts/spotify-auth.js
 5. Paste `SPOTIFY_REFRESH_TOKEN=...` into `backend/.env` and restart the server.
 6. Enable **Spotify** under Enabled widgets on the remote.
 
+While a track is playing, the dashboard can show **synced lyrics** as a soft background overlay (line timing from [LRCLIB](https://lrclib.net/), matched to Spotify progress). Coverage depends on LRCLIB — instrumentals and unmatched tracks show no lyrics. Toggle **Spotify → Lyrics background** under Appearance on the remote (on by default).
+
 ## Formula 1 (championship + live timing)
 
 The Formula 1 widget shows the driver and constructor championships side by side, under a strip naming the next race and how far away it is. That strip also shows the host country's flag and a small circuit outline. Arrows mark movement since the previous round, and constructor rows carry team logos. While a session is running, the left column switches to the live race order with gaps, lap count, and track status, and the arrows show places gained or lost against the starting grid.

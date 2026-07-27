@@ -1,4 +1,5 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useColor } from 'color-thief-react';
 import { getSpotifyNow } from '../../api/client';
 import { usePollingFetch } from '../../hooks/usePollingFetch';
 import LoadingState from '../ui/LoadingState';
@@ -6,7 +7,8 @@ import ErrorState from '../ui/ErrorState';
 import EmptyState from '../ui/EmptyState';
 import './SpotifyNow.css';
 
-const SPOTIFY_POLL_MS = 20000;
+const SPOTIFY_POLL_IDLE_MS = 20000;
+const SPOTIFY_POLL_PLAYING_MS = 4000;
 
 function formatArtists(artists) {
   if (!Array.isArray(artists) || artists.length === 0) return '—';
@@ -23,18 +25,61 @@ function formatMs(ms) {
 
 function SpotifyNow() {
   const fetchSpotify = useCallback(() => getSpotifyNow(), []);
+  const [playingPoll, setPlayingPoll] = useState(false);
   const { data, loading, error } = usePollingFetch(fetchSpotify, {
-    intervalMs: SPOTIFY_POLL_MS,
+    intervalMs: playingPoll ? SPOTIFY_POLL_PLAYING_MS : SPOTIFY_POLL_IDLE_MS,
   });
 
   const configured = data?.configured !== false;
   const track = data?.track;
   const topTracks = Array.isArray(data?.topTracks) ? data.topTracks : [];
   const playing = data?.playing === true;
+
+  useEffect(() => {
+    setPlayingPoll(playing);
+  }, [playing]);
+
+  const [liveProgressMs, setLiveProgressMs] = useState(0);
+  const anchorRef = useRef({ progressMs: 0, at: 0 });
+
+  useEffect(() => {
+    if (playing && typeof data?.progressMs === 'number') {
+      anchorRef.current = { progressMs: data.progressMs, at: performance.now() };
+      setLiveProgressMs(data.progressMs);
+    } else {
+      setLiveProgressMs(0);
+    }
+  }, [playing, data?.progressMs, data?.fetchedAt, track?.id]);
+
+  useEffect(() => {
+    if (!playing || track?.durationMs == null) return undefined;
+    let frame = 0;
+    const step = () => {
+      const { progressMs: base, at } = anchorRef.current;
+      const next = Math.min(track.durationMs, base + (performance.now() - at));
+      setLiveProgressMs(next);
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [playing, track?.durationMs, data?.fetchedAt]);
+
   const progress =
     playing && track?.durationMs
-      ? Math.max(0, Math.min(100, ((data.progressMs || 0) / track.durationMs) * 100))
+      ? Math.max(0, Math.min(100, (liveProgressMs / track.durationMs) * 100))
       : 0;
+
+  const albumArtUrl = track?.albumArt || '';
+  const { data: dominantColor } = useColor(albumArtUrl, 'hex', {
+    crossOrigin: 'anonymous',
+    quality: 10,
+  });
+  const nowPlayingStyle =
+    albumArtUrl && dominantColor
+      ? {
+          background: `linear-gradient(165deg, ${dominantColor} 0%, var(--bg-panel-elevated) 70%)`,
+        }
+      : undefined;
 
   return (
     <div className="widget-content spotify-widget">
@@ -57,10 +102,10 @@ function SpotifyNow() {
       )}
 
       {track && (
-        <div className="spotify-now">
+        <div className="spotify-now" style={nowPlayingStyle}>
           <div className="spotify-now-art">
             {track.albumArt ? (
-              <img src={track.albumArt} alt="" />
+              <img src={track.albumArt} alt="" crossOrigin="anonymous" />
             ) : (
               <div className="spotify-now-art-placeholder" />
             )}
@@ -78,7 +123,7 @@ function SpotifyNow() {
                   <div className="spotify-progress-fill" style={{ width: `${progress}%` }} />
                 </div>
                 <div className="spotify-progress-times">
-                  <span>{formatMs(data.progressMs)}</span>
+                  <span>{formatMs(liveProgressMs)}</span>
                   <span>{formatMs(track.durationMs)}</span>
                 </div>
               </div>

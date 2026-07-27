@@ -3,6 +3,8 @@
  * Credentials stay server-side (SPOTIFY_CLIENT_ID / SECRET / REFRESH_TOKEN).
  */
 
+const lyricsService = require('./lyrics');
+
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const SPOTIFY_API = 'https://api.spotify.com/v1';
 
@@ -138,11 +140,22 @@ async function getNowPlayingPayload() {
     progressMs = null;
   }
 
+  let lyrics = null;
+  if (playing && track) {
+    try {
+      lyrics = await lyricsService.fetchSyncedLyrics(track);
+    } catch (error) {
+      console.error('Lyrics lookup failed:', error.message);
+      lyrics = null;
+    }
+  }
+
   return {
     configured: true,
     playing: Boolean(playing && track),
     track,
     progressMs: playing ? progressMs : null,
+    lyrics,
     topTracks,
     fetchedAt: new Date().toISOString(),
   };

@@ -4,6 +4,7 @@ import WeatherBar from './components/WeatherBar';
 import Widgets from './components/Widgets';
 import AnimatedClock from './components/AnimatedClock';
 import WeatherAtmosphere from './components/WeatherAtmosphere';
+import SpotifyLyricsOverlay from './components/SpotifyLyricsOverlay';
 import ErrorBoundary from './components/ErrorBoundary';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { WeatherProvider, useWeather } from './context/WeatherContext';
@@ -200,6 +201,7 @@ function AppContent() {
 
   return (
     <div className={appClass} style={backgroundStyle || undefined}>
+      <SpotifyLyricsOverlay />
       {sectionOrder.map((id) => {
         const render = SECTION_COMPONENTS[id];
         return render ? render(forcedWidget, clearForcedWidget, widgetPinned) : null;
