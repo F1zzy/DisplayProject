@@ -3,7 +3,8 @@
  *
  * Prerequisites:
  * 1. Create an app at https://developer.spotify.com/dashboard
- * 2. Add redirect URI: http://localhost:3006/callback
+ * 2. Add redirect URI: http://127.0.0.1:3006/callback
+ *    (Spotify no longer allows "localhost"; loopback HTTP is required for local auth)
  * 3. Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in backend/.env
  *
  * Usage (from backend/):
@@ -13,13 +14,15 @@
  */
 
 require('dotenv').config();
+const crypto = require('crypto');
 const http = require('http');
 const { URL } = require('url');
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REDIRECT_PORT = Number(process.env.SPOTIFY_OAUTH_REDIRECT_PORT) || 3006;
-const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/callback`;
+const REDIRECT_HOST = '127.0.0.1';
+const REDIRECT_URI = `http://${REDIRECT_HOST}:${REDIRECT_PORT}/callback`;
 const SCOPES = [
   'user-read-currently-playing',
   'user-read-playback-state',
@@ -32,6 +35,18 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
   process.exit(1);
 }
 
+function base64Url(buffer) {
+  return buffer
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+const state = base64Url(crypto.randomBytes(16));
+const codeVerifier = base64Url(crypto.randomBytes(32));
+const codeChallenge = base64Url(crypto.createHash('sha256').update(codeVerifier).digest());
+
 const authUrl =
   `https://accounts.spotify.com/authorize?` +
   new URLSearchParams({
@@ -39,12 +54,15 @@ const authUrl =
     response_type: 'code',
     redirect_uri: REDIRECT_URI,
     scope: SCOPES,
+    state,
+    code_challenge_method: 'S256',
+    code_challenge: codeChallenge,
     show_dialog: 'true',
   }).toString();
 
 const server = http.createServer(async (req, res) => {
   try {
-    const requestUrl = new URL(req.url, `http://localhost:${REDIRECT_PORT}`);
+    const requestUrl = new URL(req.url, `http://${REDIRECT_HOST}:${REDIRECT_PORT}`);
     if (requestUrl.pathname !== '/callback') {
       res.writeHead(404);
       res.end('Not found');
@@ -53,18 +71,34 @@ const server = http.createServer(async (req, res) => {
 
     const error = requestUrl.searchParams.get('error');
     if (error) {
+      const description = requestUrl.searchParams.get('error_description') || '';
       res.writeHead(400, { 'Content-Type': 'text/plain' });
-      res.end(`OAuth error: ${error}`);
-      console.error(`OAuth error: ${error}`);
+      res.end(`OAuth error: ${error}${description ? ` — ${description}` : ''}`);
+      console.error(`OAuth error: ${error}${description ? ` — ${description}` : ''}`);
+      console.error(
+        '\nChecklist:\n' +
+          `  1. Redirect URI in Dashboard is exactly: ${REDIRECT_URI}\n` +
+          '  2. Dashboard → User Management: add your Spotify account (Development mode)\n' +
+          '  3. Client ID/secret in backend/.env match this app\n' +
+          '  4. Try again in an Incognito window after re-running this script\n'
+      );
       server.close();
       process.exit(1);
     }
 
     const code = requestUrl.searchParams.get('code');
+    const returnedState = requestUrl.searchParams.get('state');
     if (!code) {
       res.writeHead(400, { 'Content-Type': 'text/plain' });
       res.end('Missing authorization code');
       return;
+    }
+    if (returnedState !== state) {
+      res.writeHead(400, { 'Content-Type': 'text/plain' });
+      res.end('Invalid OAuth state');
+      console.error('OAuth state mismatch — restart the script and use the new URL.');
+      server.close();
+      process.exit(1);
     }
 
     const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
@@ -78,6 +112,7 @@ const server = http.createServer(async (req, res) => {
         grant_type: 'authorization_code',
         code,
         redirect_uri: REDIRECT_URI,
+        code_verifier: codeVerifier,
       }),
     });
 
@@ -110,9 +145,11 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(REDIRECT_PORT, () => {
+server.listen(REDIRECT_PORT, REDIRECT_HOST, () => {
   console.log(`Listening for OAuth callback on ${REDIRECT_URI}`);
-  console.log('\nAdd this Redirect URI in the Spotify Dashboard, then open:\n');
+  console.log('\nIn the Spotify Dashboard → Settings → Redirect URIs, add exactly:');
+  console.log(`  ${REDIRECT_URI}`);
+  console.log('\nThen open this URL:\n');
   console.log(authUrl);
   console.log('');
 });

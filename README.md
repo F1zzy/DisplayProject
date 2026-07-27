@@ -78,7 +78,7 @@ To force a new refresh token, revoke the app at [Google Account permissions](htt
 The Spotify widget shows what is playing now (or the last played track), plus your top 3 short-term tracks (Spotify’s ~4-week window).
 
 1. Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Add redirect URI `http://localhost:3006/callback`.
+2. Add redirect URI `http://127.0.0.1:3006/callback` (Spotify rejects `localhost`; loopback HTTP is allowed).
 3. Copy Client ID and Client Secret into `backend/.env` as `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`.
 4. From `backend/`, run:
 

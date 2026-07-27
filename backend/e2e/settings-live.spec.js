@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { stubApis, unlockRemote } = require('./helpers');
+const { stubApis, unlockRemote, openRemoteSettings } = require('./helpers');
 
 test.describe('Settings live update', () => {
   test('saving location updates dashboard weather requests via WebSocket', async ({
@@ -22,7 +22,9 @@ test.describe('Settings live update', () => {
     await expect(dashboard.locator('.App')).toBeVisible();
 
     await unlockRemote(remote);
+    await openRemoteSettings(remote);
     await remote.locator('#settingLocation').fill(uniqueLocation);
+    await remote.locator('.settings-group', { hasText: 'Layout' }).locator('summary').click();
     await remote.locator('#settingDensity').selectOption('compact');
     await remote.locator('#saveSettingsBtn').click();
     await expect(remote.locator('#status')).toContainText(/Settings saved/i);

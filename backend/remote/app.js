@@ -67,24 +67,130 @@ function setUnlocked(unlocked) {
   }
 }
 
+function replayAnimation(el) {
+  if (!el) return;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = '';
+}
+
+function pulseElement(el, className = 'is-pulse') {
+  if (!el) return;
+  el.classList.remove(className);
+  void el.offsetWidth;
+  el.classList.add(className);
+}
+
 function applyUnlockUi(unlocked) {
-  lockSection.hidden = unlocked;
-  controlsEl.hidden = !unlocked;
-  lockBtn.hidden = !unlocked;
   document.body.classList.toggle('is-unlocked', unlocked);
   statusPill.textContent = unlocked ? 'UNLOCKED' : 'LOCKED';
+  pulseElement(statusPill, 'is-pill-flash');
 
   if (unlocked) {
+    lockSection.classList.add('is-exiting');
+    window.setTimeout(() => {
+      lockSection.hidden = true;
+      lockSection.classList.remove('is-exiting');
+      controlsEl.hidden = false;
+      lockBtn.hidden = false;
+      controlsEl.classList.add('is-entering');
+      lockBtn.classList.add('is-entering');
+      setRemoteView('control', { animate: true });
+      controlsEl.querySelectorAll('.anim-in').forEach(replayAnimation);
+      window.setTimeout(() => {
+        controlsEl.classList.remove('is-entering');
+        lockBtn.classList.remove('is-entering');
+      }, 480);
+    }, 220);
     setStatus('Unlocked');
-    // restart panel enter animations
-    controlsEl.querySelectorAll('.anim-in').forEach((el) => {
-      el.style.animation = 'none';
-      void el.offsetWidth;
-      el.style.animation = '';
-    });
   } else {
+    controlsEl.hidden = true;
+    lockBtn.hidden = true;
+    lockSection.hidden = false;
+    lockSection.classList.add('is-entering');
+    replayAnimation(lockSection);
+    window.setTimeout(() => lockSection.classList.remove('is-entering'), 420);
     setStatus('Enter API key to unlock');
   }
+}
+
+function syncNavIndicator(view) {
+  const nav = document.querySelector('.remote-nav');
+  if (!nav) return;
+  nav.dataset.activeView = view;
+}
+
+function setRemoteView(view, { animate = true } = {}) {
+  const buttons = document.querySelectorAll('[data-remote-view]');
+  const panels = Array.from(document.querySelectorAll('[data-view-panel]'));
+  const current = panels.find((panel) => panel.classList.contains('is-active'));
+  const next = panels.find((panel) => panel.dataset.viewPanel === view);
+  if (!next) return;
+
+  const sameView = current === next;
+  const direction = view === 'settings' ? 'forward' : 'back';
+
+  buttons.forEach((button) => {
+    button.classList.toggle('is-active', button.dataset.remoteView === view);
+  });
+  syncNavIndicator(view);
+
+  if (sameView) {
+    next.hidden = false;
+    next.classList.add('is-active');
+    return;
+  }
+
+  panels.forEach((panel) => {
+    panel.classList.remove(
+      'is-active',
+      'view-enter-forward',
+      'view-enter-back',
+      'view-exit-forward',
+      'view-exit-back'
+    );
+    if (panel === next) {
+      panel.hidden = false;
+      panel.classList.add('is-active');
+      if (animate) {
+        panel.classList.add(direction === 'forward' ? 'view-enter-forward' : 'view-enter-back');
+        panel.querySelectorAll('.anim-in').forEach(replayAnimation);
+      }
+    } else if (panel === current && animate) {
+      panel.hidden = false;
+      panel.classList.add(direction === 'forward' ? 'view-exit-forward' : 'view-exit-back');
+      window.setTimeout(() => {
+        if (!panel.classList.contains('is-active')) {
+          panel.hidden = true;
+          panel.classList.remove('view-exit-forward', 'view-exit-back');
+        }
+      }, 280);
+    } else {
+      panel.hidden = true;
+    }
+  });
+}
+
+function bindRemoteNavigation() {
+  syncNavIndicator('control');
+
+  document.querySelectorAll('[data-remote-view]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setRemoteView(button.dataset.remoteView);
+    });
+  });
+
+  // Keep settings groups tidy: opening one closes the others.
+  document.querySelectorAll('.settings-group').forEach((group) => {
+    group.addEventListener('toggle', () => {
+      if (!group.open) return;
+      group.classList.add('is-opening');
+      window.setTimeout(() => group.classList.remove('is-opening'), 360);
+      document.querySelectorAll('.settings-group').forEach((other) => {
+        if (other !== group) other.open = false;
+      });
+    });
+  });
 }
 
 function flashButton(button) {
@@ -93,6 +199,10 @@ function flashButton(button) {
   void button.offsetWidth;
   button.classList.add('is-flash', 'is-active');
   window.setTimeout(() => button.classList.remove('is-active'), 450);
+}
+
+function flashPowerBadge() {
+  pulseElement(powerStateBadge, 'is-badge-flash');
 }
 
 async function apiRequest(path, options = {}) {
@@ -275,6 +385,11 @@ function rebuildWidgetButtons(enabledWidgets) {
   });
   pinRow.appendChild(pinBtn);
   widgetButtonsEl.appendChild(pinRow);
+
+  widgetButtonsEl.querySelectorAll('.chip, .pin-row').forEach((el, index) => {
+    el.classList.add('chip-enter');
+    el.style.setProperty('--chip-delay', `${index * 45}ms`);
+  });
 }
 
 function syncBackgroundFields() {
@@ -517,7 +632,10 @@ document.querySelectorAll('[data-action]').forEach((button) => {
       });
       document.querySelectorAll('[data-action]').forEach((btn) => btn.classList.remove('is-active'));
       flashButton(button);
-      if (powerStateBadge) powerStateBadge.textContent = action.toUpperCase();
+      if (powerStateBadge) {
+        powerStateBadge.textContent = action.toUpperCase();
+        flashPowerBadge();
+      }
       setStatus(`Display set to ${action}`);
     } catch (error) {
       setStatus(error.message, true);
@@ -527,6 +645,7 @@ document.querySelectorAll('[data-action]').forEach((button) => {
 
 unlockBtn.addEventListener('click', unlock);
 lockBtn.addEventListener('click', lock);
+bindRemoteNavigation();
 document.getElementById('settingBackgroundMode').addEventListener('change', syncBackgroundFields);
 document.getElementById('settingNightFocusMode').addEventListener('change', syncNightFocusFields);
 document.getElementById('settingNightFocusWhen').addEventListener('change', syncNightFocusFields);
@@ -550,10 +669,11 @@ saveSettingsBtn.addEventListener('click', async () => {
     });
     fillSettingsForm(updated);
     saveSettingsBtn.classList.add('is-success');
+    pulseElement(saveSettingsBtn, 'is-success-pop');
     saveBtnLabel.textContent = 'Saved';
     setStatus('Settings saved');
     window.setTimeout(() => {
-      saveSettingsBtn.classList.remove('is-success');
+      saveSettingsBtn.classList.remove('is-success', 'is-success-pop');
       saveBtnLabel.textContent = 'Save settings';
     }, 1400);
   } catch (error) {

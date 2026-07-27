@@ -232,6 +232,15 @@ async function unlockRemote(page, apiKey = CONTROL_KEY) {
 }
 
 /**
+ * Switch the remote to the Settings view (after unlock).
+ * @param {import('@playwright/test').Page} page
+ */
+async function openRemoteSettings(page) {
+  await page.locator('[data-remote-view="settings"]').click();
+  await page.locator('[data-view-panel="settings"]').waitFor({ state: 'visible' });
+}
+
+/**
  * @param {import('@playwright/test').Page} page
  */
 async function expectUnlocked(page) {
@@ -259,6 +268,7 @@ module.exports = {
   CONTROL_KEY,
   stubApis,
   unlockRemote,
+  openRemoteSettings,
   expectUnlocked,
   ensureDisplayOn,
   STUB_WEATHER_CURRENT,

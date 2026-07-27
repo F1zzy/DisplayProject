@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { unlockRemote, CONTROL_KEY, ensureDisplayOn } = require('./helpers');
+const { unlockRemote, openRemoteSettings, CONTROL_KEY, ensureDisplayOn } = require('./helpers');
 
 test.describe('Remote control', () => {
   test.afterEach(async ({ request }) => {
@@ -17,6 +17,14 @@ test.describe('Remote control', () => {
   test('unlocks with control key', async ({ page }) => {
     await unlockRemote(page, CONTROL_KEY);
     await expect(page.locator('body')).toHaveClass(/is-unlocked/);
+    await expect(page.locator('[data-view-panel="control"]')).toBeVisible();
+  });
+
+  test('switches to settings view', async ({ page }) => {
+    await unlockRemote(page);
+    await openRemoteSettings(page);
+    await expect(page.locator('#saveSettingsBtn')).toBeVisible();
+    await expect(page.locator('#settingLocation')).toBeVisible();
   });
 
   test('power on / sleep / off update badge', async ({ page }) => {
