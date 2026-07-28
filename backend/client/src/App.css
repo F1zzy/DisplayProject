@@ -139,7 +139,7 @@
   font-family: var(--font-display);
   font-size: clamp(3.1rem, 18cqi, 6.75rem);
   font-weight: 800;
-  line-height: 0.92;
+  line-height: 1;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -195,7 +195,9 @@
 .time-container-stats-temp {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
+  text-align: center;
   min-height: 0;
   overflow: hidden;
   padding: clamp(8px, 1cqh, 12px);
@@ -209,7 +211,6 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  text-align: left;
   line-height: 1.2;
 }
 
@@ -229,7 +230,6 @@
 }
 
 .time-container-stats-humidity {
-  justify-content: space-between;
   gap: 8px;
 }
 
@@ -244,6 +244,7 @@
 .humidity-value-row {
   display: flex;
   align-items: baseline;
+  justify-content: center;
   gap: 4px;
   line-height: 1;
 }

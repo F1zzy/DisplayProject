@@ -1,15 +1,27 @@
-.clock-animated {
+/* Panel centers the face; face keeps HH:MM and seconds on one baseline. */
+.time-container-time.clock-animated {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock-face {
+  display: inline-flex;
   align-items: baseline;
   justify-content: center;
-  gap: 0.08em;
-  font-variant-numeric: tabular-nums;
+  gap: 0.1em;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  line-height: 1;
 }
 
 .clock-block {
   display: inline-flex;
   align-items: baseline;
   gap: 0.02em;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .clock-block--hm {
@@ -17,9 +29,7 @@
 }
 
 .clock-block--seconds {
-  align-self: flex-end;
-  margin-bottom: 0.12em;
-  font-size: 0.42em;
+  font-size: 0.38em;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--text-muted);
@@ -136,6 +146,16 @@
   to {
     transform: rotateX(0deg);
     opacity: 1;
+  }
+}
+
+@media (orientation: landscape) {
+  .clock-face {
+    gap: 0.12em;
+  }
+
+  .clock-block--seconds {
+    font-size: 0.36em;
   }
 }
 

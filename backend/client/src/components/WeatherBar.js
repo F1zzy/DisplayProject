@@ -97,7 +97,7 @@ function WeatherForecast() {
         </div>
       </div>
       <div className={`hourly-content ${showHourly ? 'hidden' : 'visible'}`}>
-        <h2>12 Hour Forecast</h2>
+        <h2>12-Hour Forecast</h2>
         <HourlyForecast />
       </div>
     </div>

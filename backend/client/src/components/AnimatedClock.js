@@ -104,19 +104,21 @@ export default function AnimatedClock({ now, animation = 'off' }) {
       className={`time-container-time clock-animated${mode !== 'off' ? ` clock-animated--${mode}` : ''}`}
       aria-label={ariaLabel}
     >
-      <span className="clock-block clock-block--hm">
-        <DigitCell value={hours[0]} mode={mode} animate={animate} />
-        <DigitCell value={hours[1]} mode={mode} animate={animate} />
-        <span className="clock-sep" aria-hidden="true">
-          :
+      <span className="clock-face">
+        <span className="clock-block clock-block--hm">
+          <DigitCell value={hours[0]} mode={mode} animate={animate} />
+          <DigitCell value={hours[1]} mode={mode} animate={animate} />
+          <span className="clock-sep" aria-hidden="true">
+            :
+          </span>
+          <DigitCell value={minutes[0]} mode={mode} animate={animate} />
+          <DigitCell value={minutes[1]} mode={mode} animate={animate} />
         </span>
-        <DigitCell value={minutes[0]} mode={mode} animate={animate} />
-        <DigitCell value={minutes[1]} mode={mode} animate={animate} />
-      </span>
-      <span className="clock-block clock-block--seconds" aria-hidden="true">
-        <span className="clock-sep clock-sep--seconds">:</span>
-        <span className="clock-digit clock-digit--seconds">{seconds[0]}</span>
-        <span className="clock-digit clock-digit--seconds">{seconds[1]}</span>
+        <span className="clock-block clock-block--seconds" aria-hidden="true">
+          <span className="clock-sep clock-sep--seconds">:</span>
+          <span className="clock-digit clock-digit--seconds">{seconds[0]}</span>
+          <span className="clock-digit clock-digit--seconds">{seconds[1]}</span>
+        </span>
       </span>
     </div>
   );

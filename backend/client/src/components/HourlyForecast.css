@@ -1,104 +1,151 @@
 .hourly-graph {
   display: flex;
-  justify-content: space-between;
   align-items: stretch;
   flex: 1;
   min-height: 0;
   width: 100%;
-  position: relative;
-  padding-bottom: 2px;
-  gap: 1px;
+  gap: clamp(4px, 0.7cqi, 10px);
+  padding: clamp(4px, 0.6cqh, 8px) 0 0;
+  box-sizing: border-box;
 }
 
 .hourly-point {
   flex: 1 1 0;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-rows:
+    auto
+    auto
+    minmax(0, 1fr)
+    auto
+    auto;
+  gap: clamp(4px, 0.65cqh, 8px);
   align-items: center;
-  border-left: 1px solid var(--border);
-  padding: 0 1px;
-  box-sizing: border-box;
+  justify-items: center;
   height: 100%;
+  padding: clamp(6px, 0.9cqh, 10px) clamp(2px, 0.35cqi, 5px);
+  box-sizing: border-box;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: 2px solid transparent;
+  overflow: hidden;
 }
 
-.hourly-point:first-child {
-  border-left: none;
+.hourly-point--now {
+  border-top-color: var(--accent);
+  background: var(--bg-panel-elevated);
+}
+
+.hourly-temp {
+  font-family: var(--font-display);
+  font-size: clamp(0.72rem, 1.55cqi, 1.05rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.hourly-point--now .hourly-temp {
+  color: var(--accent);
+}
+
+.hourly-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  line-height: 0;
+}
+
+.hourly-weather-icon {
+  width: clamp(20px, 2.8cqi, 34px);
+  height: clamp(20px, 2.8cqi, 34px);
+  object-fit: contain;
+  filter: none;
 }
 
 .hourly-bar-area {
-  flex: 1;
   width: 100%;
   min-height: 0;
+  height: 100%;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  padding: 0 clamp(1px, 0.3cqi, 4px);
+  box-sizing: border-box;
 }
 
 .hourly-bar {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding-top: 6px;
-  box-sizing: border-box;
+  min-height: 6px;
   background: var(--accent-soft);
-  border-radius: 0;
-  transition: height 0.3s ease-in-out;
-  min-height: 18%;
+  border-top: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  box-sizing: border-box;
+  transition: height 0.45s ease;
 }
 
-.temperature {
-  font-size: clamp(0.65rem, 1.1vw, 0.9rem);
-  margin: 0 0 2px;
-  color: var(--text-primary);
+.hourly-point--now .hourly-bar {
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--accent) 30%);
+  border-top-color: var(--accent);
+}
+
+.hourly-time {
+  font-size: clamp(0.55rem, 1.05cqi, 0.72rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.weather-icon {
-  width: clamp(22px, 2.5vw, 36px);
-  height: clamp(22px, 2.5vw, 36px);
-  margin-bottom: 2px;
-}
-
-.time {
-  font-size: clamp(0.6rem, 1vw, 0.8rem);
-  margin: 0;
+.hourly-point--now .hourly-time {
   color: var(--text-secondary);
-  white-space: nowrap;
 }
 
-.hourly-details {
+.hourly-meta {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: clamp(0.55rem, 0.9vw, 0.75rem);
-  margin-top: 4px;
-  flex-shrink: 0;
+  gap: clamp(3px, 0.45cqh, 5px);
+  padding-top: clamp(4px, 0.6cqh, 8px);
+  border-top: 1px solid var(--border);
   color: var(--text-secondary);
+  font-size: clamp(0.5rem, 0.95cqi, 0.68rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
 }
 
-.rain-chance,
-.wind-details {
+.hourly-meta-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  margin: 1px 0;
+  gap: 3px;
+  line-height: 1;
   white-space: nowrap;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.hourly-graph::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background-color: var(--border-strong);
+.hourly-meta-icon {
+  font-size: 0.8em;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.hourly-wind-dir {
+  transition: transform 0.3s ease;
 }
 
 .hourly-status {
@@ -107,4 +154,37 @@
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+@media (orientation: landscape) {
+  .hourly-graph {
+    gap: clamp(3px, 0.5vw, 8px);
+  }
+
+  .hourly-point {
+    gap: clamp(3px, 0.55vh, 6px);
+    padding: clamp(4px, 0.8vh, 8px) clamp(2px, 0.3vw, 4px);
+  }
+
+  .hourly-temp {
+    font-size: clamp(0.68rem, 1.4vh, 0.95rem);
+  }
+
+  .hourly-weather-icon {
+    width: clamp(18px, 3.2vh, 28px);
+    height: clamp(18px, 3.2vh, 28px);
+  }
+
+  .hourly-meta {
+    gap: 2px;
+    padding-top: clamp(3px, 0.5vh, 6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hourly-bar,
+  .hourly-wind-dir {
+    transition: none;
+  }
 }
