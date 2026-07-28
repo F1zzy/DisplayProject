@@ -158,6 +158,8 @@ describe('settings service', () => {
   test('clock animation, focus schedule, and brightness sanitize', () => {
     const updated = settings.updateSettings({
       clockAnimation: 'flip',
+      clockSize: 'large',
+      clockFontSize: 'xl',
       weatherAtmosphere: true,
       nightFocusMode: true,
       nightFocusWhen: 'custom',
@@ -166,6 +168,8 @@ describe('settings service', () => {
       displayBrightness: 70,
     });
     expect(updated.clockAnimation).toBe('flip');
+    expect(updated.clockSize).toBe('large');
+    expect(updated.clockFontSize).toBe('xl');
     expect(updated.weatherAtmosphere).toBe(true);
     expect(updated.nightFocusMode).toBe(true);
     expect(updated.nightFocusWhen).toBe('custom');
@@ -175,6 +179,8 @@ describe('settings service', () => {
 
     const fallback = settings.updateSettings({
       clockAnimation: 'bounce',
+      clockSize: 'huge',
+      clockFontSize: 'tiny',
       weatherAtmosphere: 0,
       nightFocusMode: '',
       nightFocusWhen: 'sometime',
@@ -183,6 +189,8 @@ describe('settings service', () => {
       displayBrightness: 5,
     });
     expect(fallback.clockAnimation).toBe('off');
+    expect(fallback.clockSize).toBe('large');
+    expect(fallback.clockFontSize).toBe('lg');
     expect(fallback.weatherAtmosphere).toBe(false);
     expect(fallback.nightFocusMode).toBe(false);
     expect(fallback.nightFocusWhen).toBe('auto');

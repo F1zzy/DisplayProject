@@ -25,6 +25,8 @@ const DEFAULT_SETTINGS = {
   clockSide: 'left',
   density: 'comfortable',
   clockAnimation: 'off',
+  clockSize: 'large',
+  clockFontSize: 'lg',
   weatherAtmosphere: false,
   nightFocusMode: false,
   nightFocusWhen: 'auto',

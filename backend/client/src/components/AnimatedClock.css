@@ -1,9 +1,29 @@
 .clock-animated {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
-  gap: 0.02em;
+  gap: 0.08em;
   font-variant-numeric: tabular-nums;
+}
+
+.clock-block {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.02em;
+}
+
+.clock-block--hm {
+  color: var(--text-primary);
+}
+
+.clock-block--seconds {
+  align-self: flex-end;
+  margin-bottom: 0.12em;
+  font-size: 0.42em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  opacity: 0.9;
 }
 
 .clock-digit {
@@ -16,9 +36,21 @@
 
 .clock-sep {
   display: inline-block;
-  min-width: 0.35em;
+  min-width: 0.28em;
   text-align: center;
-  opacity: 0.85;
+  color: var(--accent);
+  opacity: 0.88;
+  font-weight: 700;
+}
+
+.clock-sep--seconds {
+  min-width: 0.22em;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.clock-digit--seconds {
+  min-width: 0.58em;
 }
 
 .clock-digit-layer {

@@ -582,6 +582,8 @@ function fillSettingsForm(settings) {
   );
   document.getElementById('settingFontPreset').value = settings.fontPreset || 'nothing';
   document.getElementById('settingClockAnimation').value = settings.clockAnimation || 'off';
+  document.getElementById('settingClockSize').value = settings.clockSize || 'large';
+  document.getElementById('settingClockFontSize').value = settings.clockFontSize || 'lg';
   document.getElementById('settingWeatherAtmosphere').checked = settings.weatherAtmosphere === true;
   document.getElementById('settingNightFocusMode').checked = settings.nightFocusMode === true;
   document.getElementById('settingSpotifyLyricsBackground').checked =
@@ -643,6 +645,8 @@ function readSettingsForm() {
     customBgCard: readCustomSurface('settingCustomBgCard', 'settingCustomBgCardTransparent'),
     fontPreset: document.getElementById('settingFontPreset').value,
     clockAnimation: document.getElementById('settingClockAnimation').value,
+    clockSize: document.getElementById('settingClockSize').value,
+    clockFontSize: document.getElementById('settingClockFontSize').value,
     weatherAtmosphere: document.getElementById('settingWeatherAtmosphere').checked,
     nightFocusMode: document.getElementById('settingNightFocusMode').checked,
     spotifyLyricsBackground: document.getElementById('settingSpotifyLyricsBackground').checked,

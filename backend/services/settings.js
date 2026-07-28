@@ -23,6 +23,10 @@ const VALID_DENSITIES = ['compact', 'comfortable', 'roomy'];
 
 const VALID_CLOCK_ANIMATIONS = ['off', 'crossfade', 'flip'];
 
+const VALID_CLOCK_SIZES = ['small', 'medium', 'large'];
+
+const VALID_CLOCK_FONT_SIZES = ['sm', 'md', 'lg', 'xl'];
+
 const VALID_NIGHT_FOCUS_WHEN = ['auto', 'always', 'custom'];
 
 const DEFAULTS = {
@@ -47,6 +51,8 @@ const DEFAULTS = {
   clockSide: 'left',
   density: 'comfortable',
   clockAnimation: 'off',
+  clockSize: 'large',
+  clockFontSize: 'lg',
   weatherAtmosphere: false,
   nightFocusMode: false,
   nightFocusWhen: 'auto',
@@ -192,6 +198,12 @@ function normalize(partial = {}) {
       VALID_CLOCK_ANIMATIONS,
       DEFAULTS.clockAnimation
     ),
+    clockSize: sanitizeFromList(merged.clockSize, VALID_CLOCK_SIZES, DEFAULTS.clockSize),
+    clockFontSize: sanitizeFromList(
+      merged.clockFontSize,
+      VALID_CLOCK_FONT_SIZES,
+      DEFAULTS.clockFontSize
+    ),
     weatherAtmosphere: Boolean(merged.weatherAtmosphere),
     nightFocusMode: Boolean(merged.nightFocusMode),
     nightFocusWhen: sanitizeFromList(
@@ -275,6 +287,8 @@ module.exports = {
   VALID_CLOCK_SIDES,
   VALID_DENSITIES,
   VALID_CLOCK_ANIMATIONS,
+  VALID_CLOCK_SIZES,
+  VALID_CLOCK_FONT_SIZES,
   VALID_NIGHT_FOCUS_WHEN,
   DEFAULTS,
   getSettings,

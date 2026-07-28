@@ -188,12 +188,20 @@ function AppContent() {
   const density = ['compact', 'comfortable', 'roomy'].includes(settings.density)
     ? settings.density
     : 'comfortable';
+  const clockSize = ['small', 'medium', 'large'].includes(settings.clockSize)
+    ? settings.clockSize
+    : 'medium';
+  const clockFontSize = ['sm', 'md', 'lg', 'xl'].includes(settings.clockFontSize)
+    ? settings.clockFontSize
+    : 'md';
   const clearForcedWidget = () => setForcedWidget(null);
 
   const appClass = [
     'App',
     `clock-side-${clockSide}`,
     `density-${density}`,
+    `clock-size-${clockSize}`,
+    `clock-font-${clockFontSize}`,
     nightFocusActive ? 'night-focus' : '',
   ]
     .filter(Boolean)

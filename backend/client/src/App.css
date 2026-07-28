@@ -113,7 +113,7 @@
 .time-container {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(0, 1.2fr) minmax(0, 0.85fr);
+  grid-template-rows: minmax(0, 1.55fr) minmax(0, 0.7fr);
   gap: clamp(8px, 1cqh, 12px);
   align-items: stretch;
   height: 100%;
@@ -137,18 +137,48 @@
   container-type: inline-size;
   container-name: clock;
   font-family: var(--font-display);
-  font-size: clamp(2.75rem, 16cqi, 5.75rem);
+  font-size: clamp(3.1rem, 18cqi, 6.75rem);
   font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.04em;
+  line-height: 0.92;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
-  padding: clamp(12px, 1.6cqh, 22px);
+  padding: clamp(18px, 2.4cqh, 32px) clamp(14px, 2cqi, 28px);
+  color: var(--text-primary);
   background: var(--bg-panel-elevated);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
+  border-top: 3px solid var(--accent);
   border-radius: 0;
   box-shadow: none;
+}
+
+.App.clock-size-small .time-container {
+  grid-template-rows: minmax(0, 1.05fr) minmax(0, 0.95fr);
+}
+
+.App.clock-size-large .time-container {
+  grid-template-rows: minmax(0, 1.85fr) minmax(0, 0.55fr);
+}
+
+.App.clock-size-small .time-container-time {
+  padding: clamp(12px, 1.6cqh, 20px) clamp(10px, 1.5cqi, 18px);
+}
+
+.App.clock-size-large .time-container-time {
+  padding: clamp(22px, 3cqh, 40px) clamp(16px, 2.4cqi, 32px);
+}
+
+.App.clock-font-sm .time-container-time {
+  font-size: clamp(2.35rem, 14cqi, 4.75rem);
+}
+
+.App.clock-font-lg .time-container-time {
+  font-size: clamp(3.6rem, 22cqi, 7.75rem);
+}
+
+.App.clock-font-xl .time-container-time {
+  font-size: clamp(4.1rem, 26cqi, 9.25rem);
 }
 
 .time-container-dateCon {
@@ -169,8 +199,9 @@
   min-height: 0;
   overflow: hidden;
   padding: clamp(8px, 1cqh, 12px);
-  background: var(--bg-panel-elevated);
+  background: var(--bg-panel);
   border: 1px solid var(--border);
+  color: var(--text-secondary);
 }
 
 .time-container-weekday {
@@ -351,7 +382,7 @@
   /* Clock above stats inside the top-left cell. */
   .time-container {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.55fr) minmax(0, 0.85fr);
     gap: clamp(8px, 1.2vh, 14px);
   }
 
@@ -366,9 +397,29 @@
 
   .time-container-time {
     min-height: 0;
-    font-size: clamp(2.4rem, 12cqi, 6.5rem);
+    font-size: clamp(2.8rem, 14cqi, 7.25rem);
     letter-spacing: 0.02em;
-    padding: clamp(12px, 1.8vh, 22px);
+    padding: clamp(16px, 2.2vh, 28px) clamp(14px, 1.8cqi, 24px);
+  }
+
+  .App.clock-size-small .time-container {
+    grid-template-rows: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+
+  .App.clock-size-large .time-container {
+    grid-template-rows: minmax(0, 1.9fr) minmax(0, 0.65fr);
+  }
+
+  .App.clock-font-sm .time-container-time {
+    font-size: clamp(2.1rem, 10cqi, 5rem);
+  }
+
+  .App.clock-font-lg .time-container-time {
+    font-size: clamp(3.2rem, 17cqi, 8.25rem);
+  }
+
+  .App.clock-font-xl .time-container-time {
+    font-size: clamp(3.7rem, 20cqi, 9.75rem);
   }
 
   .time-container-dateCon {

@@ -63,7 +63,7 @@ function DigitCell({ value, mode, animate }) {
 
 /**
  * Renders HH:MM:SS with optional minute-change animation (crossfade / flip).
- * Seconds update without animation.
+ * Seconds update without animation and read quieter than hours/minutes.
  */
 export default function AnimatedClock({ now, animation = 'off' }) {
   const reduced = prefersReducedMotion();
@@ -97,24 +97,27 @@ export default function AnimatedClock({ now, animation = 'off' }) {
     second: '2-digit',
   });
 
-  if (mode === 'off') {
-    return (
-      <div className="time-container-time" aria-label={ariaLabel}>
-        {`${hours}:${minutes}:${seconds}`}
-      </div>
-    );
-  }
+  const animate = mode !== 'off' && animateDigits;
 
   return (
-    <div className={`time-container-time clock-animated clock-animated--${mode}`} aria-label={ariaLabel}>
-      <DigitCell value={hours[0]} mode={mode} animate={animateDigits} />
-      <DigitCell value={hours[1]} mode={mode} animate={animateDigits} />
-      <span className="clock-sep">:</span>
-      <DigitCell value={minutes[0]} mode={mode} animate={animateDigits} />
-      <DigitCell value={minutes[1]} mode={mode} animate={animateDigits} />
-      <span className="clock-sep">:</span>
-      <span className="clock-digit clock-digit--seconds">{seconds[0]}</span>
-      <span className="clock-digit clock-digit--seconds">{seconds[1]}</span>
+    <div
+      className={`time-container-time clock-animated${mode !== 'off' ? ` clock-animated--${mode}` : ''}`}
+      aria-label={ariaLabel}
+    >
+      <span className="clock-block clock-block--hm">
+        <DigitCell value={hours[0]} mode={mode} animate={animate} />
+        <DigitCell value={hours[1]} mode={mode} animate={animate} />
+        <span className="clock-sep" aria-hidden="true">
+          :
+        </span>
+        <DigitCell value={minutes[0]} mode={mode} animate={animate} />
+        <DigitCell value={minutes[1]} mode={mode} animate={animate} />
+      </span>
+      <span className="clock-block clock-block--seconds" aria-hidden="true">
+        <span className="clock-sep clock-sep--seconds">:</span>
+        <span className="clock-digit clock-digit--seconds">{seconds[0]}</span>
+        <span className="clock-digit clock-digit--seconds">{seconds[1]}</span>
+      </span>
     </div>
   );
 }
