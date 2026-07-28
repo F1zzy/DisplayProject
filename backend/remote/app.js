@@ -398,6 +398,49 @@ function syncBackgroundFields() {
   document.getElementById('settingBackgroundImageRow').hidden = mode !== 'image';
 }
 
+function syncColorSchemeFields() {
+  const scheme = document.getElementById('settingColorScheme').value;
+  const row = document.getElementById('settingCustomColors');
+  if (row) row.hidden = scheme !== 'custom';
+}
+
+function syncCustomSurfaceFields() {
+  const pairs = [
+    ['settingCustomBgApp', 'settingCustomBgAppTransparent'],
+    ['settingCustomBgPanel', 'settingCustomBgPanelTransparent'],
+    ['settingCustomBgCard', 'settingCustomBgCardTransparent'],
+  ];
+  pairs.forEach(([colorId, checkId]) => {
+    const colorInput = document.getElementById(colorId);
+    const check = document.getElementById(checkId);
+    if (!colorInput || !check) return;
+    colorInput.disabled = check.checked;
+  });
+}
+
+function fillCustomSurface(colorId, checkId, value, fallbackHex) {
+  const colorInput = document.getElementById(colorId);
+  const check = document.getElementById(checkId);
+  const transparent = String(value || '').toLowerCase() === 'transparent';
+  if (check) check.checked = transparent;
+  if (colorInput) {
+    colorInput.value = transparent ? fallbackHex : value || fallbackHex;
+    colorInput.disabled = transparent;
+  }
+}
+
+function readCustomSurface(colorId, checkId) {
+  const check = document.getElementById(checkId);
+  if (check && check.checked) return 'transparent';
+  return document.getElementById(colorId).value;
+}
+
+function applyAppearanceFromFormOrSettings(settings) {
+  if (typeof applyRemoteAppearance === 'function') {
+    applyRemoteAppearance(settings);
+  }
+}
+
 function syncNightFocusFields() {
   const enabled = document.getElementById('settingNightFocusMode').checked;
   const when = document.getElementById('settingNightFocusWhen').value;
@@ -523,6 +566,20 @@ function fillSettingsForm(settings) {
   document.getElementById('settingBackgroundColor').value = settings.backgroundColor || '#101115';
   document.getElementById('settingBackgroundImage').value = settings.backgroundImage || '';
   document.getElementById('settingColorScheme').value = settings.colorScheme || 'orange-dark';
+  document.getElementById('settingCustomAccent').value = settings.customAccent || '#ff6a1a';
+  fillCustomSurface('settingCustomBgApp', 'settingCustomBgAppTransparent', settings.customBgApp, '#101115');
+  fillCustomSurface(
+    'settingCustomBgPanel',
+    'settingCustomBgPanelTransparent',
+    settings.customBgPanel,
+    '#1a1c21'
+  );
+  fillCustomSurface(
+    'settingCustomBgCard',
+    'settingCustomBgCardTransparent',
+    settings.customBgCard,
+    '#26282e'
+  );
   document.getElementById('settingFontPreset').value = settings.fontPreset || 'nothing';
   document.getElementById('settingClockAnimation').value = settings.clockAnimation || 'off';
   document.getElementById('settingWeatherAtmosphere').checked = settings.weatherAtmosphere === true;
@@ -539,8 +596,10 @@ function fillSettingsForm(settings) {
   document.getElementById('settingClockSide').value = settings.clockSide || 'left';
   document.getElementById('settingDensity').value = settings.density || 'comfortable';
   syncBackgroundFields();
+  syncColorSchemeFields();
   syncNightFocusFields();
   syncBrightnessLabel();
+  applyAppearanceFromFormOrSettings(settings);
 
   sectionOrderState = normalizeSectionOrder(settings.sectionOrder);
   renderSectionOrderList();
@@ -578,6 +637,10 @@ function readSettingsForm() {
     backgroundColor: document.getElementById('settingBackgroundColor').value,
     backgroundImage: document.getElementById('settingBackgroundImage').value.trim(),
     colorScheme: document.getElementById('settingColorScheme').value,
+    customAccent: document.getElementById('settingCustomAccent').value,
+    customBgApp: readCustomSurface('settingCustomBgApp', 'settingCustomBgAppTransparent'),
+    customBgPanel: readCustomSurface('settingCustomBgPanel', 'settingCustomBgPanelTransparent'),
+    customBgCard: readCustomSurface('settingCustomBgCard', 'settingCustomBgCardTransparent'),
     fontPreset: document.getElementById('settingFontPreset').value,
     clockAnimation: document.getElementById('settingClockAnimation').value,
     weatherAtmosphere: document.getElementById('settingWeatherAtmosphere').checked,
@@ -650,6 +713,13 @@ unlockBtn.addEventListener('click', unlock);
 lockBtn.addEventListener('click', lock);
 bindRemoteNavigation();
 document.getElementById('settingBackgroundMode').addEventListener('change', syncBackgroundFields);
+document.getElementById('settingColorScheme').addEventListener('change', syncColorSchemeFields);
+['settingCustomBgAppTransparent', 'settingCustomBgPanelTransparent', 'settingCustomBgCardTransparent'].forEach(
+  (id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', syncCustomSurfaceFields);
+  }
+);
 document.getElementById('settingNightFocusMode').addEventListener('change', syncNightFocusFields);
 document.getElementById('settingNightFocusWhen').addEventListener('change', syncNightFocusFields);
 document.getElementById('settingDisplayBrightness').addEventListener('input', syncBrightnessLabel);
@@ -693,6 +763,13 @@ if (isUnlocked() && apiKeyInput.value.trim()) {
   });
 } else {
   applyUnlockUi(false);
+  // Public settings — restyle remote to match dashboard even while locked
+  fetch(`${serverUrlInput.value.replace(/\/$/, '')}/api/settings`)
+    .then((res) => (res.ok ? res.json() : null))
+    .then((settings) => {
+      if (settings) applyAppearanceFromFormOrSettings(settings);
+    })
+    .catch(() => {});
 }
 
 if ('serviceWorker' in navigator) {

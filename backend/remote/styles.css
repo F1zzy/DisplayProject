@@ -282,6 +282,35 @@ body.is-unlocked .status-pill {
   grid-template-columns: 1fr 1fr;
 }
 
+.settings-grid--custom-colors {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+.settings-grid--custom-colors[hidden] {
+  display: none !important;
+}
+
+.field--surface .surface-transparent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.field--surface .surface-transparent input {
+  accent-color: var(--accent);
+}
+
+.field--surface input[type='color']:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .field {
   display: block;
 }

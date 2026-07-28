@@ -86,6 +86,96 @@ const FONT_VAR_KEYS = Object.keys(FONT_PRESET_VARS.nothing);
 const DEFAULT_COLOR_SCHEME = 'orange-dark';
 const DEFAULT_FONT_PRESET = 'nothing';
 
+const DEFAULT_CUSTOM_COLORS = {
+  accent: COLOR_SCHEME_VARS['orange-dark']['--accent'],
+  bgApp: COLOR_SCHEME_VARS['orange-dark']['--bg-app'],
+  bgPanel: COLOR_SCHEME_VARS['orange-dark']['--bg-panel'],
+  bgCard: COLOR_SCHEME_VARS['orange-dark']['--bg-card'],
+};
+
+function parseHex(hex) {
+  let h = String(hex || '').replace('#', '').trim();
+  if (h.length === 3) {
+    h = h
+      .split('')
+      .map((c) => c + c)
+      .join('');
+  }
+  if (h.length === 8) h = h.slice(0, 6);
+  const n = parseInt(h, 16);
+  if (Number.isNaN(n) || h.length !== 6) {
+    return { r: 16, g: 17, b: 21 };
+  }
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function toHex({ r, g, b }) {
+  return `#${[r, g, b]
+    .map((x) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
+function lighten(hex, amount) {
+  const { r, g, b } = parseHex(hex);
+  return toHex({
+    r: r + (255 - r) * amount,
+    g: g + (255 - g) * amount,
+    b: b + (255 - b) * amount,
+  });
+}
+
+function rgbaFromHex(hex, alpha) {
+  const { r, g, b } = parseHex(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function isTransparent(value) {
+  return String(value || '').trim().toLowerCase() === 'transparent';
+}
+
+function derivedSurface(base, amount) {
+  if (isTransparent(base)) return 'transparent';
+  return lighten(base, amount);
+}
+
+/** Build full CSS var map from custom accent / surface colours. */
+export function buildCustomColorVars({
+  accent = DEFAULT_CUSTOM_COLORS.accent,
+  bgApp = DEFAULT_CUSTOM_COLORS.bgApp,
+  bgPanel = DEFAULT_CUSTOM_COLORS.bgPanel,
+  bgCard = DEFAULT_CUSTOM_COLORS.bgCard,
+} = {}) {
+  const cardTransparent = isTransparent(bgCard);
+  return {
+    '--bg-app': isTransparent(bgApp) ? 'transparent' : bgApp,
+    '--bg-panel': isTransparent(bgPanel) ? 'transparent' : bgPanel,
+    '--bg-panel-elevated': derivedSurface(bgPanel, 0.06),
+    '--bg-card': cardTransparent ? 'transparent' : bgCard,
+    '--bg-card-hover': derivedSurface(bgCard, 0.08),
+    '--accent': accent,
+    '--accent-soft': rgbaFromHex(accent, 0.18),
+    '--accent-light': lighten(accent, 0.25),
+    '--text-primary': '#e8e8ea',
+    '--text-secondary': '#b7b8bd',
+    '--text-muted': '#8a8c92',
+    '--border': cardTransparent ? 'rgba(255, 255, 255, 0.12)' : lighten(bgCard, 0.05),
+    '--border-strong': cardTransparent ? 'rgba(255, 255, 255, 0.2)' : lighten(bgCard, 0.12),
+  };
+}
+
+export function resolveColorSchemeVars(settings = {}) {
+  const colorScheme = settings.colorScheme || DEFAULT_COLOR_SCHEME;
+  if (colorScheme === 'custom') {
+    return buildCustomColorVars({
+      accent: settings.customAccent || DEFAULT_CUSTOM_COLORS.accent,
+      bgApp: settings.customBgApp || DEFAULT_CUSTOM_COLORS.bgApp,
+      bgPanel: settings.customBgPanel || DEFAULT_CUSTOM_COLORS.bgPanel,
+      bgCard: settings.customBgCard || DEFAULT_CUSTOM_COLORS.bgCard,
+    });
+  }
+  return COLOR_SCHEME_VARS[colorScheme] || COLOR_SCHEME_VARS[DEFAULT_COLOR_SCHEME];
+}
+
 /** Chart.js-friendly font family string for the active (or given) preset. */
 export function getChartFontFamily(fontPreset) {
   const preset =
@@ -130,7 +220,7 @@ export function applyDashboardAppearance(settings = {}) {
   const colorScheme = settings.colorScheme || DEFAULT_COLOR_SCHEME;
   const fontPreset = settings.fontPreset || DEFAULT_FONT_PRESET;
 
-  const colorVars = COLOR_SCHEME_VARS[colorScheme] || COLOR_SCHEME_VARS[DEFAULT_COLOR_SCHEME];
+  const colorVars = resolveColorSchemeVars(settings);
   const fontVars = FONT_PRESET_VARS[fontPreset] || FONT_PRESET_VARS[DEFAULT_FONT_PRESET];
 
   if (colorScheme === DEFAULT_COLOR_SCHEME) {
@@ -146,4 +236,10 @@ export function applyDashboardAppearance(settings = {}) {
   }
 }
 
-export { COLOR_SCHEME_VARS, FONT_PRESET_VARS, DEFAULT_COLOR_SCHEME, DEFAULT_FONT_PRESET };
+export {
+  COLOR_SCHEME_VARS,
+  FONT_PRESET_VARS,
+  DEFAULT_COLOR_SCHEME,
+  DEFAULT_FONT_PRESET,
+  DEFAULT_CUSTOM_COLORS,
+};

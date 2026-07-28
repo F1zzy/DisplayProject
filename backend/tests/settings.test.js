@@ -77,7 +77,7 @@ describe('settings service', () => {
     });
 
     expect(updated.backgroundMode).toBe('image');
-    expect(updated.backgroundColor).toBe('#abc');
+    expect(updated.backgroundColor).toBe('#aabbcc');
     expect(updated.backgroundImage).toBe('https://example.com/bg.jpg');
 
     const cleared = settings.updateSettings({
@@ -117,6 +117,42 @@ describe('settings service', () => {
     expect(fallback.clockSide).toBe('left');
     expect(fallback.density).toBe('comfortable');
     expect(fallback.sectionOrder).toEqual(['header', 'weather', 'widgets']);
+  });
+
+  test('custom colour scheme persists and sanitizes hex values', () => {
+    const updated = settings.updateSettings({
+      colorScheme: 'custom',
+      customAccent: '#ABC',
+      customBgApp: '#112233',
+      customBgPanel: '#445566',
+      customBgCard: '#778899',
+    });
+
+    expect(updated.colorScheme).toBe('custom');
+    expect(updated.customAccent).toBe('#aabbcc');
+    expect(updated.customBgApp).toBe('#112233');
+    expect(updated.customBgPanel).toBe('#445566');
+    expect(updated.customBgCard).toBe('#778899');
+
+    const cleared = settings.updateSettings({
+      customAccent: 'orange',
+      customBgApp: 'not-a-color',
+      customBgPanel: 'javascript:alert(1)',
+      customBgCard: '#gg0000',
+    });
+    expect(cleared.customAccent).toBe('#ff6a1a');
+    expect(cleared.customBgApp).toBe('#101115');
+    expect(cleared.customBgPanel).toBe('#1a1c21');
+    expect(cleared.customBgCard).toBe('#26282e');
+
+    const transparent = settings.updateSettings({
+      customBgApp: 'transparent',
+      customBgPanel: 'Transparent',
+      customBgCard: 'transparent',
+    });
+    expect(transparent.customBgApp).toBe('transparent');
+    expect(transparent.customBgPanel).toBe('transparent');
+    expect(transparent.customBgCard).toBe('transparent');
   });
 
   test('clock animation, focus schedule, and brightness sanitize', () => {

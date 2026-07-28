@@ -11,7 +11,7 @@ const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network', 'sky', 'spotify'
 
 const VALID_BACKGROUND_MODES = ['default', 'color', 'image'];
 
-const VALID_COLOR_SCHEMES = ['orange-dark', 'cool-blue', 'soft-neutral', 'forest'];
+const VALID_COLOR_SCHEMES = ['orange-dark', 'cool-blue', 'soft-neutral', 'forest', 'custom'];
 
 const VALID_FONT_PRESETS = ['nothing', 'time-caps', 'system'];
 
@@ -38,6 +38,10 @@ const DEFAULTS = {
   backgroundColor: '#101115',
   backgroundImage: '',
   colorScheme: 'orange-dark',
+  customAccent: '#ff6a1a',
+  customBgApp: '#101115',
+  customBgPanel: '#1a1c21',
+  customBgCard: '#26282e',
   fontPreset: 'nothing',
   sectionOrder: [...VALID_SECTIONS],
   clockSide: 'left',
@@ -98,12 +102,31 @@ function sanitizeBackgroundMode(value) {
   return VALID_BACKGROUND_MODES.includes(mode) ? mode : DEFAULTS.backgroundMode;
 }
 
-function sanitizeBackgroundColor(value) {
-  const color = String(value || '').trim();
-  if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(color)) {
+function sanitizeHexColor(value, fallback) {
+  let color = String(value || '').trim();
+  if (/^#([0-9a-fA-F]{3})$/.test(color)) {
+    color = `#${color
+      .slice(1)
+      .split('')
+      .map((c) => c + c)
+      .join('')}`;
+  }
+  if (/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(color)) {
     return color.toLowerCase();
   }
-  return DEFAULTS.backgroundColor;
+  return fallback;
+}
+
+/** Hex colour, or the keyword `transparent` for custom surface fields. */
+function sanitizeSurfaceColor(value, fallback) {
+  if (String(value || '').trim().toLowerCase() === 'transparent') {
+    return 'transparent';
+  }
+  return sanitizeHexColor(value, fallback);
+}
+
+function sanitizeBackgroundColor(value) {
+  return sanitizeHexColor(value, DEFAULTS.backgroundColor);
 }
 
 function sanitizeBackgroundImage(value) {
@@ -156,6 +179,10 @@ function normalize(partial = {}) {
     backgroundColor: sanitizeBackgroundColor(merged.backgroundColor),
     backgroundImage: sanitizeBackgroundImage(merged.backgroundImage),
     colorScheme: sanitizeFromList(merged.colorScheme, VALID_COLOR_SCHEMES, DEFAULTS.colorScheme),
+    customAccent: sanitizeHexColor(merged.customAccent, DEFAULTS.customAccent),
+    customBgApp: sanitizeSurfaceColor(merged.customBgApp, DEFAULTS.customBgApp),
+    customBgPanel: sanitizeSurfaceColor(merged.customBgPanel, DEFAULTS.customBgPanel),
+    customBgCard: sanitizeSurfaceColor(merged.customBgCard, DEFAULTS.customBgCard),
     fontPreset: sanitizeFromList(merged.fontPreset, VALID_FONT_PRESETS, DEFAULTS.fontPreset),
     sectionOrder: sanitizeSectionOrder(merged.sectionOrder),
     clockSide: sanitizeFromList(merged.clockSide, VALID_CLOCK_SIDES, DEFAULTS.clockSide),

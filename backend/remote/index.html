@@ -202,8 +202,39 @@
                     <option value="cool-blue">Cool blue</option>
                     <option value="soft-neutral">Soft neutral</option>
                     <option value="forest">Forest</option>
+                    <option value="custom">Custom</option>
                   </select>
                 </label>
+                <div id="settingCustomColors" class="settings-grid settings-grid--custom-colors" hidden>
+                  <label class="field">
+                    <span class="field-label">Accent</span>
+                    <input id="settingCustomAccent" type="color" value="#ff6a1a" />
+                  </label>
+                  <div class="field field--surface">
+                    <span class="field-label">App</span>
+                    <input id="settingCustomBgApp" type="color" value="#101115" />
+                    <label class="surface-transparent">
+                      <input type="checkbox" id="settingCustomBgAppTransparent" />
+                      Transparent
+                    </label>
+                  </div>
+                  <div class="field field--surface">
+                    <span class="field-label">Panel</span>
+                    <input id="settingCustomBgPanel" type="color" value="#1a1c21" />
+                    <label class="surface-transparent">
+                      <input type="checkbox" id="settingCustomBgPanelTransparent" />
+                      Transparent
+                    </label>
+                  </div>
+                  <div class="field field--surface">
+                    <span class="field-label">Card</span>
+                    <input id="settingCustomBgCard" type="color" value="#26282e" />
+                    <label class="surface-transparent">
+                      <input type="checkbox" id="settingCustomBgCardTransparent" />
+                      Transparent
+                    </label>
+                  </div>
+                </div>
                 <label class="field">
                   <span class="field-label">Font</span>
                   <select id="settingFontPreset">
@@ -301,6 +332,7 @@
       </div>
     </div>
   </div>
+  <script src="/remote/appearance.js"></script>
   <script src="/remote/app.js"></script>
 </body>
 </html>
