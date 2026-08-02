@@ -120,6 +120,8 @@ function syncNavIndicator(view) {
   nav.dataset.activeView = view;
 }
 
+const REMOTE_VIEW_ORDER = ['control', 'analytics', 'settings'];
+
 function setRemoteView(view, { animate = true } = {}) {
   const buttons = document.querySelectorAll('[data-remote-view]');
   const panels = Array.from(document.querySelectorAll('[data-view-panel]'));
@@ -128,7 +130,10 @@ function setRemoteView(view, { animate = true } = {}) {
   if (!next) return;
 
   const sameView = current === next;
-  const direction = view === 'settings' ? 'forward' : 'back';
+  const currentView = current?.dataset.viewPanel || 'control';
+  const fromIdx = REMOTE_VIEW_ORDER.indexOf(currentView);
+  const toIdx = REMOTE_VIEW_ORDER.indexOf(view);
+  const direction = toIdx >= fromIdx ? 'forward' : 'back';
 
   buttons.forEach((button) => {
     button.classList.toggle('is-active', button.dataset.remoteView === view);
@@ -138,6 +143,9 @@ function setRemoteView(view, { animate = true } = {}) {
   if (sameView) {
     next.hidden = false;
     next.classList.add('is-active');
+    if (view === 'analytics') {
+      loadAnalytics().catch((error) => setStatus(error.message, true));
+    }
     return;
   }
 
@@ -169,6 +177,70 @@ function setRemoteView(view, { animate = true } = {}) {
       panel.hidden = true;
     }
   });
+
+  if (view === 'analytics') {
+    loadAnalytics().catch((error) => setStatus(error.message, true));
+  }
+}
+
+function formatHourLabel(hour) {
+  const h = Number(hour);
+  if (Number.isNaN(h)) return '—';
+  const start = String(h).padStart(2, '0');
+  const end = String((h + 1) % 24).padStart(2, '0');
+  return `${start}:00–${end}:00`;
+}
+
+function setAnalyticsText(selector, text) {
+  const el = document.querySelector(`[data-analytics="${selector}"]`);
+  if (el) el.textContent = text;
+}
+
+async function loadAnalytics() {
+  const badge = document.getElementById('analyticsBadge');
+  const hint = document.getElementById('analyticsHint');
+  const data = await apiRequest('/api/analytics/summary');
+
+  const most = data.mostViewedWidget;
+  if (most?.key) {
+    setAnalyticsText('mostViewed', WIDGET_LABELS[most.key] || most.key);
+    setAnalyticsText('mostViewedMeta', `${most.views} view${most.views === 1 ? '' : 's'}`);
+  } else {
+    setAnalyticsText('mostViewed', 'No data yet');
+    setAnalyticsText('mostViewedMeta', '');
+  }
+
+  const busy = data.busiestHour;
+  if (busy && busy.hour !== undefined && busy.hour !== null) {
+    setAnalyticsText('busiestHour', formatHourLabel(busy.hour));
+    setAnalyticsText('busiestHourMeta', `${busy.events} event${busy.events === 1 ? '' : 's'}`);
+  } else {
+    setAnalyticsText('busiestHour', 'No data yet');
+    setAnalyticsText('busiestHourMeta', '');
+  }
+
+  const slow = data.slowestApi;
+  if (slow?.path) {
+    setAnalyticsText('slowestApi', slow.path);
+    setAnalyticsText(
+      'slowestApiMeta',
+      `${Math.round(slow.avgMs)} ms avg · ${slow.samples} sample${slow.samples === 1 ? '' : 's'}`
+    );
+  } else {
+    setAnalyticsText('slowestApi', 'No data yet');
+    setAnalyticsText('slowestApiMeta', '');
+  }
+
+  if (badge) {
+    badge.textContent = data.available === false ? 'OFFLINE' : '24H';
+  }
+  if (hint) {
+    const totals = data.totals || {};
+    hint.textContent =
+      data.available === false
+        ? 'Analytics service unreachable. Start it with: cd analytics && go run ./cmd/analytics'
+        : `Last ${data.windowHours || 24}h · ${totals.apiCalls || 0} API calls · ${totals.widgetViews || 0} widget views`;
+  }
 }
 
 function bindRemoteNavigation() {
@@ -179,6 +251,19 @@ function bindRemoteNavigation() {
       setRemoteView(button.dataset.remoteView);
     });
   });
+
+  const analyticsRefreshBtn = document.getElementById('analyticsRefreshBtn');
+  if (analyticsRefreshBtn) {
+    analyticsRefreshBtn.addEventListener('click', async () => {
+      flashButton(analyticsRefreshBtn);
+      try {
+        await loadAnalytics();
+        setStatus('Analytics refreshed');
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    });
+  }
 
   // Keep settings groups tidy: opening one closes the others.
   document.querySelectorAll('.settings-group').forEach((group) => {

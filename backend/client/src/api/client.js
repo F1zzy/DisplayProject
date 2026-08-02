@@ -95,6 +95,16 @@ export function getSettings() {
   return request('/api/settings');
 }
 
+/** Fire-and-forget widget view beacon for analytics (auto-rotation). */
+export function reportWidgetView(widget, source = 'auto') {
+  if (!widget) return;
+  void fetch(`${API_BASE}/api/analytics/event`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'widget_view', widget, source }),
+  }).catch(() => {});
+}
+
 export function weatherIconUrl(iconPath) {
   if (!iconPath) return '';
   return iconPath.startsWith('http') ? iconPath : `https:${iconPath}`;

@@ -9,6 +9,8 @@ const { WebSocketServer } = require('ws');
 const apiRoutes = require('./routes/api');
 const createDisplayRouter = require('./routes/display');
 const createSettingsRouter = require('./routes/settings');
+const createAnalyticsRouter = require('./routes/analytics');
+const { metricsMiddleware } = require('./middleware/metricsMiddleware');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -37,6 +39,8 @@ function broadcast(message) {
 }
 
 app.use(express.json());
+app.use(metricsMiddleware);
+app.use('/api/analytics', createAnalyticsRouter());
 app.use('/api', apiRoutes);
 
 const displayRouter = createDisplayRouter(broadcast);

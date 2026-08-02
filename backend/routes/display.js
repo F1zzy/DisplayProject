@@ -1,6 +1,7 @@
 const express = require('express');
 const api = require('../services/api');
 const settings = require('../services/settings');
+const metrics = require('../services/metrics');
 const { setDisplayPower } = require('../services/displayPower');
 
 function createDisplayRouter(broadcast) {
@@ -21,6 +22,21 @@ function createDisplayRouter(broadcast) {
 
   function getWidgetCount() {
     return Math.max(1, settings.getSettings().enabledWidgets.length);
+  }
+
+  function widgetKeyAt(index) {
+    const enabled = settings.getSettings().enabledWidgets || [];
+    return enabled[index] || null;
+  }
+
+  function recordWidgetView(index, source) {
+    const key = widgetKeyAt(index);
+    if (!key) return;
+    metrics.record({
+      type: 'widget_view',
+      widget_key: key,
+      source,
+    });
   }
 
   function getLiveState() {
@@ -52,6 +68,7 @@ function createDisplayRouter(broadcast) {
     displayState = { ...displayState, power: action };
     broadcast({ type: 'display:power', action });
     setDisplayPower(action);
+    metrics.record({ type: 'power', power_action: action });
     res.json(getLiveState());
   });
 
@@ -65,6 +82,7 @@ function createDisplayRouter(broadcast) {
     };
     const live = getLiveState();
     broadcast({ type: 'widgets:rotate', currentWidget: live.currentWidget, pinned: false });
+    recordWidgetView(live.currentWidget, 'rotate');
     res.json(live);
   });
 
@@ -78,6 +96,7 @@ function createDisplayRouter(broadcast) {
     displayState = { ...displayState, currentWidget: index };
     const live = getLiveState();
     broadcast({ type: 'widgets:set', currentWidget: index, pinned: live.pinned });
+    recordWidgetView(live.currentWidget, 'set');
     res.json(live);
   });
 
@@ -101,6 +120,9 @@ function createDisplayRouter(broadcast) {
       pinned: live.pinned,
       currentWidget: live.currentWidget,
     });
+    if (pinned) {
+      recordWidgetView(live.currentWidget, 'pin');
+    }
     res.json(live);
   });
 
@@ -111,6 +133,7 @@ function createDisplayRouter(broadcast) {
       displayState = { ...displayState, power: action };
       broadcast({ type: 'display:power', action });
       setDisplayPower(action);
+      metrics.record({ type: 'power', power_action: action });
     }
     res.sendStatus(200);
   });

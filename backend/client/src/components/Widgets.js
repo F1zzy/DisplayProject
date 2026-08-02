@@ -1,8 +1,9 @@
-import React, { Suspense, lazy, useState, useEffect, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo, useRef } from 'react';
 import './Widgets.css';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingState from './ui/LoadingState';
 import { useSettings } from '../context/SettingsContext';
+import { reportWidgetView } from '../api/client';
 
 const WIDGET_REGISTRY = {
   stock: {
@@ -104,6 +105,19 @@ function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
 
   const activeIndex = currentWidget % widgets.length;
   const { Component, key, label } = widgets[activeIndex];
+  const lastBeaconKey = useRef(null);
+
+  useEffect(() => {
+    if (!key) return;
+    // Remote-driven jumps are counted by the Node display routes; only beacon local/auto views.
+    if (forcedWidget !== null && forcedWidget !== undefined) {
+      lastBeaconKey.current = key;
+      return;
+    }
+    if (lastBeaconKey.current === key) return;
+    lastBeaconKey.current = key;
+    reportWidgetView(key, 'auto');
+  }, [key, forcedWidget]);
 
   return (
     <div className="Wid-container panel">

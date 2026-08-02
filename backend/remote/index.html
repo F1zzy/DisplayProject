@@ -48,6 +48,7 @@
       <nav class="remote-nav" aria-label="Remote sections">
         <span class="remote-nav-indicator" aria-hidden="true"></span>
         <button type="button" class="remote-nav-btn is-active" data-remote-view="control">Control</button>
+        <button type="button" class="remote-nav-btn" data-remote-view="analytics">Analytics</button>
         <button type="button" class="remote-nav-btn" data-remote-view="settings">Settings</button>
       </nav>
 
@@ -80,6 +81,36 @@
           </div>
           <div class="chip-row" id="widgetButtons">
             <button type="button" data-widget="rotate" class="chip">Next Widget</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="remote-view" data-view-panel="analytics" hidden>
+        <section class="panel panel--compact anim-in" style="--delay: 0ms">
+          <div class="panel-header panel-header--compact">
+            <h2 class="panel-title">Analytics</h2>
+            <span class="panel-badge" id="analyticsBadge">24H</span>
+          </div>
+          <p class="analytics-hint" id="analyticsHint">Last 24 hours from the local analytics service.</p>
+          <div class="analytics-grid" id="analyticsContent">
+            <article class="analytics-card">
+              <div class="analytics-label">Most viewed widget</div>
+              <div class="analytics-value" data-analytics="mostViewed">—</div>
+              <div class="analytics-meta" data-analytics="mostViewedMeta"></div>
+            </article>
+            <article class="analytics-card">
+              <div class="analytics-label">Busiest hour</div>
+              <div class="analytics-value" data-analytics="busiestHour">—</div>
+              <div class="analytics-meta" data-analytics="busiestHourMeta"></div>
+            </article>
+            <article class="analytics-card">
+              <div class="analytics-label">Slowest API</div>
+              <div class="analytics-value" data-analytics="slowestApi">—</div>
+              <div class="analytics-meta" data-analytics="slowestApiMeta"></div>
+            </article>
+          </div>
+          <div class="chip-row analytics-actions">
+            <button type="button" class="chip" id="analyticsRefreshBtn">Refresh</button>
           </div>
         </section>
       </div>

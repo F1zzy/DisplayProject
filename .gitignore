@@ -40,3 +40,6 @@ backend/e2e/.tmp/
 backend/playwright-report/
 backend/test-results/
 backend/blob-report/
+
+# Analytics SQLite DB
+analytics/data/

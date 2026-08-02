@@ -8,6 +8,7 @@ const f1Standings = require('../services/f1Standings');
 const f1Live = require('../services/f1Live');
 const f1Logos = require('../services/f1Logos');
 const f1Media = require('../services/f1Media');
+const metrics = require('../services/metrics');
 
 describe('API routes', () => {
   test('GET /api/health returns ok', async () => {
@@ -491,5 +492,56 @@ describe('Settings API', () => {
 
     const state = await request(app).get('/api/display/state');
     expect(state.body.widgetCount).toBe(2);
+  });
+});
+
+describe('Analytics API', () => {
+  const apiKey = process.env.CONTROL_API_KEY || 'change-me';
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('GET /api/analytics/summary requires auth', async () => {
+    const response = await request(app).get('/api/analytics/summary');
+    expect(response.status).toBe(401);
+  });
+
+  test('GET /api/analytics/summary returns payload with valid key', async () => {
+    jest.spyOn(metrics, 'getSummary').mockResolvedValue({
+      mostViewedWidget: { key: 'spotify', views: 4 },
+      busiestHour: { hour: 18, events: 12 },
+      slowestApi: { path: '/api/stocks', avgMs: 500, samples: 2 },
+      windowHours: 24,
+      totals: { apiCalls: 20, widgetViews: 4 },
+      available: true,
+    });
+
+    const response = await request(app)
+      .get('/api/analytics/summary')
+      .set('x-api-key', apiKey);
+
+    expect(response.status).toBe(200);
+    expect(response.body.mostViewedWidget.key).toBe('spotify');
+    expect(response.body.available).toBe(true);
+  });
+
+  test('POST /api/analytics/event accepts widget_view', async () => {
+    const spy = jest.spyOn(metrics, 'record').mockImplementation(() => {});
+    const response = await request(app)
+      .post('/api/analytics/event')
+      .send({ type: 'widget_view', widget: 'news', source: 'auto' });
+
+    expect(response.status).toBe(202);
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'widget_view', widget_key: 'news', source: 'auto' })
+    );
+  });
+
+  test('POST /api/analytics/event rejects invalid type', async () => {
+    const response = await request(app)
+      .post('/api/analytics/event')
+      .send({ type: 'api', widget: 'news' });
+    expect(response.status).toBe(400);
   });
 });

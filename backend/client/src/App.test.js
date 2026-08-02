@@ -59,6 +59,7 @@ jest.mock('./api/client', () => ({
       live: { active: false, order: [] },
     }),
   weatherIconUrl: (icon) => (icon.startsWith('http') ? icon : `https:${icon}`),
+  reportWidgetView: () => {},
 }));
 
 beforeEach(() => {
