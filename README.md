@@ -2,6 +2,16 @@
 
 Widget-style dashboard for a **portrait 9:16** secondary monitor (1080×1920 — a rotated 16:9 / 1920×1080 panel), with weather, stocks, news, and a daily timetable. Controlled remotely via a web PWA and Alexa skill.
 
+![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=nodedotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![WebSocket](https://img.shields.io/badge/WebSocket-Realtime-010101?logo=socketdotio&logoColor=white)
+![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-Kiosk-A22846?logo=raspberrypi&logoColor=white)
+![AWS Lambda](https://img.shields.io/badge/AWS%20Lambda-Alexa-FF9900?logo=awslambda&logoColor=white)
+
+## What this is
+
+DisplayProject turns a spare portrait monitor into an always-on information wall: clock, weather, stocks, news, calendar, Spotify, Formula 1, and more that allows you to control from  your phone or Alexa without walking over to the screen. API keys stay on the server, the UI updates over WebSockets in real time, and appearance (colour schemes, transparent panels, backgrounds) is tunable so it looks like *your* desk display, not a generic dashboard.
+
 ## Features
 
 - Live clock and current weather
@@ -13,6 +23,40 @@ Widget-style dashboard for a **portrait 9:16** secondary monitor (1080×1920 —
 - WebSocket updates for display power, widgets, and settings
 - Raspberry Pi kiosk install with HDMI power control
 - Alexa skill stub in [`alexa/`](alexa/)
+
+## Screenshots
+
+Portrait Formula 1 standings (driver + constructor championships, next race strip, 12-hour forecast):
+
+![Formula 1 dashboard portrait](./images/formula_one_dashboard_portrait.png)
+
+Landscape Spotify widget with album-colour panel background:
+
+![Spotify dashboard landscape](./images/spotify_dashboard_landscape.png)
+
+Custom orange accent colour scheme:
+
+![Spotify dashboard with orange accents](./images/spotify_dashboard_landscape_orange.png)
+
+Transparent surfaces over a custom background image:
+
+![Spotify dashboard with transparent panels and background](./images/spotify_dashboard_landscape_transparentWithBackground.png)
+
+Stocks widget with 7-day chart:
+
+![Stock market dashboard landscape](./images/stock_market_landscape.png)
+
+Night / focus mode with transparent UI over a full-bleed background:
+
+![Focus mode portrait](./images/focus_mode.png)
+
+Remote control: unlock screen:
+
+![Remote control home unlock](./images/remote_control_home_page.png)
+
+Remote control: power, widgets, and settings:
+
+![Remote control page](./images/remote_control_control_page.gif)
 
 ## Prerequisites
 
