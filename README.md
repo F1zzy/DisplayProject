@@ -5,6 +5,7 @@ Widget-style dashboard for a **portrait 9:16** secondary monitor (1080×1920 —
 ![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=nodedotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 ![WebSocket](https://img.shields.io/badge/WebSocket-Realtime-010101?logo=socketdotio&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-E2E%20tested-2EAD33?logo=playwright&logoColor=white)
 ![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-Kiosk-A22846?logo=raspberrypi&logoColor=white)
 ![AWS Lambda](https://img.shields.io/badge/AWS%20Lambda-Alexa-FF9900?logo=awslambda&logoColor=white)
 
