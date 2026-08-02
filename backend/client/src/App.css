@@ -41,7 +41,7 @@
   padding: clamp(12px, 1.6cqh, 20px);
   gap: clamp(10px, 1.2cqh, 14px);
   --gap-sm: 6px;
-  --gap-md: 8px;
+  --gap-md: 8px; 
   --gap-lg: 10px;
 }
 

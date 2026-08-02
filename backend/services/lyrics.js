@@ -1,11 +1,14 @@
 /**
  * Synced lyrics via LRCLIB (https://lrclib.net/docs).
  * No API key. Identify client with User-Agent / Lrclib-Client.
+ *
+ * Lookup order: /api/get (full signature) → /api/get (no album) → /api/search.
  */
 
-const LRCLIB_API = 'https://lrclib.net/api/get';
+const LRCLIB_API = 'https://lrclib.net/api';
 const CLIENT_ID = 'DisplayProject/1.0 (https://github.com/fisayo/DisplayProject)';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const DURATION_TOLERANCE_SEC = 5;
 
 /** @type {Map<string, { expiresAt: number, value: object|null }>} */
 const lyricsCache = new Map();
@@ -63,6 +66,107 @@ function setCached(key, value) {
   lyricsCache.set(key, { expiresAt: Date.now() + CACHE_TTL_MS, value });
 }
 
+function lrclibHeaders() {
+  return {
+    'User-Agent': CLIENT_ID,
+    'Lrclib-Client': CLIENT_ID,
+  };
+}
+
+/**
+ * @param {string} path
+ * @param {URLSearchParams} params
+ */
+async function lrclibFetch(path, params) {
+  try {
+    return await fetch(`${LRCLIB_API}${path}?${params}`, {
+      headers: lrclibHeaders(),
+    });
+  } catch (error) {
+    console.error('LRCLIB request failed:', error.message);
+    return null;
+  }
+}
+
+/**
+ * @param {object|null} data
+ * @returns {{ lines: { t: number, text: string }[], source: 'lrclib' }|null}
+ */
+function payloadFromRecord(data) {
+  if (!data || data.instrumental === true) return null;
+  const lines = parseSyncedLyrics(data.syncedLyrics);
+  if (lines.length === 0) return null;
+  return { lines, source: 'lrclib' };
+}
+
+/**
+ * @param {{ name: string, artists: string[], albumName?: string, durationMs: number }} track
+ * @param {boolean} includeAlbum
+ */
+async function fetchBySignature(track, includeAlbum) {
+  const durationSec = Math.round(Number(track.durationMs) / 1000);
+  const params = new URLSearchParams({
+    track_name: track.name,
+    artist_name: track.artists[0],
+    duration: String(durationSec),
+  });
+  if (includeAlbum) {
+    params.set('album_name', track.albumName || track.name);
+  }
+
+  const response = await lrclibFetch('/get', params);
+  if (!response) return null;
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    console.error(`LRCLIB /get failed (${response.status})`);
+    return null;
+  }
+
+  const data = await response.json().catch(() => null);
+  return payloadFromRecord(data);
+}
+
+/**
+ * Fallback when exact signature misses — pick closest synced match by duration.
+ * @param {{ name: string, artists: string[], durationMs: number }} track
+ */
+async function fetchBySearch(track) {
+  const durationSec = Math.round(Number(track.durationMs) / 1000);
+  const params = new URLSearchParams({
+    track_name: track.name,
+    artist_name: track.artists[0],
+  });
+
+  const response = await lrclibFetch('/search', params);
+  if (!response) return null;
+  if (!response.ok) {
+    console.error(`LRCLIB /search failed (${response.status})`);
+    return null;
+  }
+
+  const results = await response.json().catch(() => null);
+  if (!Array.isArray(results) || results.length === 0) return null;
+
+  const synced = results
+    .filter((row) => row && row.instrumental !== true && row.syncedLyrics)
+    .map((row) => ({
+      row,
+      delta: Math.abs(Number(row.duration) - durationSec),
+    }))
+    .filter((entry) => Number.isFinite(entry.delta))
+    .sort((a, b) => a.delta - b.delta);
+
+  if (synced.length === 0) return null;
+
+  const best = synced[0];
+  // Prefer close duration matches; still accept looser ones if nothing else.
+  if (best.delta > DURATION_TOLERANCE_SEC && synced.every((s) => s.delta > DURATION_TOLERANCE_SEC)) {
+    // Keep the closest anyway — metadata often drifts a few seconds on Spotify edits.
+  }
+
+  return payloadFromRecord(best.row);
+}
+
 /**
  * Fetch synced lyrics for a Spotify-mapped track.
  * @param {{ id?: string|null, name: string, artists?: string[], albumName?: string, durationMs?: number|null }} track
@@ -82,53 +186,14 @@ async function fetchSyncedLyrics(track) {
     return cached;
   }
 
-  const durationSec = Math.round(Number(track.durationMs) / 1000);
-  const params = new URLSearchParams({
-    track_name: track.name,
-    artist_name: track.artists[0],
-    album_name: track.albumName || track.name,
-    duration: String(durationSec),
-  });
-
-  let response;
-  try {
-    response = await fetch(`${LRCLIB_API}?${params}`, {
-      headers: {
-        'User-Agent': CLIENT_ID,
-        'Lrclib-Client': CLIENT_ID,
-      },
-    });
-  } catch (error) {
-    console.error('LRCLIB request failed:', error.message);
-    setCached(key, null);
-    return null;
+  let payload = await fetchBySignature(track, true);
+  if (!payload) {
+    payload = await fetchBySignature(track, false);
+  }
+  if (!payload) {
+    payload = await fetchBySearch(track);
   }
 
-  if (response.status === 404) {
-    setCached(key, null);
-    return null;
-  }
-
-  if (!response.ok) {
-    console.error(`LRCLIB failed (${response.status})`);
-    // Do not cache hard failures long — allow retry next poll cycle via short miss
-    setCached(key, null);
-    return null;
-  }
-
-  const data = await response.json().catch(() => null);
-  if (!data || data.instrumental === true) {
-    setCached(key, null);
-    return null;
-  }
-
-  const lines = parseSyncedLyrics(data.syncedLyrics);
-  if (lines.length === 0) {
-    setCached(key, null);
-    return null;
-  }
-
-  const payload = { lines, source: 'lrclib' };
   setCached(key, payload);
   return payload;
 }

@@ -1,7 +1,8 @@
 .spotify-lyrics-overlay {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  /* Above dashboard panels so lyrics remain visible as a soft overlay. */
+  z-index: 2;
   pointer-events: none;
   display: flex;
   align-items: flex-end;
@@ -15,8 +16,8 @@
   inset: 0;
   background: linear-gradient(
     to top,
-    rgba(16, 17, 21, 0.72) 0%,
-    rgba(16, 17, 21, 0.28) 42%,
+    rgba(16, 17, 21, 0.55) 0%,
+    rgba(16, 17, 21, 0.18) 42%,
     transparent 72%
   );
 }
@@ -43,14 +44,18 @@
 .spotify-lyrics-line.is-next {
   font-size: clamp(1rem, 2.4vw, 1.55rem);
   color: var(--text-muted, #8a8c92);
-  opacity: 0.45;
+  opacity: 0.5;
 }
 
 .spotify-lyrics-line.is-current {
   font-size: clamp(1.45rem, 4.2vw, 2.6rem);
   color: var(--text-primary, #e8e8ea);
-  opacity: 0.92;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+  opacity: 0.95;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+}
+
+.spotify-lyrics-line.is-upcoming {
+  opacity: 0.7;
 }
 
 .spotify-lyrics-line.is-prev {

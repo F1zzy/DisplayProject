@@ -81,21 +81,35 @@ function SpotifyLyricsOverlay() {
 
   const activeIndex = useMemo(() => findLineIndex(lines, progressMs), [lines, progressMs]);
 
-  if (!enabled || !spotifyEnabled || !playing || !hasLyrics || activeIndex < 0) {
+  if (!enabled || !spotifyEnabled || !playing || !hasLyrics) {
     return null;
   }
 
+  // Before the first timed line, preview it as upcoming so the overlay isn't blank.
   const prev = activeIndex > 0 ? lines[activeIndex - 1] : null;
-  const current = lines[activeIndex];
-  const next = activeIndex < lines.length - 1 ? lines[activeIndex + 1] : null;
+  const current = activeIndex >= 0 ? lines[activeIndex] : null;
+  const next =
+    activeIndex >= 0
+      ? activeIndex < lines.length - 1
+        ? lines[activeIndex + 1]
+        : null
+      : lines[0];
+
+  if (!current && !next) {
+    return null;
+  }
 
   return (
     <div className="spotify-lyrics-overlay" aria-hidden="true">
       <div className="spotify-lyrics-veil" />
       <div className="spotify-lyrics-stack">
         {prev ? <div className="spotify-lyrics-line is-prev">{prev.text}</div> : null}
-        <div className="spotify-lyrics-line is-current">{current.text}</div>
-        {next ? <div className="spotify-lyrics-line is-next">{next.text}</div> : null}
+        {current ? (
+          <div className="spotify-lyrics-line is-current">{current.text}</div>
+        ) : (
+          <div className="spotify-lyrics-line is-current is-upcoming">{next.text}</div>
+        )}
+        {current && next ? <div className="spotify-lyrics-line is-next">{next.text}</div> : null}
       </div>
     </div>
   );
