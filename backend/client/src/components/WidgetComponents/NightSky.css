@@ -1,0 +1,131 @@
+.night-sky-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(14px, 1.8cqh, 24px);
+  gap: clamp(12px, 1.4cqh, 18px);
+  min-height: 0;
+  background: transparent;
+}
+
+.night-sky-widget h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.night-sky-place {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.night-sky-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.night-sky-chart {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: clamp(220px, 28cqh, 420px);
+  overflow: hidden;
+  background: transparent;
+}
+
+.night-sky-chart-sway {
+  position: absolute;
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+  display: grid;
+  place-items: center;
+  will-change: transform;
+  animation: nightSkySway 36s ease-in-out infinite;
+}
+
+.night-sky-chart-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  /* Inverted chart: white field becomes the widget bg; stars stay as points */
+  mix-blend-mode: multiply;
+}
+
+.night-sky-bodies {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 1.2cqh, 16px);
+  flex: 0 0 auto;
+}
+
+.night-sky-body {
+  padding: var(--gap-md) var(--gap-lg);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--bg-card);
+}
+
+.night-sky-body-label {
+  display: block;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.night-sky-body-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 3.2cqi, 1.6rem);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@keyframes nightSkySway {
+  0%,
+  100% {
+    transform: translate3d(-0.8%, 0.3%, 0) scale(1.02);
+  }
+  50% {
+    transform: translate3d(0.9%, -0.4%, 0) scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .night-sky-chart-sway {
+    animation: none;
+  }
+}
+
+@media (orientation: landscape) {
+  .night-sky-widget {
+    padding: var(--gap-lg);
+    gap: var(--gap-md);
+  }
+
+  .night-sky-chart {
+    min-height: 160px;
+  }
+
+  .night-sky-bodies {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--gap-md);
+  }
+
+  .night-sky-body-value {
+    font-size: 1.25rem;
+  }
+}

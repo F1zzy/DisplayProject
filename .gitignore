@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build output
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+
+# Runtime settings (defaults applied if missing)
+backend/data/settings.json
+
+# F1 live timing credentials and the browser profile that renews them
+backend/data/f1-token.json
+backend/data/f1-profile/
+
+# Playwright E2E
+backend/e2e/.tmp/
+backend/playwright-report/
+backend/test-results/
+backend/blob-report/

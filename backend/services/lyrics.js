@@ -1,0 +1,210 @@
+/**
+ * Synced lyrics via LRCLIB (https://lrclib.net/docs).
+ * No API key. Identify client with User-Agent / Lrclib-Client.
+ *
+ * Lookup order: /api/get (full signature) → /api/get (no album) → /api/search.
+ */
+
+const LRCLIB_API = 'https://lrclib.net/api';
+const CLIENT_ID = 'DisplayProject/1.0 (https://github.com/fisayo/DisplayProject)';
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const DURATION_TOLERANCE_SEC = 5;
+
+/** @type {Map<string, { expiresAt: number, value: object|null }>} */
+const lyricsCache = new Map();
+
+/**
+ * Parse LRC synced lyrics into timed lines.
+ * @param {string|null|undefined} syncedLyrics
+ * @returns {{ t: number, text: string }[]}
+ */
+function parseSyncedLyrics(syncedLyrics) {
+  if (!syncedLyrics || typeof syncedLyrics !== 'string') return [];
+
+  const lines = [];
+  const re = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]\s*(.*)$/gm;
+  let match;
+  while ((match = re.exec(syncedLyrics)) !== null) {
+    const minutes = parseInt(match[1], 10);
+    const seconds = parseInt(match[2], 10);
+    const frac = match[3] || '0';
+    const msPart =
+      frac.length === 1
+        ? parseInt(frac, 10) * 100
+        : frac.length === 2
+          ? parseInt(frac, 10) * 10
+          : parseInt(frac.padEnd(3, '0').slice(0, 3), 10);
+    const t = minutes * 60_000 + seconds * 1000 + msPart;
+    const text = String(match[4] || '').trim();
+    if (!text) continue;
+    lines.push({ t, text });
+  }
+
+  lines.sort((a, b) => a.t - b.t);
+  return lines;
+}
+
+function cacheKey(track) {
+  if (track?.id) return `id:${track.id}`;
+  const name = String(track?.name || '').toLowerCase();
+  const artist = String(track?.artists?.[0] || '').toLowerCase();
+  const duration = Math.round(Number(track?.durationMs || 0) / 1000);
+  return `sig:${name}|${artist}|${duration}`;
+}
+
+function getCached(key) {
+  const entry = lyricsCache.get(key);
+  if (!entry) return undefined;
+  if (entry.expiresAt <= Date.now()) {
+    lyricsCache.delete(key);
+    return undefined;
+  }
+  return entry.value;
+}
+
+function setCached(key, value) {
+  lyricsCache.set(key, { expiresAt: Date.now() + CACHE_TTL_MS, value });
+}
+
+function lrclibHeaders() {
+  return {
+    'User-Agent': CLIENT_ID,
+    'Lrclib-Client': CLIENT_ID,
+  };
+}
+
+/**
+ * @param {string} path
+ * @param {URLSearchParams} params
+ */
+async function lrclibFetch(path, params) {
+  try {
+    return await fetch(`${LRCLIB_API}${path}?${params}`, {
+      headers: lrclibHeaders(),
+    });
+  } catch (error) {
+    console.error('LRCLIB request failed:', error.message);
+    return null;
+  }
+}
+
+/**
+ * @param {object|null} data
+ * @returns {{ lines: { t: number, text: string }[], source: 'lrclib' }|null}
+ */
+function payloadFromRecord(data) {
+  if (!data || data.instrumental === true) return null;
+  const lines = parseSyncedLyrics(data.syncedLyrics);
+  if (lines.length === 0) return null;
+  return { lines, source: 'lrclib' };
+}
+
+/**
+ * @param {{ name: string, artists: string[], albumName?: string, durationMs: number }} track
+ * @param {boolean} includeAlbum
+ */
+async function fetchBySignature(track, includeAlbum) {
+  const durationSec = Math.round(Number(track.durationMs) / 1000);
+  const params = new URLSearchParams({
+    track_name: track.name,
+    artist_name: track.artists[0],
+    duration: String(durationSec),
+  });
+  if (includeAlbum) {
+    params.set('album_name', track.albumName || track.name);
+  }
+
+  const response = await lrclibFetch('/get', params);
+  if (!response) return null;
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    console.error(`LRCLIB /get failed (${response.status})`);
+    return null;
+  }
+
+  const data = await response.json().catch(() => null);
+  return payloadFromRecord(data);
+}
+
+/**
+ * Fallback when exact signature misses — pick closest synced match by duration.
+ * @param {{ name: string, artists: string[], durationMs: number }} track
+ */
+async function fetchBySearch(track) {
+  const durationSec = Math.round(Number(track.durationMs) / 1000);
+  const params = new URLSearchParams({
+    track_name: track.name,
+    artist_name: track.artists[0],
+  });
+
+  const response = await lrclibFetch('/search', params);
+  if (!response) return null;
+  if (!response.ok) {
+    console.error(`LRCLIB /search failed (${response.status})`);
+    return null;
+  }
+
+  const results = await response.json().catch(() => null);
+  if (!Array.isArray(results) || results.length === 0) return null;
+
+  const synced = results
+    .filter((row) => row && row.instrumental !== true && row.syncedLyrics)
+    .map((row) => ({
+      row,
+      delta: Math.abs(Number(row.duration) - durationSec),
+    }))
+    .filter((entry) => Number.isFinite(entry.delta))
+    .sort((a, b) => a.delta - b.delta);
+
+  if (synced.length === 0) return null;
+
+  const best = synced[0];
+  // Prefer close duration matches; still accept looser ones if nothing else.
+  if (best.delta > DURATION_TOLERANCE_SEC && synced.every((s) => s.delta > DURATION_TOLERANCE_SEC)) {
+    // Keep the closest anyway — metadata often drifts a few seconds on Spotify edits.
+  }
+
+  return payloadFromRecord(best.row);
+}
+
+/**
+ * Fetch synced lyrics for a Spotify-mapped track.
+ * @param {{ id?: string|null, name: string, artists?: string[], albumName?: string, durationMs?: number|null }} track
+ * @returns {Promise<{ lines: { t: number, text: string }[], source: 'lrclib' }|null>}
+ */
+async function fetchSyncedLyrics(track) {
+  if (!track?.name || !Array.isArray(track.artists) || track.artists.length === 0) {
+    return null;
+  }
+  if (track.durationMs == null || Number.isNaN(Number(track.durationMs))) {
+    return null;
+  }
+
+  const key = cacheKey(track);
+  const cached = getCached(key);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  let payload = await fetchBySignature(track, true);
+  if (!payload) {
+    payload = await fetchBySignature(track, false);
+  }
+  if (!payload) {
+    payload = await fetchBySearch(track);
+  }
+
+  setCached(key, payload);
+  return payload;
+}
+
+function resetLyricsCache() {
+  lyricsCache.clear();
+}
+
+module.exports = {
+  parseSyncedLyrics,
+  fetchSyncedLyrics,
+  resetLyricsCache,
+  cacheKey,
+};
