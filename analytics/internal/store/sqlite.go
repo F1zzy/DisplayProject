@@ -49,8 +49,11 @@ type Summary struct {
 	MostViewedWidget *MostViewedWidget `json:"mostViewedWidget"`
 	BusiestHour      *BusiestHour      `json:"busiestHour"`
 	SlowestAPI       *SlowestAPI       `json:"slowestApi"`
-	WindowHours      int               `json:"windowHours"`
-	Totals           Totals            `json:"totals"`
+	WidgetViews      []MostViewedWidget `json:"widgetViews"`
+	EventsByHour     []BusiestHour      `json:"eventsByHour"`
+	APILatency       []SlowestAPI       `json:"apiLatency"`
+	WindowHours      int                `json:"windowHours"`
+	Totals           Totals             `json:"totals"`
 }
 
 type Store struct {
@@ -157,8 +160,14 @@ func nullStr(v string) any {
 func (s *Store) Summary() (Summary, error) {
 	since := time.Now().UTC().Add(-windowHours * time.Hour).Format(time.RFC3339Nano)
 	out := Summary{
-		WindowHours: windowHours,
-		Totals:      Totals{},
+		WindowHours:  windowHours,
+		Totals:       Totals{},
+		WidgetViews:  []MostViewedWidget{},
+		EventsByHour: make([]BusiestHour, 24),
+		APILatency:   []SlowestAPI{},
+	}
+	for h := 0; h < 24; h++ {
+		out.EventsByHour[h] = BusiestHour{Hour: h, Events: 0}
 	}
 
 	if err := s.db.QueryRow(
@@ -218,6 +227,76 @@ func (s *Store) Summary() (Summary, error) {
 	if err == nil {
 		out.SlowestAPI = &SlowestAPI{Path: path, AvgMs: avgMs, Samples: samples}
 	} else if err != sql.ErrNoRows {
+		return out, err
+	}
+
+	rows, err := s.db.Query(`
+		SELECT widget_key, COUNT(*) AS c
+		FROM events
+		WHERE type = 'widget_view' AND ts >= ? AND widget_key IS NOT NULL AND widget_key != ''
+		GROUP BY widget_key
+		ORDER BY c DESC
+		LIMIT 8
+	`, since)
+	if err != nil {
+		return out, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var item MostViewedWidget
+		if err := rows.Scan(&item.Key, &item.Views); err != nil {
+			return out, err
+		}
+		out.WidgetViews = append(out.WidgetViews, item)
+	}
+	if err := rows.Err(); err != nil {
+		return out, err
+	}
+
+	hourRows, err := s.db.Query(`
+		SELECT CAST(strftime('%H', ts) AS INTEGER) AS h, COUNT(*) AS c
+		FROM events
+		WHERE ts >= ?
+		GROUP BY h
+	`, since)
+	if err != nil {
+		return out, err
+	}
+	defer hourRows.Close()
+	for hourRows.Next() {
+		var h, c int
+		if err := hourRows.Scan(&h, &c); err != nil {
+			return out, err
+		}
+		if h >= 0 && h < 24 {
+			out.EventsByHour[h] = BusiestHour{Hour: h, Events: c}
+		}
+	}
+	if err := hourRows.Err(); err != nil {
+		return out, err
+	}
+
+	latRows, err := s.db.Query(`
+		SELECT path, AVG(duration_ms) AS avg_ms, COUNT(*) AS c
+		FROM events
+		WHERE type = 'api' AND ts >= ? AND path IS NOT NULL AND path != '' AND duration_ms IS NOT NULL
+		GROUP BY path
+		HAVING c >= 1
+		ORDER BY avg_ms DESC
+		LIMIT 8
+	`, since)
+	if err != nil {
+		return out, err
+	}
+	defer latRows.Close()
+	for latRows.Next() {
+		var item SlowestAPI
+		if err := latRows.Scan(&item.Path, &item.AvgMs, &item.Samples); err != nil {
+			return out, err
+		}
+		out.APILatency = append(out.APILatency, item)
+	}
+	if err := latRows.Err(); err != nil {
 		return out, err
 	}
 

@@ -29,9 +29,12 @@ const VALID_CLOCK_FONT_SIZES = ['sm', 'md', 'lg', 'xl'];
 
 const VALID_NIGHT_FOCUS_WHEN = ['auto', 'always', 'custom'];
 
+const VALID_STOCK_CHART_MODES = ['line', 'candles'];
+
 const DEFAULTS = {
   location: process.env.LOCATION || 'Nottingham',
   stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
+  stockChartMode: 'line',
   widgetRotationMs: 120000,
   enabledWidgets: [...VALID_WIDGETS],
   calendarDays: 1,
@@ -175,6 +178,11 @@ function normalize(partial = {}) {
   return {
     location: String(merged.location || DEFAULTS.location).trim() || DEFAULTS.location,
     stockSymbols: symbols.length ? symbols : [...DEFAULTS.stockSymbols],
+    stockChartMode: sanitizeFromList(
+      merged.stockChartMode,
+      VALID_STOCK_CHART_MODES,
+      DEFAULTS.stockChartMode
+    ),
     widgetRotationMs: clampInt(merged.widgetRotationMs, 0, 3600000, DEFAULTS.widgetRotationMs),
     enabledWidgets: sanitizeEnabledWidgets(merged.enabledWidgets),
     calendarDays: clampInt(merged.calendarDays, 1, 7, DEFAULTS.calendarDays),
@@ -290,6 +298,7 @@ module.exports = {
   VALID_CLOCK_SIZES,
   VALID_CLOCK_FONT_SIZES,
   VALID_NIGHT_FOCUS_WHEN,
+  VALID_STOCK_CHART_MODES,
   DEFAULTS,
   getSettings,
   updateSettings,

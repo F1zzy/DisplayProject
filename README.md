@@ -290,7 +290,7 @@ Disable screen blanking in Pi OS desktop preferences as an extra safeguard again
 
 ## Analytics (optional)
 
-A small Go microservice records API response times and widget views in SQLite, then exposes a 24-hour summary for the remote **Analytics** tab (most viewed widget, busiest hour, slowest API). The Node backend posts events and proxies the summary — the remote never talks to Go directly.
+A small Go microservice records API response times and widget views in SQLite, then exposes a 24-hour summary for the remote **Analytics** tab (most viewed widget, busiest hour, slowest API, plus chart series). The Node backend posts events and proxies the summary — the remote never talks to Go directly.
 
 ```bash
 cd analytics
@@ -299,13 +299,23 @@ go run ./cmd/analytics
 
 In `backend/.env` set `ANALYTICS_URL=http://127.0.0.1:3010` (the default). Set `ANALYTICS_URL=false` to disable. Details: [`analytics/README.md`](analytics/README.md). Safe to skip on a Pi if you do not need the tab — the dashboard keeps working when the service is down.
 
+Charts on the remote Analytics tab are a small Vite/React island ([Bklit](https://bklit.com/) via shadcn). Build once after clone or when changing chart UI:
+
+```bash
+cd backend/remote-analytics
+npm install
+npm run build
+```
+
+Or from `backend/`: `npm run build:remote-analytics` (after `npm install` in `remote-analytics`). Output lands in `backend/remote/analytics-app/` and is served under `/remote/analytics-app/`.
+
 ## Remote control
 
 1. Start the server
 2. Open `http://localhost:3000/remote` (or `http://<pi-ip>:3000/remote` from another device)
 3. Enter your `CONTROL_API_KEY` from `backend/.env` and tap **Unlock**
 4. Use On / Sleep / Off, widget jump buttons, and **Pin widget** (pick which widget to freeze; **Unpin** or **Next Widget** clears the pin)
-5. Open the **Analytics** tab for the last-24h summary (requires the Go service above)
+5. Open the **Analytics** tab for the last-24h summary and charts (requires the Go service above; build remote-analytics once as documented in Analytics)
 6. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background, appearance (including **colour scheme** — presets or **Custom** with accent/app/panel/card pickers and optional transparent surfaces; **clock size** and **clock font size**; applied to both the dashboard and this remote page — night focus schedule and **display brightness** — on a Raspberry Pi this drives the panel/HDMI backlight via `displayproject-display-brightness`), and layout, then **Save settings**
 
 Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip. Enable **Spotify** after completing the Spotify setup above. Enable **Formula 1** for championship standings and live race order.

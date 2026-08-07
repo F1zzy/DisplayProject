@@ -220,7 +220,7 @@
   display: flex;
   flex-direction: column;
   font-family: var(--font-body);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .chart-wrapper {
@@ -242,6 +242,13 @@
   flex-shrink: 0;
 }
 
+.chart-header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
 .chart-title {
   margin: 0;
   font-size: clamp(0.85rem, 1.4vw, 1.05rem);
@@ -251,16 +258,48 @@
   color: var(--text-muted);
 }
 
-.chart-price {
-  font-size: clamp(1.25rem, 3cqi, 1.7rem);
-  font-weight: 700;
-  color: var(--accent);
+.chart-mode-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+}
+
+.chart-mode-btn {
+  margin: 0;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chart-mode-btn--active {
+  background: var(--accent);
+  color: #1a1c21;
 }
 
 .chart-container {
   flex: 1;
   min-height: 0;
   position: relative;
+  overflow: visible;
+}
+
+.stock-bklit-chart {
+  height: 100% !important;
+  width: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.chart-price {
+  font-size: clamp(1.25rem, 3cqi, 1.7rem);
+  font-weight: 700;
+  color: var(--accent);
 }
 
 @media (orientation: landscape) {

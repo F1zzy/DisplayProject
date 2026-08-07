@@ -24,6 +24,54 @@
   --gap-lg: 16px;
   --font-display: 'NothingFont', 'Time-Font', 'Segoe UI', sans-serif;
   --font-body: 'NothingFont', 'Segoe UI', sans-serif;
+
+  /* shadcn / Bklit chart tokens */
+  --background: var(--bg-panel);
+  --foreground: var(--text-primary);
+  --card: var(--bg-card);
+  --card-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: #101115;
+  --muted: #22242a;
+  --muted-foreground: var(--text-muted);
+  --ring: var(--accent);
+  --color-emerald-500: var(--success);
+  --color-red-500: var(--danger);
+
+  --chart-1: #ff6a1a;
+  --chart-2: #3ddc97;
+  --chart-3: #5b8cff;
+  --chart-4: #ffc107;
+  --chart-5: #c084fc;
+  --chart-background: transparent;
+  --chart-foreground: #e8e8ea;
+  --chart-foreground-muted: #8a8c92;
+  --chart-label: #b7b8bd;
+  --chart-line-primary: #ff6a1a;
+  --chart-line-secondary: #5b8cff;
+  --chart-crosshair: rgba(255, 106, 26, 0.55);
+  --chart-grid: rgba(232, 232, 234, 0.1);
+  --chart-indicator-color: #ff6a1a;
+  --chart-indicator-secondary-color: #5b8cff;
+  --chart-marker-background: #1a1c21;
+  --chart-marker-border: #35373d;
+  --chart-marker-foreground: #e8e8ea;
+  --chart-marker-badge-background: #26282e;
+  --chart-marker-badge-foreground: #e8e8ea;
+  --chart-segment-background: rgba(255, 106, 26, 0.12);
+  --chart-segment-line: #ff6a1a;
+  --chart-brush-border: #35373d;
+  --chart-tooltip-background: #1a1c21;
+  --chart-tooltip-foreground: #e8e8ea;
+  --chart-tooltip-muted: #8a8c92;
+  --chart-scale-01: #1e2025;
+  --chart-scale-02: #26282e;
+  --chart-scale-03: #2c2e34;
+  --chart-scale-04: #35373d;
+  --chart-scale-05: #8a8c92;
+  --chart-scale-pattern-color: #1a1c21;
+  --popover: #1a1c21;
+  --popover-foreground: #e8e8ea;
 }
 
 *,

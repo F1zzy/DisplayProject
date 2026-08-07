@@ -112,6 +112,7 @@
           <div class="chip-row analytics-actions">
             <button type="button" class="chip" id="analyticsRefreshBtn">Refresh</button>
           </div>
+          <div id="analytics-charts-root"></div>
         </section>
       </div>
 
@@ -128,6 +129,13 @@
                 <label class="field">
                   <span class="field-label">Stock symbols</span>
                   <input id="settingSymbols" type="text" placeholder="AAPL,GOOGL,MSFT" />
+                </label>
+                <label class="field">
+                  <span class="field-label">Stock chart</span>
+                  <select id="settingStockChartMode">
+                    <option value="line">Line (live)</option>
+                    <option value="candles">Candles</option>
+                  </select>
                 </label>
                 <label class="field">
                   <span class="field-label">Rotation (sec)</span>

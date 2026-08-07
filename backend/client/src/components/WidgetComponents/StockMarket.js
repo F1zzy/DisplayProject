@@ -1,36 +1,28 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
 import { getStocks } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
-import { getChartFontFamily } from '../../utils/dashboardAppearance';
+import { LiveLineChart } from '../charts/live-line-chart';
+import { LiveLine } from '../charts/live-line';
+import { LiveXAxis } from '../charts/live-x-axis';
+import { LiveYAxis } from '../charts/live-y-axis';
+import { CandlestickChart } from '../charts/candlestick-chart';
+import { Candlestick } from '../charts/candlestick';
+import { Background } from '../charts/background';
+import { ChartTooltip } from '../charts/tooltip';
+import { XAxis } from '../charts/x-axis';
 import './StockMarket.css';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
-
-ChartJS.defaults.color = '#8a8c92';
 
 /** How long each symbol stays featured before rotating (kiosk, non-interactive). */
 const STOCK_ROTATE_MS = 8000;
+const LIVE_WINDOW = 25;
+const LIVE_LOOKBACK = 25;
+const CANDLE_LOOKBACK = 30;
+
+const momentumColors = {
+  up: 'var(--color-emerald-500)',
+  down: 'var(--color-red-500)',
+  flat: 'var(--muted-foreground)',
+};
 
 function formatPrice(value) {
   return Number.parseFloat(value).toFixed(2);
@@ -40,9 +32,8 @@ function formatVolume(value) {
   return Number.parseInt(value, 10).toLocaleString();
 }
 
-function formatChartDate(dateStr) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString([], { weekday: 'short', day: 'numeric' });
+function formatUsd(value) {
+  return `$${Number(value).toFixed(2)}`;
 }
 
 function getLatestStats(data) {
@@ -69,6 +60,44 @@ function getLatestStats(data) {
   };
 }
 
+function CandlestickTooltipContent({ point }) {
+  const date = point.date instanceof Date ? point.date : new Date(point.date);
+  const open = Number(point.open) || 0;
+  const high = Number(point.high) || 0;
+  const low = Number(point.low) || 0;
+  const close = Number(point.close) || 0;
+
+  return (
+    <div className="px-3 py-2.5">
+      <div className="mb-1.5 text-xs font-medium opacity-60" style={{ color: 'var(--chart-tooltip-foreground)' }}>
+        {date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })}
+      </div>
+      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
+        <span style={{ color: 'var(--chart-tooltip-muted)' }}>Open</span>
+        <span className="tabular-nums" style={{ color: 'var(--chart-tooltip-foreground)' }}>
+          {formatUsd(open)}
+        </span>
+        <span style={{ color: 'var(--chart-tooltip-muted)' }}>High</span>
+        <span className="tabular-nums" style={{ color: 'var(--color-emerald-500)' }}>
+          {formatUsd(high)}
+        </span>
+        <span style={{ color: 'var(--chart-tooltip-muted)' }}>Low</span>
+        <span className="tabular-nums" style={{ color: 'var(--color-red-500)' }}>
+          {formatUsd(low)}
+        </span>
+        <span style={{ color: 'var(--chart-tooltip-muted)' }}>Close</span>
+        <span className="tabular-nums" style={{ color: 'var(--chart-tooltip-foreground)' }}>
+          {formatUsd(close)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function StockMarket() {
   const { settings } = useSettings();
   const symbolsKey = (settings.stockSymbols || []).join(',');
@@ -76,6 +105,7 @@ function StockMarket() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [symbols, setSymbols] = useState([]);
   const [loading, setLoading] = useState(true);
+  const chartMode = settings.stockChartMode === 'candles' ? 'candles' : 'line';
 
   useEffect(() => {
     let cancelled = false;
@@ -119,59 +149,43 @@ function StockMarket() {
   const selectedData = stocks[activeIndex];
   const stats = useMemo(() => getLatestStats(selectedData), [selectedData]);
 
-  const chart = useMemo(() => {
-    if (!selectedData) return null;
+  const chronologicalDates = useMemo(() => {
+    if (!selectedData) return [];
+    return Object.keys(selectedData).slice().reverse();
+  }, [selectedData]);
 
-    const dates = Object.keys(selectedData).slice(0, 7).reverse();
-    const prices = dates.map((date) => parseFloat(selectedData[date]['4. close']));
-    const chartFont = getChartFontFamily(settings.fontPreset);
+  const liveSeries = useMemo(() => {
+    if (!chronologicalDates.length) {
+      return { data: [], value: 0 };
+    }
+    const dates = chronologicalDates.slice(-LIVE_LOOKBACK);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const data = dates.map((dateStr, index) => ({
+      time: nowSec - (dates.length - 1 - index),
+      value: parseFloat(selectedData[dateStr]['4. close']),
+    }));
+    const value = data.length ? data[data.length - 1].value : 0;
+    return { data, value };
+  }, [chronologicalDates, selectedData]);
 
-    return {
-      data: {
-        labels: dates.map(formatChartDate),
-        datasets: [
-          {
-            label: 'Close',
-            data: prices,
-            fill: true,
-            backgroundColor: 'rgba(255, 106, 26, 0.15)',
-            borderColor: '#ff6a1a',
-            borderWidth: 2,
-            pointBackgroundColor: '#ff6a1a',
-            pointBorderColor: '#1a1c21',
-            pointRadius: 3,
-            pointHoverRadius: 3,
-            tension: 0.35,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 400 },
-        interaction: { mode: 'nearest', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: { enabled: false },
-        },
-        scales: {
-          x: {
-            ticks: { color: '#aaa', maxRotation: 0, font: { family: chartFont, size: 11 } },
-            grid: { color: 'rgba(255, 255, 255, 0.06)' },
-          },
-          y: {
-            ticks: {
-              color: '#aaa',
-              font: { family: chartFont, size: 11 },
-              callback: (value) => `$${value}`,
-            },
-            grid: { color: 'rgba(255, 255, 255, 0.08)' },
-          },
-        },
-      },
-      lastPrice: prices[prices.length - 1],
-    };
-  }, [selectedData, settings.fontPreset]);
+  const ohlcData = useMemo(() => {
+    if (!chronologicalDates.length) return [];
+    return chronologicalDates.slice(-CANDLE_LOOKBACK).map((dateStr) => {
+      const bar = selectedData[dateStr];
+      return {
+        date: new Date(dateStr),
+        open: parseFloat(bar['1. open']),
+        high: parseFloat(bar['2. high']),
+        low: parseFloat(bar['3. low']),
+        close: parseFloat(bar['4. close']),
+      };
+    });
+  }, [chronologicalDates, selectedData]);
+
+  const lastPrice =
+    liveSeries.data.length > 0
+      ? liveSeries.data[liveSeries.data.length - 1].value
+      : null;
 
   if (loading) {
     return (
@@ -188,6 +202,8 @@ function StockMarket() {
       </div>
     );
   }
+
+  const hasChartData = chartMode === 'line' ? liveSeries.data.length > 0 : ohlcData.length > 0;
 
   return (
     <div className="stock-market-widget" aria-live="polite">
@@ -271,14 +287,65 @@ function StockMarket() {
         </div>
 
         <section className="stock-graph">
-          {chart ? (
+          {hasChartData ? (
             <div className="chart-wrapper">
               <div className="chart-header">
-                <h3 className="chart-title">Last 7 Days</h3>
-                <span className="chart-price">${formatPrice(chart.lastPrice)}</span>
+                <div className="chart-header-main">
+                  <h3 className="chart-title">
+                    {chartMode === 'line' ? 'Live Close' : 'OHLC'}
+                  </h3>
+                  <div className="chart-mode-toggle" role="status" aria-label="Chart mode">
+                    <span
+                      className={`chart-mode-btn${chartMode === 'line' ? ' chart-mode-btn--active' : ''}`}
+                    >
+                      Line
+                    </span>
+                    <span
+                      className={`chart-mode-btn${chartMode === 'candles' ? ' chart-mode-btn--active' : ''}`}
+                    >
+                      Candles
+                    </span>
+                  </div>
+                </div>
+                <span className="chart-price">{formatUsd(lastPrice ?? stats?.close ?? 0)}</span>
               </div>
               <div className="chart-container">
-                <Line data={chart.data} options={chart.options} />
+                {chartMode === 'line' ? (
+                  <LiveLineChart
+                    key={selectedSymbol}
+                    className="stock-bklit-chart"
+                    data={liveSeries.data}
+                    value={liveSeries.value}
+                    window={LIVE_WINDOW}
+                    nowOffsetUnits={1}
+                    paused
+                    margin={{ top: 12, right: 88, bottom: 40, left: 8 }}
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <LiveLine
+                      dataKey="value"
+                      momentumColors={momentumColors}
+                      formatValue={formatUsd}
+                      dotSize={5}
+                    />
+                    <LiveXAxis />
+                    <LiveYAxis position="left" formatValue={formatUsd} />
+                  </LiveLineChart>
+                ) : (
+                  <CandlestickChart
+                    key={`${selectedSymbol}-candles`}
+                    className="stock-bklit-chart"
+                    data={ohlcData}
+                    margin={{ top: 12, right: 56, bottom: 40, left: 8 }}
+                    style={{ height: '100%', width: '100%', aspectRatio: 'unset' }}
+                    revealSignature={selectedSymbol}
+                  >
+                    <Background />
+                    <Candlestick fadedOpacity={0.25} />
+                    <ChartTooltip content={CandlestickTooltipContent} showDots={false} />
+                    <XAxis />
+                  </CandlestickChart>
+                )}
               </div>
             </div>
           ) : (

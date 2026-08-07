@@ -5,6 +5,9 @@ const EMPTY_SUMMARY = {
   mostViewedWidget: null,
   busiestHour: null,
   slowestApi: null,
+  widgetViews: [],
+  eventsByHour: [],
+  apiLatency: [],
   windowHours: 24,
   totals: { apiCalls: 0, widgetViews: 0 },
 };

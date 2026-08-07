@@ -58,4 +58,20 @@ func TestSummaryAggregates(t *testing.T) {
 	if summary.BusiestHour == nil || summary.BusiestHour.Events < 1 {
 		t.Fatalf("busiestHour=%+v", summary.BusiestHour)
 	}
+	if len(summary.WidgetViews) < 2 || summary.WidgetViews[0].Key != "spotify" {
+		t.Fatalf("widgetViews=%+v", summary.WidgetViews)
+	}
+	if len(summary.EventsByHour) != 24 {
+		t.Fatalf("eventsByHour len=%d", len(summary.EventsByHour))
+	}
+	var hourTotal int
+	for _, h := range summary.EventsByHour {
+		hourTotal += h.Events
+	}
+	if hourTotal != 7 {
+		t.Fatalf("eventsByHour total=%d", hourTotal)
+	}
+	if len(summary.APILatency) < 2 || summary.APILatency[0].Path != "/api/stocks" {
+		t.Fatalf("apiLatency=%+v", summary.APILatency)
+	}
 }

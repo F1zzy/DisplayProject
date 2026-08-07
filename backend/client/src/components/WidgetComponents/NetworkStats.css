@@ -84,6 +84,14 @@
   border: 1px solid var(--border);
   background: var(--bg-card);
   padding: 8px 10px 4px;
+  overflow: visible;
+}
+
+.network-bklit-chart {
+  height: 100% !important;
+  width: 100%;
+  min-height: 140px;
+  overflow: visible;
 }
 
 .network-chart-empty {

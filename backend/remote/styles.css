@@ -983,6 +983,10 @@ input[type='color'] {
   margin-top: 12px;
 }
 
+#analytics-charts-root {
+  margin-top: 4px;
+}
+
 .remote-view {
   position: relative;
 }

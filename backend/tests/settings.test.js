@@ -41,6 +41,7 @@ describe('settings service', () => {
     const updated = settings.updateSettings({
       location: 'London',
       stockSymbols: ['msft', 'aapl!!'],
+      stockChartMode: 'candles',
       widgetRotationMs: 60000,
       enabledWidgets: ['news', 'stock', 'bogus'],
       calendarDays: 99,
@@ -51,6 +52,7 @@ describe('settings service', () => {
 
     expect(updated.location).toBe('London');
     expect(updated.stockSymbols).toEqual(['MSFT', 'AAPL']);
+    expect(updated.stockChartMode).toBe('candles');
     expect(updated.enabledWidgets).toEqual(['news', 'stock']);
     expect(updated.calendarDays).toBe(7);
     expect(updated.forecastDays).toBe(1);
@@ -58,6 +60,7 @@ describe('settings service', () => {
 
     settings.resetSettingsCache();
     expect(settings.getSettings().location).toBe('London');
+    expect(settings.getSettings().stockChartMode).toBe('candles');
   });
 
   test('updateSettings rejects unknown keys', () => {

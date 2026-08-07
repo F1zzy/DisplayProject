@@ -9,6 +9,7 @@ node_modules/
 # Build output
 build/
 dist/
+backend/remote/analytics-app/
 
 # Logs
 npm-debug.log*

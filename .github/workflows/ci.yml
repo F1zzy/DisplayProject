@@ -19,6 +19,7 @@ jobs:
           cache-dependency-path: |
             backend/package-lock.json
             backend/client/package-lock.json
+            backend/remote-analytics/package-lock.json
 
       - name: Install backend dependencies
         working-directory: backend
@@ -51,6 +52,14 @@ jobs:
 
       - name: Build client
         working-directory: backend/client
+        run: npm run build
+
+      - name: Install remote-analytics dependencies
+        working-directory: backend/remote-analytics
+        run: npm ci
+
+      - name: Build remote-analytics
+        working-directory: backend/remote-analytics
         run: npm run build
 
       - name: Install Playwright Chromium

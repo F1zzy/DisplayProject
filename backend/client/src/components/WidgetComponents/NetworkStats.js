@@ -1,35 +1,18 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-} from 'chart.js';
 import { getNetworkStats } from '../../api/client';
-import { useSettings } from '../../context/SettingsContext';
-import { getChartFontFamily } from '../../utils/dashboardAppearance';
 import { usePollingFetch } from '../../hooks/usePollingFetch';
 import LoadingState from '../ui/LoadingState';
 import ErrorState from '../ui/ErrorState';
+import { LiveLineChart } from '../charts/live-line-chart';
+import { LiveLine } from '../charts/live-line';
+import { LiveXAxis } from '../charts/live-x-axis';
+import { LiveYAxis } from '../charts/live-y-axis';
 import './NetworkStats.css';
 
 const HISTORY_MAX = 24;
 const POLL_MS = 15000;
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend
-);
+/** ~20 samples at 15s ≈ 5 minutes (LiveLine window is seconds). */
+const LIVE_WINDOW_SECS = 20 * (POLL_MS / 1000);
 
 function formatRate(bps) {
   if (bps == null || Number.isNaN(bps)) return '—';
@@ -38,11 +21,8 @@ function formatRate(bps) {
   return `${(bps / (1024 * 1024)).toFixed(2)} MB/s`;
 }
 
-function formatRateTick(bps) {
-  if (bps == null || Number.isNaN(bps)) return '';
-  if (bps < 1024) return `${Math.round(bps)} B`;
-  if (bps < 1024 * 1024) return `${(bps / 1024).toFixed(0)} K`;
-  return `${(bps / (1024 * 1024)).toFixed(1)} M`;
+function formatSats(value) {
+  return formatRate(value);
 }
 
 function formatCheckedAt(iso) {
@@ -58,19 +38,7 @@ function formatCheckedAt(iso) {
   }
 }
 
-function formatChartTime(iso) {
-  try {
-    return new Date(iso).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return '';
-  }
-}
-
 function NetworkStats() {
-  const { settings } = useSettings();
   const [history, setHistory] = useState([]);
   const fetchStats = useCallback(() => getNetworkStats(), []);
   const { data: stats, loading, error } = usePollingFetch(fetchStats, {
@@ -94,136 +62,23 @@ function NetworkStats() {
     });
   }, [stats]);
 
-  const hasRateHistory = history.some(
-    (point) => point.rxBps != null || point.txBps != null
-  );
-  const hasLatencyHistory = history.some((point) => point.latencyMs != null);
-  const showTrafficChart = hasRateHistory;
-  const showChart = showTrafficChart || hasLatencyHistory;
+  const liveSeries = useMemo(() => {
+    const data = history
+      .filter((point) => point.rxBps != null && !Number.isNaN(point.rxBps))
+      .map((point) => ({
+        time: Math.floor(new Date(point.at).getTime() / 1000),
+        value: point.rxBps,
+      }));
+    const value =
+      data.length > 0
+        ? data[data.length - 1].value
+        : stats?.rxBps != null
+          ? stats.rxBps
+          : 0;
+    return { data, value };
+  }, [history, stats]);
 
-  const chartData = useMemo(() => {
-    const labels = history.map((point) => formatChartTime(point.at));
-
-    if (showTrafficChart) {
-      return {
-        labels,
-        datasets: [
-          {
-            label: 'Download',
-            data: history.map((point) => point.rxBps),
-            borderColor: '#ff6a1a',
-            backgroundColor: 'rgba(255, 106, 26, 0.12)',
-            borderWidth: 2,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            pointBackgroundColor: '#ff6a1a',
-            tension: 0.35,
-            fill: true,
-            spanGaps: true,
-          },
-          {
-            label: 'Upload',
-            data: history.map((point) => point.txBps),
-            borderColor: '#3ddc97',
-            backgroundColor: 'rgba(61, 220, 151, 0.1)',
-            borderWidth: 2,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            pointBackgroundColor: '#3ddc97',
-            tension: 0.35,
-            fill: true,
-            spanGaps: true,
-          },
-        ],
-      };
-    }
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Latency',
-          data: history.map((point) => point.latencyMs),
-          borderColor: '#ff6a1a',
-          backgroundColor: 'rgba(255, 106, 26, 0.12)',
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-          pointBackgroundColor: '#ff6a1a',
-          tension: 0.35,
-          fill: true,
-          spanGaps: true,
-        },
-      ],
-    };
-  }, [history, showTrafficChart]);
-
-  const chartOptions = useMemo(() => {
-    const chartFont = getChartFontFamily(settings.fontPreset);
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        mode: 'index',
-        intersect: false,
-      },
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          align: 'end',
-          labels: {
-            color: '#8a8c92',
-            boxWidth: 10,
-            boxHeight: 10,
-            padding: 12,
-            font: { family: chartFont, size: 11 },
-          },
-        },
-        tooltip: {
-          backgroundColor: '#1f1f1f',
-          titleColor: '#fff',
-          bodyColor: '#ddd',
-          borderColor: '#444',
-          borderWidth: 1,
-          titleFont: { family: chartFont },
-          bodyFont: { family: chartFont },
-          callbacks: {
-            label: (context) => {
-              const value = context.parsed.y;
-              if (context.dataset.label === 'Latency') {
-                return `Latency: ${value == null ? '—' : `${value} ms`}`;
-              }
-              return `${context.dataset.label}: ${formatRate(value)}`;
-            },
-          },
-        },
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: '#8a8c92',
-            maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: 6,
-            font: { family: chartFont, size: 10 },
-          },
-          grid: { color: 'rgba(255, 255, 255, 0.06)' },
-        },
-        y: {
-          beginAtZero: true,
-          ticks: {
-            color: '#8a8c92',
-            font: { family: chartFont, size: 10 },
-            callback: (value) =>
-              showTrafficChart ? formatRateTick(value) : `${value} ms`,
-          },
-          grid: { color: 'rgba(255, 255, 255, 0.08)' },
-        },
-      },
-    };
-  }, [showTrafficChart, settings.fontPreset]);
-
+  const showChart = liveSeries.data.length > 0;
   const online = stats?.online === true;
 
   return (
@@ -262,7 +117,24 @@ function NetworkStats() {
 
           <div className="network-chart">
             {showChart ? (
-              <Line data={chartData} options={chartOptions} />
+              <LiveLineChart
+                className="network-bklit-chart"
+                data={liveSeries.data}
+                value={liveSeries.value}
+                window={LIVE_WINDOW_SECS}
+                nowOffsetUnits={1}
+                margin={{ top: 12, right: 88, bottom: 40, left: 8 }}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <LiveLine
+                  dataKey="value"
+                  stroke="var(--chart-3)"
+                  formatValue={formatSats}
+                  dotSize={4}
+                />
+                <LiveXAxis />
+                <LiveYAxis position="left" formatValue={formatSats} />
+              </LiveLineChart>
             ) : (
               <p className="network-chart-empty">
                 Graph will appear after the next samples

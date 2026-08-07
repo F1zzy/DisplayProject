@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  --bg-app: #101115;
+  --bg-shell: #1a1c21;
+  --bg-panel: #1e2025;
+  --bg-card: #26282e;
+  --accent: #ff6a1a;
+  --accent-soft: rgba(255, 106, 26, 0.16);
+  --text-primary: #e8e8ea;
+  --text-secondary: #b7b8bd;
+  --text-muted: #8a8c92;
+  --border: #2c2e34;
+  --border-strong: #35373d;
+  --success: #3ddc97;
+  --danger: #ff7b72;
+
+  --background: var(--bg-panel);
+  --foreground: var(--text-primary);
+  --card: var(--bg-card);
+  --card-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: #101115;
+  --muted: #22242a;
+  --muted-foreground: var(--text-muted);
+  --ring: var(--accent);
+
+  --chart-1: #ff6a1a;
+  --chart-2: #3ddc97;
+  --chart-3: #5b8cff;
+  --chart-4: #ffc107;
+  --chart-5: #c084fc;
+  --chart-background: transparent;
+  --chart-foreground: #e8e8ea;
+  --chart-foreground-muted: #8a8c92;
+  --chart-label: #b7b8bd;
+  --chart-line-primary: #ff6a1a;
+  --chart-line-secondary: #5b8cff;
+  --chart-crosshair: rgba(255, 106, 26, 0.55);
+  --chart-grid: rgba(232, 232, 234, 0.1);
+  --chart-indicator-color: #ff6a1a;
+  --chart-indicator-secondary-color: #5b8cff;
+  --chart-marker-background: #1a1c21;
+  --chart-marker-border: #35373d;
+  --chart-marker-foreground: #e8e8ea;
+  --chart-marker-badge-background: #26282e;
+  --chart-marker-badge-foreground: #e8e8ea;
+  --chart-segment-background: rgba(255, 106, 26, 0.12);
+  --chart-segment-line: #ff6a1a;
+  --chart-brush-border: #35373d;
+  --chart-tooltip-background: #1a1c21;
+
+  color-scheme: dark;
+  color: var(--text-primary);
+  background: transparent;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: transparent;
+}
+
+#analytics-charts-root {
+  width: 100%;
+}
+
+.analytics-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.analytics-chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 14px 12px 10px;
+}
+
+.analytics-chart-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.analytics-chart-body {
+  min-height: 160px;
+}
+
+.analytics-chart-status {
+  margin: 0;
+  padding: 18px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}

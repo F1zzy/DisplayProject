@@ -6,6 +6,7 @@ const SettingsContext = createContext(null);
 const DEFAULT_SETTINGS = {
   location: process.env.REACT_APP_LOCATION || 'Nottingham',
   stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
+  stockChartMode: 'line',
   widgetRotationMs: 120000,
   enabledWidgets: ['stock', 'news', 'timetable', 'network', 'sky', 'spotify', 'f1'],
   calendarDays: 1,

@@ -199,6 +199,8 @@ function setAnalyticsText(selector, text) {
 async function loadAnalytics() {
   const badge = document.getElementById('analyticsBadge');
   const hint = document.getElementById('analyticsHint');
+  const chartsAlreadyMounted = Boolean(document.querySelector('script[data-analytics-charts]'));
+  const chartsReady = ensureAnalyticsChartsLoaded().catch(() => null);
   const data = await apiRequest('/api/analytics/summary');
 
   const most = data.mostViewedWidget;
@@ -241,6 +243,42 @@ async function loadAnalytics() {
         ? 'Analytics service unreachable. Start it with: cd analytics && go run ./cmd/analytics'
         : `Last ${data.windowHours || 24}h · ${totals.apiCalls || 0} API calls · ${totals.widgetViews || 0} widget views`;
   }
+
+  await chartsReady;
+  // First mount fetches on its own; later visits/refreshes re-fetch via this event.
+  if (chartsAlreadyMounted) {
+    window.dispatchEvent(new CustomEvent('analytics:refresh'));
+  }
+}
+
+let analyticsChartsPromise = null;
+
+function ensureAnalyticsChartsLoaded() {
+  if (analyticsChartsPromise) return analyticsChartsPromise;
+  if (document.querySelector('script[data-analytics-charts]')) {
+    analyticsChartsPromise = Promise.resolve();
+    return analyticsChartsPromise;
+  }
+
+  analyticsChartsPromise = new Promise((resolve, reject) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/remote/analytics-app/assets/analytics.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = '/remote/analytics-app/assets/analytics.js';
+    script.dataset.analyticsCharts = '1';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load analytics charts'));
+    document.body.appendChild(script);
+  }).catch((error) => {
+    analyticsChartsPromise = null;
+    throw error;
+  });
+
+  return analyticsChartsPromise;
 }
 
 function bindRemoteNavigation() {
@@ -642,6 +680,7 @@ function renderSectionOrderList() {
 function fillSettingsForm(settings) {
   document.getElementById('settingLocation').value = settings.location || '';
   document.getElementById('settingSymbols').value = (settings.stockSymbols || []).join(',');
+  document.getElementById('settingStockChartMode').value = settings.stockChartMode || 'line';
   document.getElementById('settingRotation').value = Math.round((settings.widgetRotationMs || 0) / 1000);
   document.getElementById('settingCalendarDays').value = settings.calendarDays ?? 1;
   document.getElementById('settingForecastDays').value = settings.forecastDays ?? 3;
@@ -714,6 +753,7 @@ function readSettingsForm() {
       .value.split(',')
       .map((s) => s.trim())
       .filter(Boolean),
+    stockChartMode: document.getElementById('settingStockChartMode').value || 'line',
     widgetRotationMs: Number.isNaN(rotationSeconds) ? 120000 : rotationSeconds * 1000,
     enabledWidgets,
     calendarDays: parseInt(document.getElementById('settingCalendarDays').value, 10) || 1,
