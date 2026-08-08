@@ -1,5 +1,6 @@
 import './App.css';
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import WeatherBar from './components/WeatherBar';
 import Widgets from './components/Widgets';
 import AnimatedClock from './components/AnimatedClock';
@@ -16,39 +17,16 @@ import {
 } from './utils/dashboardBackground';
 import { applyDashboardAppearance } from './utils/dashboardAppearance';
 import { shouldActivateNightFocus } from './utils/isNightTime';
+import {
+  fadeTransition,
+  nightDimAnimate,
+} from './lib/dashboard-motion';
 
-const SECTION_COMPONENTS = {
-  header: () => (
-    <header className="dashboard-header" key="header">
-      <ErrorBoundary label="header" title="Clock unavailable">
-        <TimeDisplay />
-      </ErrorBoundary>
-    </header>
-  ),
-  weather: () => (
-    <section className="dashboard-weather" key="weather">
-      <ErrorBoundary label="weather" title="Weather unavailable">
-        <WeatherBar />
-      </ErrorBoundary>
-    </section>
-  ),
-  widgets: (forcedWidget, onWidgetShown, pinned) => (
-    <section className="dashboard-widgets" key="widgets">
-      <ErrorBoundary label="widgets" title="Widgets unavailable">
-        <Widgets
-          forcedWidget={forcedWidget}
-          onWidgetShown={onWidgetShown}
-          pinned={pinned}
-        />
-      </ErrorBoundary>
-    </section>
-  ),
-};
-
-function TimeDisplay() {
+function TimeDisplay({ nightFocusActive }) {
   const [now, setNow] = useState(new Date());
   const { current, loading } = useWeather();
   const { settings } = useSettings();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -58,28 +36,67 @@ function TimeDisplay() {
   const weekday = now.toLocaleDateString([], { weekday: 'long' });
   const date = now.toLocaleDateString([], { month: 'long', day: 'numeric' });
   const clockAnimation = settings.clockAnimation || 'off';
+  const humidity =
+    !loading && current?.humidity != null
+      ? Math.max(0, Math.min(100, Number(current.humidity)))
+      : 0;
+  const cardEnter = (delay) => ({
+    initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    transition: { ...fadeTransition(reduceMotion, 0.4), delay: reduceMotion ? 0 : delay },
+  });
 
   return (
     <div className="time-container">
       <AnimatedClock now={now} animation={clockAnimation} />
-      <div className="time-container-dateCon">
-        <div className="time-container-weekday stat-card">
+      <motion.div
+        className="time-container-dateCon"
+        animate={nightDimAnimate(nightFocusActive, reduceMotion)}
+      >
+        <motion.div className="time-container-weekday stat-card" {...cardEnter(0)}>
           <div>{weekday}</div>
           <div>{date}</div>
-        </div>
-        <div className="time-container-stats-temp stat-card">
-          {loading ? '—' : current ? `${current.temperature}°C` : 'N/A'}
-        </div>
-        <div className="temp-container-stats-weather stat-card">
+        </motion.div>
+        <motion.div className="time-container-stats-temp stat-card" {...cardEnter(0.06)}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={loading ? 'loading' : current ? String(current.temperature) : 'na'}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+              transition={fadeTransition(reduceMotion, 0.35)}
+            >
+              {loading ? '—' : current ? `${current.temperature}°C` : 'N/A'}
+            </motion.span>
+          </AnimatePresence>
+        </motion.div>
+        <motion.div className="temp-container-stats-weather stat-card" {...cardEnter(0.12)}>
           <div className="CurrentWeather-Icon">
-            {current?.iconUrl ? (
-              <img src={weatherIconUrl(current.iconUrl)} alt="Weather Icon" />
-            ) : (
-              <span>{loading ? '…' : '—'}</span>
-            )}
+            <AnimatePresence mode="wait" initial={false}>
+              {current?.iconUrl ? (
+                <motion.img
+                  key={current.iconUrl}
+                  src={weatherIconUrl(current.iconUrl)}
+                  alt="Weather Icon"
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.88 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92 }}
+                  transition={fadeTransition(reduceMotion, 0.4)}
+                />
+              ) : (
+                <motion.span
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {loading ? '…' : '—'}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
-        <div className="time-container-stats-humidity stat-card">
+        </motion.div>
+        <motion.div className="time-container-stats-humidity stat-card" {...cardEnter(0.18)}>
           <span className="humidity-label">Humidity</span>
           <div className="humidity-value-row">
             <span className="humidity-value">
@@ -99,19 +116,19 @@ function TimeDisplay() {
               !loading && current?.humidity != null ? Number(current.humidity) : undefined
             }
           >
-            <div
+            <motion.div
               className="humidity-meter-fill"
-              style={{
-                width: `${
-                  !loading && current?.humidity != null
-                    ? Math.max(0, Math.min(100, Number(current.humidity)))
-                    : 0
-                }%`,
-              }}
+              initial={false}
+              animate={{ width: `${humidity}%` }}
+              transition={
+                reduceMotion
+                  ? { duration: 0.15 }
+                  : { type: 'spring', stiffness: 120, damping: 22 }
+              }
             />
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
@@ -123,6 +140,7 @@ function AppContent() {
   const [now, setNow] = useState(new Date());
   const { settings, applySettings } = useSettings();
   const { current, forecast } = useWeather();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     applyDocumentBackground(settings);
@@ -175,10 +193,6 @@ function AppContent() {
     return shouldActivateNightFocus(settings, current, forecast, now);
   }, [settings, current, forecast, now]);
 
-  if (displayPower === 'off' || displayPower === 'sleep') {
-    return <div className={`display-sleep display-sleep--${displayPower}`} />;
-  }
-
   const backgroundStyle = buildDashboardBackgroundStyle(settings);
   const sectionOrder =
     Array.isArray(settings.sectionOrder) && settings.sectionOrder.length > 0
@@ -195,6 +209,8 @@ function AppContent() {
     ? settings.clockFontSize
     : 'md';
   const clearForcedWidget = () => setForcedWidget(null);
+  const dim = nightDimAnimate(nightFocusActive, reduceMotion);
+  const screenTransition = fadeTransition(reduceMotion, 0.45);
 
   const appClass = [
     'App',
@@ -207,16 +223,70 @@ function AppContent() {
     .filter(Boolean)
     .join(' ');
 
+  const sections = {
+    header: (
+      <header className="dashboard-header" key="header">
+        <ErrorBoundary label="header" title="Clock unavailable">
+          <TimeDisplay nightFocusActive={nightFocusActive} />
+        </ErrorBoundary>
+      </header>
+    ),
+    weather: (
+      <motion.section
+        className="dashboard-weather"
+        key="weather"
+        animate={dim}
+      >
+        <ErrorBoundary label="weather" title="Weather unavailable">
+          <WeatherBar />
+        </ErrorBoundary>
+      </motion.section>
+    ),
+    widgets: (
+      <motion.section
+        className="dashboard-widgets"
+        key="widgets"
+        animate={dim}
+      >
+        <ErrorBoundary label="widgets" title="Widgets unavailable">
+          <Widgets
+            forcedWidget={forcedWidget}
+            onWidgetShown={clearForcedWidget}
+            pinned={widgetPinned}
+          />
+        </ErrorBoundary>
+      </motion.section>
+    ),
+  };
+
   return (
-    <div className={appClass} style={backgroundStyle || undefined}>
-      <SpotifyLyricsOverlay />
-      {sectionOrder.map((id) => {
-        const render = SECTION_COMPONENTS[id];
-        return render ? render(forcedWidget, clearForcedWidget, widgetPinned) : null;
-      })}
-      {/* Render last so rain/snow paint above all dashboard panels */}
-      <WeatherAtmosphere />
-    </div>
+    <AnimatePresence mode="wait" initial={false}>
+      {displayPower === 'off' || displayPower === 'sleep' ? (
+        <motion.div
+          key={`sleep-${displayPower}`}
+          className={`display-sleep display-sleep--${displayPower}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: displayPower === 'off' ? 0 : 1 }}
+          exit={{ opacity: 0 }}
+          transition={screenTransition}
+        />
+      ) : (
+        <motion.div
+          key="dashboard"
+          className={appClass}
+          style={backgroundStyle || undefined}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.992 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={screenTransition}
+        >
+          <SpotifyLyricsOverlay />
+          {sectionOrder.map((id) => sections[id] || null)}
+          {/* Render last so rain/snow paint above all dashboard panels */}
+          <WeatherAtmosphere />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

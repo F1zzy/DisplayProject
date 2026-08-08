@@ -86,7 +86,6 @@
   background: var(--accent-soft);
   border-top: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
   box-sizing: border-box;
-  transition: height 0.45s ease;
 }
 
 .hourly-point--now .hourly-bar {
@@ -144,8 +143,13 @@
   flex-shrink: 0;
 }
 
+.hourly-wind-dir-wrap {
+  display: inline-flex;
+  line-height: 0;
+}
+
 .hourly-wind-dir {
-  transition: transform 0.3s ease;
+  display: block;
 }
 
 .hourly-status {
@@ -183,8 +187,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hourly-bar,
-  .hourly-wind-dir {
-    transition: none;
+  .forecast-content,
+  .hourly-content,
+  .hourly-point,
+  .hourly-bar {
+    will-change: auto;
   }
 }

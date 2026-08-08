@@ -37,33 +37,23 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1.25;
-  transition: opacity 0.35s ease, transform 0.35s ease, color 0.35s ease, filter 0.35s ease;
 }
 
 .spotify-lyrics-line.is-prev,
 .spotify-lyrics-line.is-next {
   font-size: clamp(1rem, 2.4vw, 1.55rem);
   color: var(--text-muted, #8a8c92);
-  opacity: 0.5;
 }
 
 .spotify-lyrics-line.is-current {
   font-size: clamp(1.45rem, 4.2vw, 2.6rem);
   color: var(--text-primary, #e8e8ea);
-  opacity: 0.95;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
 }
 
 .spotify-lyrics-line.is-upcoming {
-  opacity: 0.7;
-}
-
-.spotify-lyrics-line.is-prev {
-  transform: translateY(4px);
-}
-
-.spotify-lyrics-line.is-next {
-  transform: translateY(-4px);
+  font-size: clamp(1.45rem, 4.2vw, 2.6rem);
+  color: var(--text-primary, #e8e8ea);
 }
 
 .App > .dashboard-header,
@@ -73,8 +63,3 @@
   z-index: 1;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .spotify-lyrics-line {
-    transition: none;
-  }
-}

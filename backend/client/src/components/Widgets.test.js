@@ -2,6 +2,41 @@ import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import Widgets from './Widgets';
 
+jest.mock('motion/react', () => {
+  const React = require('react');
+  const strip = (props) => {
+    const safe = { ...props };
+    delete safe.initial;
+    delete safe.animate;
+    delete safe.exit;
+    delete safe.transition;
+    delete safe.variants;
+    delete safe.custom;
+    delete safe.layoutId;
+    delete safe.layout;
+    delete safe.whileInView;
+    delete safe.viewport;
+    return safe;
+  };
+  const create = (tag) => {
+    const Comp = React.forwardRef(({ children, className, ...rest }, ref) =>
+      React.createElement(tag, { ref, className, ...strip(rest) }, children)
+    );
+    Comp.displayName = `MotionMock(${tag})`;
+    return Comp;
+  };
+  return {
+    AnimatePresence: ({ children }) => <>{children}</>,
+    motion: new Proxy(
+      {},
+      {
+        get: (_t, key) => create(typeof key === 'string' ? key : 'div'),
+      }
+    ),
+    useReducedMotion: () => true,
+  };
+});
+
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: {

@@ -318,7 +318,6 @@
   bottom: 1px;
   background: var(--team, var(--accent));
   opacity: 0.14;
-  transition: width 0.6s ease;
 }
 
 .f1-row > *:not(.f1-fill) {

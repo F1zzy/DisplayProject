@@ -1,62 +1,46 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { DASH_EASE, fadeTransition } from '../lib/dashboard-motion';
 import './AnimatedClock.css';
-
-function prefersReducedMotion() {
-  if (typeof window === 'undefined' || !window.matchMedia) return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
 
 function pad2(n) {
   return String(n).padStart(2, '0');
 }
 
 function DigitCell({ value, mode, animate }) {
-  const [display, setDisplay] = useState(value);
-  const [outgoing, setOutgoing] = useState(null);
-  const [phase, setPhase] = useState('idle');
-  const displayRef = useRef(value);
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    if (value === displayRef.current) return undefined;
-
-    if (!animate || mode === 'off') {
-      displayRef.current = value;
-      setDisplay(value);
-      setOutgoing(null);
-      setPhase('idle');
-      return undefined;
-    }
-
-    const previous = displayRef.current;
-    displayRef.current = value;
-    setOutgoing(previous);
-    setDisplay(value);
-    setPhase(mode === 'flip' ? 'flip' : 'crossfade');
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setOutgoing(null);
-      setPhase('idle');
-    }, mode === 'flip' ? 500 : 400);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [value, animate, mode]);
+  const reduceMotion = useReducedMotion();
 
   if (mode === 'off' || !animate) {
     return <span className="clock-digit">{value}</span>;
   }
 
+  const isFlip = mode === 'flip' && !reduceMotion;
+  const transition = isFlip
+    ? { duration: 0.45, ease: DASH_EASE }
+    : fadeTransition(reduceMotion, 0.35);
+
   return (
-    <span className={`clock-digit clock-digit--${mode} ${phase !== 'idle' ? `is-${phase}` : ''}`}>
-      {outgoing != null ? (
-        <span className="clock-digit-layer clock-digit-layer--out" aria-hidden="true">
-          {outgoing}
-        </span>
-      ) : null}
-      <span className="clock-digit-layer clock-digit-layer--in">{display}</span>
+    <span className={`clock-digit clock-digit--${isFlip ? 'flip' : 'crossfade'}`}>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={value}
+          className="clock-digit-layer"
+          initial={
+            isFlip
+              ? { opacity: 0, rotateX: -80 }
+              : { opacity: 0, y: reduceMotion ? 0 : 10 }
+          }
+          animate={isFlip ? { opacity: 1, rotateX: 0 } : { opacity: 1, y: 0 }}
+          exit={
+            isFlip
+              ? { opacity: 0, rotateX: 80 }
+              : { opacity: 0, y: reduceMotion ? 0 : -10 }
+          }
+          transition={transition}
+        >
+          {value}
+        </motion.span>
+      </AnimatePresence>
     </span>
   );
 }
@@ -66,7 +50,7 @@ function DigitCell({ value, mode, animate }) {
  * Seconds update without animation and read quieter than hours/minutes.
  */
 export default function AnimatedClock({ now, animation = 'off' }) {
-  const reduced = prefersReducedMotion();
+  const reduced = useReducedMotion();
   const mode = reduced || animation === 'off' ? 'off' : animation;
 
   const hours = pad2(now.getHours());

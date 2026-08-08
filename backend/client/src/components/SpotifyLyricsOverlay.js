@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { getSpotifyNow } from '../api/client';
 import { useSettings } from '../context/SettingsContext';
+import { fadeTransition } from '../lib/dashboard-motion';
 import './SpotifyLyricsOverlay.css';
 
 const POLL_PLAYING_MS = 4000;
@@ -16,8 +18,39 @@ function findLineIndex(lines, progressMs) {
   return idx;
 }
 
+function LyricLine({ role, text, reduceMotion }) {
+  const isCurrent = role === 'current' || role === 'upcoming';
+  const y =
+    role === 'prev' ? 8 : role === 'next' ? -8 : 0;
+
+  return (
+    <motion.div
+      className={`spotify-lyrics-line is-${role}`}
+      initial={
+        reduceMotion
+          ? { opacity: 0 }
+          : { opacity: 0, y: isCurrent ? 14 : y }
+      }
+      animate={{
+        opacity: role === 'current' ? 0.95 : role === 'upcoming' ? 0.7 : 0.5,
+        y: reduceMotion ? 0 : y,
+      }}
+      exit={
+        reduceMotion
+          ? { opacity: 0 }
+          : { opacity: 0, y: role === 'prev' ? -10 : 10 }
+      }
+      transition={fadeTransition(reduceMotion, 0.38)}
+      layout={!reduceMotion}
+    >
+      {text}
+    </motion.div>
+  );
+}
+
 function SpotifyLyricsOverlay() {
   const { settings } = useSettings();
+  const reduceMotion = useReducedMotion();
   const enabled = settings.spotifyLyricsBackground !== false;
   const spotifyEnabled = Array.isArray(settings.enabledWidgets)
     ? settings.enabledWidgets.includes('spotify')
@@ -100,18 +133,50 @@ function SpotifyLyricsOverlay() {
   }
 
   return (
-    <div className="spotify-lyrics-overlay" aria-hidden="true">
+    <motion.div
+      className="spotify-lyrics-overlay"
+      aria-hidden="true"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={fadeTransition(reduceMotion, 0.5)}
+    >
       <div className="spotify-lyrics-veil" />
       <div className="spotify-lyrics-stack">
-        {prev ? <div className="spotify-lyrics-line is-prev">{prev.text}</div> : null}
-        {current ? (
-          <div className="spotify-lyrics-line is-current">{current.text}</div>
-        ) : (
-          <div className="spotify-lyrics-line is-current is-upcoming">{next.text}</div>
-        )}
-        {current && next ? <div className="spotify-lyrics-line is-next">{next.text}</div> : null}
+        <AnimatePresence mode="popLayout" initial={false}>
+          {prev ? (
+            <LyricLine
+              key={`prev-${prev.t}-${prev.text}`}
+              role="prev"
+              text={prev.text}
+              reduceMotion={reduceMotion}
+            />
+          ) : null}
+          {current ? (
+            <LyricLine
+              key={`cur-${current.t}-${current.text}`}
+              role="current"
+              text={current.text}
+              reduceMotion={reduceMotion}
+            />
+          ) : (
+            <LyricLine
+              key={`up-${next.t}-${next.text}`}
+              role="upcoming"
+              text={next.text}
+              reduceMotion={reduceMotion}
+            />
+          )}
+          {current && next ? (
+            <LyricLine
+              key={`next-${next.t}-${next.text}`}
+              role="next"
+              text={next.text}
+              reduceMotion={reduceMotion}
+            />
+          ) : null}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

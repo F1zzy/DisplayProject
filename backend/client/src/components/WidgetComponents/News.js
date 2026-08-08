@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { getNews } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faNewspaper, faMicrochip } from '@fortawesome/free-solid-svg-icons';
+import {
+  fadeTransition,
+  listContainerVariants,
+  listItemVariants,
+} from '../../lib/dashboard-motion';
 import './News.css';
 
 function getSourceLabel(source) {
@@ -23,17 +29,21 @@ function getSourceInitials(name) {
 
 function NewsThumbnail({ article, variant = 'general' }) {
   const [imageFailed, setImageFailed] = useState(false);
+  const reduceMotion = useReducedMotion();
   const sourceLabel = getSourceLabel(article.source);
   const showImage = article.urlToImage && !imageFailed;
 
   if (showImage) {
     return (
-      <img
+      <motion.img
         src={article.urlToImage}
         alt=""
         className="news-image"
         loading="lazy"
         onError={() => setImageFailed(true)}
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.04 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={fadeTransition(reduceMotion, 0.5)}
       />
     );
   }
@@ -57,11 +67,14 @@ function NewsThumbnail({ article, variant = 'general' }) {
 
 function News() {
   const { settings } = useSettings();
+  const reduceMotion = useReducedMotion();
   const showGeneral = settings.newsGeneral !== false;
   const showTechnology = settings.newsTechnology !== false;
   const [generalNews, setGeneralNews] = useState([]);
   const [techNews, setTechNews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const listVariants = listContainerVariants(reduceMotion, 0.07);
+  const itemVariants = listItemVariants(reduceMotion, 12);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +111,7 @@ function News() {
   }
 
   const renderNewsItem = (article, variant) => (
-    <article className="news-item" key={article.url}>
+    <motion.article className="news-item" key={article.url} variants={itemVariants}>
       <NewsThumbnail article={article} variant={variant} />
       <div className="news-content">
         <h4 className="news-title">{article.title}</h4>
@@ -109,7 +122,7 @@ function News() {
           <span className="news-source">{getSourceLabel(article.source)}</span>
         )}
       </div>
-    </article>
+    </motion.article>
   );
 
   if (!showGeneral && !showTechnology) {
@@ -121,25 +134,40 @@ function News() {
   }
 
   return (
-    <div className="news-widget">
+    <motion.div
+      className="news-widget"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={fadeTransition(reduceMotion, 0.4)}
+    >
       {showGeneral && (
         <div className="news-section">
           <h3 className="news-section-title">Top Headlines</h3>
-          <div className="news-list">
+          <motion.div
+            className="news-list"
+            variants={listVariants}
+            initial="hidden"
+            animate="show"
+          >
             {generalNews.slice(0, 3).map((article) => renderNewsItem(article, 'general'))}
-          </div>
+          </motion.div>
         </div>
       )}
 
       {showTechnology && (
         <div className="news-section">
           <h3 className="news-section-title">Technology News</h3>
-          <div className="news-list">
+          <motion.div
+            className="news-list"
+            variants={listVariants}
+            initial="hidden"
+            animate="show"
+          >
             {techNews.slice(0, 2).map((article) => renderNewsItem(article, 'technology'))}
-          </div>
+          </motion.div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 

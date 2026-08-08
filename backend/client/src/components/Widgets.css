@@ -123,6 +123,7 @@
 }
 
 .widget-display {
+  position: relative;
   min-height: 0;
   width: 100%;
   height: 100%;
@@ -131,13 +132,30 @@
   grid-template-rows: minmax(0, 1fr);
 }
 
+.widget-stage {
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  will-change: transform, opacity;
+}
+
 /* Fill the stage so widgets can stretch rows/content to the available height. */
-.widget-display > .widget-content,
-.widget-display > .error-boundary-fallback {
+.widget-stage > .widget-content,
+.widget-stage > .error-boundary-fallback,
+.widget-display .widget-content,
+.widget-display .error-boundary-fallback {
   min-height: 0;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .widget-stage {
+    will-change: auto;
+  }
 }
 
 @media (orientation: landscape) {

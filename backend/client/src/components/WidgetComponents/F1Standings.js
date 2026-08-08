@@ -1,8 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { getF1Standings } from '../../api/client';
 import { usePollingFetch } from '../../hooks/usePollingFetch';
 import LoadingState from '../ui/LoadingState';
 import ErrorState from '../ui/ErrorState';
+import {
+  fadeTransition,
+  listContainerVariants,
+  listItemVariants,
+} from '../../lib/dashboard-motion';
 import './F1Standings.css';
 
 const LIVE_POLL_MS = 5000;
@@ -228,8 +234,11 @@ function F1Standings() {
   const [pollMs, setPollMs] = useState(IDLE_POLL_MS);
   const { data, loading, error } = usePollingFetch(fetchF1, { intervalMs: pollMs });
   const landscape = useLandscape();
+  const reduceMotion = useReducedMotion();
   const maxDrivers = landscape ? MAX_DRIVER_ROWS_LANDSCAPE : MAX_DRIVER_ROWS;
   const maxConstructors = MAX_CONSTRUCTOR_ROWS;
+  const listVariants = listContainerVariants(reduceMotion, 0.035);
+  const rowVariants = listItemVariants(reduceMotion, 8);
 
   const sessionActive = data?.live?.active === true;
   useEffect(() => {
@@ -249,10 +258,15 @@ function F1Standings() {
   // Points bars are drawn relative to whoever leads each championship.
   const driverLead = drivers[0]?.points || 0;
   const teamLead = constructors[0]?.points || 0;
-  const share = (points, lead) => (lead ? `${Math.max(0, (points / lead) * 100)}%` : '0%');
+  const share = (points, lead) => (lead ? Math.max(0, (points / lead) * 100) : 0);
 
   return (
-    <div className="widget-content f1-widget">
+    <motion.div
+      className="widget-content f1-widget"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={fadeTransition(reduceMotion, 0.4)}
+    >
       <header className="f1-head">
         <div className="f1-brand">
           <span className="f1-mark" aria-hidden="true" />
@@ -285,53 +299,66 @@ function F1Standings() {
               <span className="f1-num">{isLive ? 'Gap' : 'Pts'}</span>
             </div>
 
-            <ol
-              className="f1-list"
-              style={{ '--f1-rows': Math.max(driverRows.length, 1) }}
-            >
-              {isLive
-                ? driverRows.map((entry) => (
-                    <li
-                      key={entry.number ?? entry.position}
-                      className={`f1-row f1-row--driver ${entry.retired ? 'is-out' : ''} ${
-                        entry.inPit ? 'is-pit' : ''
-                      }`}
-                      style={{
-                        '--team': entry.teamColour || teamColour(entry.constructorId),
-                      }}
-                    >
-                      <span className="f1-pos">{entry.position}</span>
-                      <span className="f1-accent" aria-hidden="true" />
-                      <ConstructorLogo constructorId={entry.constructorId} season={data.season} />
-                      <span className="f1-code">{entry.code || entry.number || '—'}</span>
-                      <span className="f1-full f1-hide-narrow">{entry.name || ''}</span>
-                      <span className="f1-team">{entry.team || ''}</span>
-                      <PositionDelta value={entry.positionChange} />
-                      <span className="f1-num f1-gap">{formatGap(entry)}</span>
-                    </li>
-                  ))
-                : driverRows.map((driver) => (
-                    <li
-                      key={driver.driverId || driver.position}
-                      className="f1-row f1-row--driver"
-                      style={{ '--team': teamColour(driver.constructorId) }}
-                    >
-                      <span
-                        className="f1-fill"
-                        style={{ width: share(driver.points, driverLead) }}
-                        aria-hidden="true"
-                      />
-                      <span className="f1-pos">{driver.position}</span>
-                      <span className="f1-accent" aria-hidden="true" />
-                      <ConstructorLogo constructorId={driver.constructorId} season={data.season} />
-                      <span className="f1-code">{driverCode(driver)}</span>
-                      <span className="f1-full f1-hide-narrow">{driverName(driver)}</span>
-                      <span className="f1-team">{driver.constructor || ''}</span>
-                      <PositionDelta value={driver.positionChange} />
-                      <span className="f1-num f1-points">{driver.points}</span>
-                    </li>
-                  ))}
-            </ol>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.ol
+                key={isLive ? 'live' : 'standings'}
+                className="f1-list"
+                style={{ '--f1-rows': Math.max(driverRows.length, 1) }}
+                variants={listVariants}
+                initial="hidden"
+                animate="show"
+                exit={{ opacity: 0 }}
+                transition={fadeTransition(reduceMotion, 0.25)}
+              >
+                {isLive
+                  ? driverRows.map((entry) => (
+                      <motion.li
+                        key={entry.number ?? entry.position}
+                        className={`f1-row f1-row--driver ${entry.retired ? 'is-out' : ''} ${
+                          entry.inPit ? 'is-pit' : ''
+                        }`}
+                        style={{
+                          '--team': entry.teamColour || teamColour(entry.constructorId),
+                        }}
+                        variants={rowVariants}
+                        layout={!reduceMotion}
+                      >
+                        <span className="f1-pos">{entry.position}</span>
+                        <span className="f1-accent" aria-hidden="true" />
+                        <ConstructorLogo constructorId={entry.constructorId} season={data.season} />
+                        <span className="f1-code">{entry.code || entry.number || '—'}</span>
+                        <span className="f1-full f1-hide-narrow">{entry.name || ''}</span>
+                        <span className="f1-team">{entry.team || ''}</span>
+                        <PositionDelta value={entry.positionChange} />
+                        <span className="f1-num f1-gap">{formatGap(entry)}</span>
+                      </motion.li>
+                    ))
+                  : driverRows.map((driver) => (
+                      <motion.li
+                        key={driver.driverId || driver.position}
+                        className="f1-row f1-row--driver"
+                        style={{ '--team': teamColour(driver.constructorId) }}
+                        variants={rowVariants}
+                      >
+                        <motion.span
+                          className="f1-fill"
+                          initial={reduceMotion ? false : { width: 0 }}
+                          animate={{ width: `${share(driver.points, driverLead)}%` }}
+                          transition={fadeTransition(reduceMotion, 0.55)}
+                          aria-hidden="true"
+                        />
+                        <span className="f1-pos">{driver.position}</span>
+                        <span className="f1-accent" aria-hidden="true" />
+                        <ConstructorLogo constructorId={driver.constructorId} season={data.season} />
+                        <span className="f1-code">{driverCode(driver)}</span>
+                        <span className="f1-full f1-hide-narrow">{driverName(driver)}</span>
+                        <span className="f1-team">{driver.constructor || ''}</span>
+                        <PositionDelta value={driver.positionChange} />
+                        <span className="f1-num f1-points">{driver.points}</span>
+                      </motion.li>
+                    ))}
+              </motion.ol>
+            </AnimatePresence>
           </section>
 
           <section className="f1-panel">
@@ -345,19 +372,25 @@ function F1Standings() {
               <span className="f1-num">Pts</span>
             </div>
 
-            <ol
+            <motion.ol
               className="f1-list"
               style={{ '--f1-rows': Math.max(constructorRows.length, 1) }}
+              variants={listVariants}
+              initial="hidden"
+              animate="show"
             >
               {constructorRows.map((team) => (
-                <li
+                <motion.li
                   key={team.constructorId || team.position}
                   className="f1-row f1-row--team"
                   style={{ '--team': teamColour(team.constructorId) }}
+                  variants={rowVariants}
                 >
-                  <span
+                  <motion.span
                     className="f1-fill"
-                    style={{ width: share(team.points, teamLead) }}
+                    initial={reduceMotion ? false : { width: 0 }}
+                    animate={{ width: `${share(team.points, teamLead)}%` }}
+                    transition={fadeTransition(reduceMotion, 0.55)}
                     aria-hidden="true"
                   />
                   <span className="f1-pos">{team.position}</span>
@@ -367,13 +400,13 @@ function F1Standings() {
                   <PositionDelta value={team.positionChange} />
                   <span className="f1-num f1-wins">{team.wins}</span>
                   <span className="f1-num f1-points">{team.points}</span>
-                </li>
+                </motion.li>
               ))}
-            </ol>
+            </motion.ol>
           </section>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 

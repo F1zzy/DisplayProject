@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { getStocks } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
 import { LiveLineChart } from '../charts/live-line-chart';
@@ -10,6 +11,7 @@ import { Candlestick } from '../charts/candlestick';
 import { Background } from '../charts/background';
 import { ChartTooltip } from '../charts/tooltip';
 import { XAxis } from '../charts/x-axis';
+import { fadeTransition } from '../../lib/dashboard-motion';
 import './StockMarket.css';
 
 /** How long each symbol stays featured before rotating (kiosk, non-interactive). */
@@ -22,6 +24,42 @@ const momentumColors = {
   up: 'var(--color-emerald-500)',
   down: 'var(--color-red-500)',
   flat: 'var(--muted-foreground)',
+};
+
+const chartPanelVariants = {
+  enter: (direction) => ({
+    opacity: 0,
+    x: direction >= 0 ? 28 : -28,
+  }),
+  center: { opacity: 1, x: 0 },
+  exit: (direction) => ({
+    opacity: 0,
+    x: direction >= 0 ? -22 : 22,
+  }),
+};
+
+const reducedChartPanelVariants = {
+  enter: { opacity: 0 },
+  center: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const metaVariants = {
+  enter: (direction) => ({
+    opacity: 0,
+    y: direction >= 0 ? 12 : -12,
+  }),
+  center: { opacity: 1, y: 0 },
+  exit: (direction) => ({
+    opacity: 0,
+    y: direction >= 0 ? -10 : 10,
+  }),
+};
+
+const reducedMetaVariants = {
+  enter: { opacity: 0 },
+  center: { opacity: 1 },
+  exit: { opacity: 0 },
 };
 
 function formatPrice(value) {
@@ -100,12 +138,20 @@ function CandlestickTooltipContent({ point }) {
 
 function StockMarket() {
   const { settings } = useSettings();
+  const reduceMotion = useReducedMotion();
   const symbolsKey = (settings.stockSymbols || []).join(',');
   const [stocks, setStocks] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
   const [symbols, setSymbols] = useState([]);
   const [loading, setLoading] = useState(true);
   const chartMode = settings.stockChartMode === 'candles' ? 'candles' : 'line';
+  const panelVariants = reduceMotion ? reducedChartPanelVariants : chartPanelVariants;
+  const detailVariants = reduceMotion ? reducedMetaVariants : metaVariants;
+  const panelTransition = fadeTransition(reduceMotion, 0.42);
+  const highlightTransition = reduceMotion
+    ? { duration: 0.15 }
+    : { type: 'spring', stiffness: 380, damping: 34 };
 
   useEffect(() => {
     let cancelled = false;
@@ -122,8 +168,13 @@ function StockMarket() {
         setSymbols(result.symbols);
         setStocks(result.data);
         setActiveIndex(0);
+        setDirection(1);
       } catch (error) {
-        console.error('Error fetching stock data:', error);
+        console.error('Error fetching stocks:', error);
+        if (!cancelled) {
+          setSymbols([]);
+          setStocks([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -138,11 +189,12 @@ function StockMarket() {
   useEffect(() => {
     if (symbols.length <= 1) return undefined;
 
-    const timer = setInterval(() => {
+    const id = setInterval(() => {
+      setDirection(1);
       setActiveIndex((prev) => (prev + 1) % symbols.length);
     }, STOCK_ROTATE_MS);
 
-    return () => clearInterval(timer);
+    return () => clearInterval(id);
   }, [symbols.length]);
 
   const selectedSymbol = symbols[activeIndex];
@@ -155,22 +207,18 @@ function StockMarket() {
   }, [selectedData]);
 
   const liveSeries = useMemo(() => {
-    if (!chronologicalDates.length) {
-      return { data: [], value: 0 };
-    }
-    const dates = chronologicalDates.slice(-LIVE_LOOKBACK);
-    const nowSec = Math.floor(Date.now() / 1000);
-    const data = dates.map((dateStr, index) => ({
-      time: nowSec - (dates.length - 1 - index),
+    const slice = chronologicalDates.slice(-LIVE_LOOKBACK);
+    const data = slice.map((dateStr, index) => ({
+      time: index,
       value: parseFloat(selectedData[dateStr]['4. close']),
     }));
-    const value = data.length ? data[data.length - 1].value : 0;
+    const value = data.length > 0 ? data[data.length - 1].value : 0;
     return { data, value };
   }, [chronologicalDates, selectedData]);
 
   const ohlcData = useMemo(() => {
-    if (!chronologicalDates.length) return [];
-    return chronologicalDates.slice(-CANDLE_LOOKBACK).map((dateStr) => {
+    const slice = chronologicalDates.slice(-CANDLE_LOOKBACK);
+    return slice.map((dateStr) => {
       const bar = selectedData[dateStr];
       return {
         date: new Date(dateStr),
@@ -204,9 +252,16 @@ function StockMarket() {
   }
 
   const hasChartData = chartMode === 'line' ? liveSeries.data.length > 0 : ohlcData.length > 0;
+  const chartKey = `${selectedSymbol}-${chartMode}`;
 
   return (
-    <div className="stock-market-widget" aria-live="polite">
+    <motion.div
+      className="stock-market-widget"
+      aria-live="polite"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={fadeTransition(reduceMotion, 0.4)}
+    >
       <div className="stock-ticker" role="list" aria-label="Stock symbols">
         {symbols.map((symbol, index) => {
           const itemStats = getLatestStats(stocks[index]);
@@ -219,6 +274,14 @@ function StockMarket() {
                 !itemStats ? ' stock-ticker-item--empty' : ''
               }`}
             >
+              {isActive ? (
+                <motion.span
+                  layoutId={reduceMotion ? undefined : 'stock-ticker-active'}
+                  className="stock-ticker-active-bg"
+                  transition={highlightTransition}
+                  aria-hidden="true"
+                />
+              ) : null}
               <span className="stock-ticker-symbol">{symbol}</span>
               {itemStats ? (
                 <span
@@ -239,41 +302,54 @@ function StockMarket() {
 
       <div className="stock-featured">
         <div className="stock-featured-meta">
-          <div className="stock-featured-heading">
-            <h2 className="stock-featured-symbol">{selectedSymbol}</h2>
-            {stats ? (
-              <span
-                className={`stock-featured-change ${
-                  stats.isUp ? 'stock-featured-change--up' : 'stock-featured-change--down'
-                }`}
-              >
-                {stats.isUp ? '+' : ''}
-                {stats.changePct.toFixed(2)}%
-              </span>
-            ) : null}
-          </div>
-
-          {stats ? (
-            <>
-              <div className="stock-featured-price">${formatPrice(stats.close)}</div>
-              <div className="stock-featured-stats">
-                <div className="stock-featured-stat">
-                  <span className="stock-featured-stat-label">High</span>
-                  <span className="stock-featured-stat-value">${formatPrice(stats.high)}</span>
-                </div>
-                <div className="stock-featured-stat">
-                  <span className="stock-featured-stat-label">Low</span>
-                  <span className="stock-featured-stat-value">${formatPrice(stats.low)}</span>
-                </div>
-                <div className="stock-featured-stat">
-                  <span className="stock-featured-stat-label">Volume</span>
-                  <span className="stock-featured-stat-value">{formatVolume(stats.volume)}</span>
-                </div>
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div
+              key={selectedSymbol}
+              className="stock-featured-meta-stage"
+              custom={direction}
+              variants={detailVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={panelTransition}
+            >
+              <div className="stock-featured-heading">
+                <h2 className="stock-featured-symbol">{selectedSymbol}</h2>
+                {stats ? (
+                  <span
+                    className={`stock-featured-change ${
+                      stats.isUp ? 'stock-featured-change--up' : 'stock-featured-change--down'
+                    }`}
+                  >
+                    {stats.isUp ? '+' : ''}
+                    {stats.changePct.toFixed(2)}%
+                  </span>
+                ) : null}
               </div>
-            </>
-          ) : (
-            <div className="stock-featured-unavailable">Unavailable</div>
-          )}
+
+              {stats ? (
+                <>
+                  <div className="stock-featured-price">${formatPrice(stats.close)}</div>
+                  <div className="stock-featured-stats">
+                    <div className="stock-featured-stat">
+                      <span className="stock-featured-stat-label">High</span>
+                      <span className="stock-featured-stat-value">${formatPrice(stats.high)}</span>
+                    </div>
+                    <div className="stock-featured-stat">
+                      <span className="stock-featured-stat-label">Low</span>
+                      <span className="stock-featured-stat-value">${formatPrice(stats.low)}</span>
+                    </div>
+                    <div className="stock-featured-stat">
+                      <span className="stock-featured-stat-label">Volume</span>
+                      <span className="stock-featured-stat-value">{formatVolume(stats.volume)}</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="stock-featured-unavailable">Unavailable</div>
+              )}
+            </motion.div>
+          </AnimatePresence>
 
           {symbols.length > 1 ? (
             <div className="stock-rotate-progress" aria-hidden="true">
@@ -287,75 +363,98 @@ function StockMarket() {
         </div>
 
         <section className="stock-graph">
-          {hasChartData ? (
-            <div className="chart-wrapper">
-              <div className="chart-header">
-                <div className="chart-header-main">
-                  <h3 className="chart-title">
-                    {chartMode === 'line' ? 'Live Close' : 'OHLC'}
-                  </h3>
-                  <div className="chart-mode-toggle" role="status" aria-label="Chart mode">
-                    <span
-                      className={`chart-mode-btn${chartMode === 'line' ? ' chart-mode-btn--active' : ''}`}
-                    >
-                      Line
-                    </span>
-                    <span
-                      className={`chart-mode-btn${chartMode === 'candles' ? ' chart-mode-btn--active' : ''}`}
-                    >
-                      Candles
-                    </span>
-                  </div>
+          <div className="chart-wrapper">
+            <div className="chart-header">
+              <div className="chart-header-main">
+                <h3 className="chart-title">
+                  {chartMode === 'line' ? 'Live Close' : 'OHLC'}
+                </h3>
+                <div className="chart-mode-toggle" role="status" aria-label="Chart mode">
+                  <span
+                    className={`chart-mode-btn${chartMode === 'line' ? ' chart-mode-btn--active' : ''}`}
+                  >
+                    Line
+                  </span>
+                  <span
+                    className={`chart-mode-btn${chartMode === 'candles' ? ' chart-mode-btn--active' : ''}`}
+                  >
+                    Candles
+                  </span>
                 </div>
-                <span className="chart-price">{formatUsd(lastPrice ?? stats?.close ?? 0)}</span>
               </div>
-              <div className="chart-container">
-                {chartMode === 'line' ? (
-                  <LiveLineChart
-                    key={selectedSymbol}
-                    className="stock-bklit-chart"
-                    data={liveSeries.data}
-                    value={liveSeries.value}
-                    window={LIVE_WINDOW}
-                    nowOffsetUnits={1}
-                    paused
-                    margin={{ top: 12, right: 88, bottom: 40, left: 8 }}
-                    style={{ height: '100%', width: '100%' }}
-                  >
-                    <LiveLine
-                      dataKey="value"
-                      momentumColors={momentumColors}
-                      formatValue={formatUsd}
-                      dotSize={5}
-                    />
-                    <LiveXAxis />
-                    <LiveYAxis position="left" formatValue={formatUsd} />
-                  </LiveLineChart>
-                ) : (
-                  <CandlestickChart
-                    key={`${selectedSymbol}-candles`}
-                    className="stock-bklit-chart"
-                    data={ohlcData}
-                    margin={{ top: 12, right: 56, bottom: 40, left: 8 }}
-                    style={{ height: '100%', width: '100%', aspectRatio: 'unset' }}
-                    revealSignature={selectedSymbol}
-                  >
-                    <Background />
-                    <Candlestick fadedOpacity={0.25} />
-                    <ChartTooltip content={CandlestickTooltipContent} showDots={false} />
-                    <XAxis />
-                  </CandlestickChart>
-                )}
-              </div>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={`${selectedSymbol}-price`}
+                  className="chart-price"
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                  transition={fadeTransition(reduceMotion, 0.3)}
+                >
+                  {formatUsd(lastPrice ?? stats?.close ?? 0)}
+                </motion.span>
+              </AnimatePresence>
             </div>
-          ) : (
-            <div className="stock-chart-empty">
-              <p>No chart data for {selectedSymbol}</p>
+
+            <div className="chart-container">
+              <AnimatePresence mode="wait" initial={false} custom={direction}>
+                <motion.div
+                  key={chartKey}
+                  className="chart-stage"
+                  custom={direction}
+                  variants={panelVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={panelTransition}
+                >
+                  {hasChartData ? (
+                    chartMode === 'line' ? (
+                      <LiveLineChart
+                        className="stock-bklit-chart"
+                        data={liveSeries.data}
+                        value={liveSeries.value}
+                        window={LIVE_WINDOW}
+                        nowOffsetUnits={1}
+                        paused
+                        margin={{ top: 12, right: 88, bottom: 40, left: 8 }}
+                        style={{ height: '100%', width: '100%' }}
+                      >
+                        <LiveLine
+                          dataKey="value"
+                          momentumColors={momentumColors}
+                          formatValue={formatUsd}
+                          dotSize={5}
+                        />
+                        <LiveXAxis />
+                        <LiveYAxis position="left" formatValue={formatUsd} />
+                      </LiveLineChart>
+                    ) : (
+                      <CandlestickChart
+                        className="stock-bklit-chart"
+                        data={ohlcData}
+                        margin={{ top: 12, right: 56, bottom: 40, left: 8 }}
+                        style={{ height: '100%', width: '100%', aspectRatio: 'unset' }}
+                        revealSignature={selectedSymbol}
+                      >
+                        <Background />
+                        <Candlestick fadedOpacity={0.25} />
+                        <ChartTooltip content={CandlestickTooltipContent} showDots={false} />
+                        <XAxis />
+                      </CandlestickChart>
+                    )
+                  ) : (
+                    <div className="stock-chart-empty">
+                      <p>No chart data for {selectedSymbol}</p>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
-          )}
+          </div>
         </section>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

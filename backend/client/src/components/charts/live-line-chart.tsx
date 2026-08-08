@@ -156,7 +156,9 @@ function computeTargetRange(
   const rawRange = max - min;
   const paddingFactor = exaggerate ? 0.03 : 0.15;
   const rangePad = rawRange * paddingFactor || (exaggerate ? 0.04 : 10);
-  return { yMin: min - rangePad, yMax: max + rangePad };
+  // Keep non-negative series (rates, latency, prices) from dipping below zero.
+  const yMin = min >= 0 ? Math.max(0, min - rangePad) : min - rangePad;
+  return { yMin, yMax: max + rangePad };
 }
 
 function nextAnimFrame(

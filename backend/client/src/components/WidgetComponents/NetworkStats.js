@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { getNetworkStats } from '../../api/client';
 import { usePollingFetch } from '../../hooks/usePollingFetch';
 import LoadingState from '../ui/LoadingState';
@@ -7,6 +8,11 @@ import { LiveLineChart } from '../charts/live-line-chart';
 import { LiveLine } from '../charts/live-line';
 import { LiveXAxis } from '../charts/live-x-axis';
 import { LiveYAxis } from '../charts/live-y-axis';
+import {
+  fadeTransition,
+  listContainerVariants,
+  listItemVariants,
+} from '../../lib/dashboard-motion';
 import './NetworkStats.css';
 
 const HISTORY_MAX = 12;
@@ -56,10 +62,13 @@ function toLatencyPoints(history) {
 
 function NetworkStats() {
   const [history, setHistory] = useState([]);
+  const reduceMotion = useReducedMotion();
   const fetchStats = useCallback(() => getNetworkStats(), []);
   const { data: stats, loading, error } = usePollingFetch(fetchStats, {
     intervalMs: POLL_MS,
   });
+  const cardVariants = listContainerVariants(reduceMotion, 0.06);
+  const itemVariants = listItemVariants(reduceMotion, 10);
 
   useEffect(() => {
     if (!stats) return;
@@ -134,16 +143,23 @@ function NetworkStats() {
   const showTrafficChart = trafficSeries.data.length > 0;
   const showLatencyChart = latencySeries.data.length > 0;
   const statusLabel = online ? 'Connected' : 'Disconnected';
-  const statusDetail = online
-    ? stats.latencyMs != null
-      ? `${stats.latencyMs} ms round-trip`
-      : 'Probe OK'
-    : stats.lastOnlineAt
-      ? `Last seen ${formatCheckedAt(stats.lastOnlineAt)}`
-      : 'No route to internet probe';
+  const statusDetail = !stats
+    ? ''
+    : online
+      ? stats.latencyMs != null
+        ? `${stats.latencyMs} ms round-trip`
+        : 'Probe OK'
+      : stats.lastOnlineAt
+        ? `Last seen ${formatCheckedAt(stats.lastOnlineAt)}`
+        : 'No route to internet probe';
 
   return (
-    <div className="widget-content network-stats-widget">
+    <motion.div
+      className="widget-content network-stats-widget"
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={fadeTransition(reduceMotion, 0.4)}
+    >
       <h3>Network</h3>
 
       {loading && !stats && <LoadingState>Checking connection…</LoadingState>}
@@ -153,8 +169,13 @@ function NetworkStats() {
       )}
 
       {!loading && stats && (
-        <>
-          <div className="network-status-card">
+        <motion.div
+          className="network-stats-body"
+          variants={cardVariants}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.div className="network-status-card" variants={itemVariants}>
             <div className="network-status-main">
               <span
                 className={`network-status-pill ${
@@ -169,9 +190,9 @@ function NetworkStats() {
               </span>
             </div>
             <p className="network-status-detail">{statusDetail}</p>
-          </div>
+          </motion.div>
 
-          <div className="network-rates">
+          <motion.div className="network-rates" variants={itemVariants}>
             <div className="network-rate">
               <span className="network-rate-label">Download</span>
               <strong className="network-rate-value">{formatRate(stats.rxBps)}</strong>
@@ -180,9 +201,9 @@ function NetworkStats() {
               <span className="network-rate-label">Upload</span>
               <strong className="network-rate-value">{formatRate(stats.txBps)}</strong>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="network-identity">
+          <motion.div className="network-identity" variants={itemVariants}>
             <div className="network-identity-item">
               <span className="network-identity-label">Public IP</span>
               <strong className="network-identity-value">{stats.publicIp || '—'}</strong>
@@ -197,9 +218,9 @@ function NetworkStats() {
                 {stats.ipv4 || stats.interface || '—'}
               </strong>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="network-chart-stack">
+          <motion.div className="network-chart-stack" variants={itemVariants}>
             <section className="network-chart-panel">
               <div className="network-chart-header">
                 <h4 className="network-chart-title">Traffic</h4>
@@ -228,16 +249,18 @@ function NetworkStats() {
                     value={trafficSeries.download}
                     dataKey="download"
                     window={LIVE_WINDOW_SECS}
-                    nowOffsetUnits={1}
-                    margin={{ top: 10, right: 88, bottom: 32, left: 6 }}
+                    nowOffsetUnits={0}
+                    margin={{ top: 8, right: 12, bottom: 24, left: 56 }}
                     style={{ height: '100%', width: '100%' }}
                   >
                     <LiveLine
                       dataKey="download"
                       stroke="var(--chart-3)"
                       formatValue={formatRate}
-                      dotSize={4}
+                      dotSize={3}
                       fill
+                      badge={false}
+                      pulse={false}
                     />
                     <LiveLine
                       dataKey="upload"
@@ -246,9 +269,10 @@ function NetworkStats() {
                       dotSize={3}
                       fill={false}
                       badge={false}
+                      pulse={false}
                     />
-                    <LiveXAxis />
-                    <LiveYAxis position="left" formatValue={formatRate} />
+                    <LiveXAxis numTicks={4} />
+                    <LiveYAxis position="left" formatValue={formatRate} minGap={28} />
                   </LiveLineChart>
                 ) : (
                   <p className="network-chart-empty">Waiting for rate samples…</p>
@@ -268,28 +292,30 @@ function NetworkStats() {
                     data={latencySeries.data}
                     value={latencySeries.value}
                     window={LIVE_WINDOW_SECS}
-                    nowOffsetUnits={1}
-                    margin={{ top: 10, right: 72, bottom: 32, left: 6 }}
+                    nowOffsetUnits={0}
+                    margin={{ top: 8, right: 12, bottom: 24, left: 48 }}
                     style={{ height: '100%', width: '100%' }}
                   >
                     <LiveLine
                       dataKey="value"
                       stroke="var(--chart-1, var(--accent))"
                       formatValue={formatMs}
-                      dotSize={4}
+                      dotSize={3}
+                      badge={false}
+                      pulse={false}
                     />
-                    <LiveXAxis />
-                    <LiveYAxis position="left" formatValue={formatMs} />
+                    <LiveXAxis numTicks={4} />
+                    <LiveYAxis position="left" formatValue={formatMs} minGap={28} />
                   </LiveLineChart>
                 ) : (
                   <p className="network-chart-empty">Waiting for latency samples…</p>
                 )}
               </div>
             </section>
-          </div>
+          </motion.div>
 
           {targets.length > 0 ? (
-            <section className="network-targets">
+            <motion.section className="network-targets" variants={itemVariants}>
               <h4 className="network-chart-title">Probe targets</h4>
               <div className="network-targets-list">
                 {targets.map((target) => (
@@ -299,20 +325,22 @@ function NetworkStats() {
                       <span className="network-target-ms">{formatMs(target.latencyMs)}</span>
                     </div>
                     <div className="network-target-track" aria-hidden="true">
-                      <span
+                      <motion.span
                         className={`network-target-fill${
                           target.latencyMs == null ? ' network-target-fill--miss' : ''
                         }`}
-                        style={{ width: `${target.pct}%` }}
+                        initial={reduceMotion ? false : { width: 0 }}
+                        animate={{ width: `${target.pct}%` }}
+                        transition={fadeTransition(reduceMotion, 0.55)}
                       />
                     </div>
                   </div>
                 ))}
               </div>
-            </section>
+            </motion.section>
           ) : null}
 
-          <div className="network-meta">
+          <motion.div className="network-meta" variants={itemVariants}>
             {stats.interface ? (
               <span>
                 Interface {stats.interface}
@@ -322,12 +350,14 @@ function NetworkStats() {
               <span>Traffic rates unavailable on this host</span>
             )}
             {stats.checkedAt ? <span>Checked {formatCheckedAt(stats.checkedAt)}</span> : null}
-          </div>
+          </motion.div>
 
-          <p className="network-footer">Sampled every ~15s · Bklit live charts · no speed test</p>
-        </>
+          <motion.p className="network-footer" variants={itemVariants}>
+            Sampled every ~15s · Bklit live charts · no speed test
+          </motion.p>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
 

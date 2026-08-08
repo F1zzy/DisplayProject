@@ -292,37 +292,11 @@
   filter: none;
 }
 
-/* Soft night focus: dim everything except the clock digits */
-.App.night-focus .dashboard-weather,
-.App.night-focus .dashboard-widgets,
-.App.night-focus .time-container-dateCon {
-  opacity: 0.28;
-  filter: blur(1px);
-  transition: opacity 1s ease, filter 1s ease;
-}
-
+/* Soft night focus: dim everything except the clock digits (Motion drives opacity). */
 .App.night-focus .time-container-time {
   opacity: 1;
-  filter: none;
   position: relative;
   z-index: 1;
-}
-
-.App:not(.night-focus) .dashboard-weather,
-.App:not(.night-focus) .dashboard-widgets,
-.App:not(.night-focus) .time-container-dateCon {
-  transition: opacity 1s ease, filter 1s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .App.night-focus .dashboard-weather,
-  .App.night-focus .dashboard-widgets,
-  .App.night-focus .time-container-dateCon,
-  .App:not(.night-focus) .dashboard-weather,
-  .App:not(.night-focus) .dashboard-widgets,
-  .App:not(.night-focus) .time-container-dateCon {
-    transition: none;
-  }
 }
 
 /*

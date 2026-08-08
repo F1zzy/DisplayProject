@@ -1,9 +1,49 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo, useRef } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import './Widgets.css';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingState from './ui/LoadingState';
 import { useSettings } from '../context/SettingsContext';
 import { reportWidgetView } from '../api/client';
+
+const WIDGET_EASE = [0.22, 1, 0.36, 1];
+
+function widgetStageVariants(reduceMotion) {
+  if (reduceMotion) {
+    return {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+    };
+  }
+  return {
+    initial: (direction) => ({
+      opacity: 0,
+      y: direction >= 0 ? 28 : -28,
+      scale: 0.985,
+    }),
+    animate: { opacity: 1, y: 0, scale: 1 },
+    exit: (direction) => ({
+      opacity: 0,
+      y: direction >= 0 ? -22 : 22,
+      scale: 0.99,
+    }),
+  };
+}
+
+function widgetStageTransition(reduceMotion) {
+  if (reduceMotion) {
+    return { duration: 0.12, ease: 'easeOut' };
+  }
+  return { duration: 0.48, ease: WIDGET_EASE };
+}
+
+function rotationDirection(fromIndex, toIndex, length) {
+  if (length <= 1 || fromIndex === toIndex) return 1;
+  const forward = (toIndex - fromIndex + length) % length;
+  const backward = (fromIndex - toIndex + length) % length;
+  return forward <= backward ? 1 : -1;
+}
 
 const WIDGET_REGISTRY = {
   stock: {
@@ -67,6 +107,7 @@ function ToolbarContent({ widgets, activeIndex, pinned }) {
 
 function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
   const { settings } = useSettings();
+  const reduceMotion = useReducedMotion();
   const widgets = useMemo(() => {
     const enabled = Array.isArray(settings.enabledWidgets) ? settings.enabledWidgets : [];
     const list = enabled.map((key) => WIDGET_REGISTRY[key]).filter(Boolean);
@@ -76,7 +117,9 @@ function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
   const rotationMs = settings.widgetRotationMs ?? 120000;
   const [currentWidget, setCurrentWidget] = useState(0);
   const [cycleId, setCycleId] = useState(0);
+  const [direction, setDirection] = useState(1);
   const timerActive = rotationMs > 0 && widgets.length > 1 && !pinned;
+  const indexRef = useRef(0);
 
   useEffect(() => {
     setCurrentWidget((prev) => (prev >= widgets.length ? 0 : prev));
@@ -84,7 +127,10 @@ function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
 
   useEffect(() => {
     if (forcedWidget !== null && forcedWidget !== undefined) {
-      setCurrentWidget(forcedWidget % widgets.length);
+      const next = forcedWidget % widgets.length;
+      setDirection(rotationDirection(indexRef.current, next, widgets.length));
+      setCurrentWidget(next);
+      indexRef.current = next;
       setCycleId((id) => id + 1);
       onWidgetShown?.();
     }
@@ -96,7 +142,12 @@ function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
     }
 
     const timeout = setTimeout(() => {
-      setCurrentWidget((prevWidget) => (prevWidget + 1) % widgets.length);
+      setDirection(1);
+      setCurrentWidget((prevWidget) => {
+        const next = (prevWidget + 1) % widgets.length;
+        indexRef.current = next;
+        return next;
+      });
       setCycleId((id) => id + 1);
     }, rotationMs);
 
@@ -106,6 +157,8 @@ function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
   const activeIndex = currentWidget % widgets.length;
   const { Component, key, label } = widgets[activeIndex];
   const lastBeaconKey = useRef(null);
+  const stageVariants = widgetStageVariants(reduceMotion);
+  const stageTransition = widgetStageTransition(reduceMotion);
 
   useEffect(() => {
     if (!key) return;
@@ -144,16 +197,28 @@ function Widgets({ forcedWidget, onWidgetShown, pinned = false }) {
         aria-live="polite"
         aria-label={`${label} widget`}
       >
-        <ErrorBoundary
-          key={key}
-          label={`widget:${key}`}
-          title={`${label} unavailable`}
-          message="This widget failed. Rotation and other widgets keep working."
-        >
-          <Suspense fallback={<LoadingState>Loading widget…</LoadingState>}>
-            <Component key={key} />
-          </Suspense>
-        </ErrorBoundary>
+        <AnimatePresence mode="wait" initial={false} custom={direction}>
+          <motion.div
+            key={key}
+            className="widget-stage"
+            custom={direction}
+            variants={stageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={stageTransition}
+          >
+            <ErrorBoundary
+              label={`widget:${key}`}
+              title={`${label} unavailable`}
+              message="This widget failed. Rotation and other widgets keep working."
+            >
+              <Suspense fallback={<LoadingState>Loading widget…</LoadingState>}>
+                <Component />
+              </Suspense>
+            </ErrorBoundary>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
