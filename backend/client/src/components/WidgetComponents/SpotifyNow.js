@@ -3,14 +3,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useColor } from 'color-thief-react';
 import { getSpotifyNow } from '../../api/client';
 import { usePollingFetch } from '../../hooks/usePollingFetch';
-import LoadingState from '../ui/LoadingState';
+import WidgetSkeleton from '../ui/WidgetSkeleton';
 import ErrorState from '../ui/ErrorState';
 import EmptyState from '../ui/EmptyState';
-import {
-  fadeTransition,
-  listContainerVariants,
-  listItemVariants,
-} from '../../lib/dashboard-motion';
+import { fadeTransition } from '../../lib/dashboard-motion';
+import { useWidgetLoadSequence } from '../../hooks/useWidgetLoadSequence';
 import './SpotifyNow.css';
 
 const SPOTIFY_POLL_IDLE_MS = 20000;
@@ -33,16 +30,18 @@ function SpotifyNow() {
   const fetchSpotify = useCallback(() => getSpotifyNow(), []);
   const [playingPoll, setPlayingPoll] = useState(false);
   const reduceMotion = useReducedMotion();
+  const rootRef = useRef(null);
   const { data, loading, error } = usePollingFetch(fetchSpotify, {
     intervalMs: playingPoll ? SPOTIFY_POLL_PLAYING_MS : SPOTIFY_POLL_IDLE_MS,
   });
-  const topListVariants = listContainerVariants(reduceMotion, 0.045);
-  const topItemVariants = listItemVariants(reduceMotion, 8);
 
   const configured = data?.configured !== false;
   const track = data?.track;
   const topTracks = Array.isArray(data?.topTracks) ? data.topTracks : [];
   const playing = data?.playing === true;
+  const showMain = Boolean(track) || (configured && topTracks.length > 0);
+  const ready = Boolean(data) && showMain;
+  const { showSkeleton } = useWidgetLoadSequence({ loading, ready, rootRef });
 
   useEffect(() => {
     setPlayingPoll(playing);
@@ -67,7 +66,6 @@ function SpotifyNow() {
       const { progressMs: base, at } = anchorRef.current;
       const next = Math.min(track.durationMs, base + (performance.now() - at));
       setLiveProgressMs(next);
-      frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
@@ -90,8 +88,6 @@ function SpotifyNow() {
         }
       : undefined;
 
-  const showMain = Boolean(track) || (configured && topTracks.length > 0);
-
   return (
     <motion.div
       className="widget-content spotify-widget"
@@ -101,7 +97,7 @@ function SpotifyNow() {
     >
       <h3>Spotify</h3>
 
-      {loading && !data && <LoadingState>Loading Spotify…</LoadingState>}
+      {showSkeleton && <WidgetSkeleton label="Loading Spotify…" rows={5} />}
 
       {!loading && !configured && (
         <EmptyState className="spotify-empty">
@@ -113,19 +109,18 @@ function SpotifyNow() {
         <ErrorState className="spotify-empty">{error || 'Unable to load Spotify'}</ErrorState>
       )}
 
-      {!loading && configured && !error && !track && (
+      {!loading && configured && !error && !track && topTracks.length === 0 && (
         <EmptyState className="spotify-empty">No recent Spotify activity</EmptyState>
       )}
 
       {showMain && (
-        <div className="spotify-main" style={nowPlayingStyle}>
+        <div ref={rootRef} className="spotify-main" style={nowPlayingStyle}>
           <AnimatePresence mode="wait" initial={false}>
             {track ? (
               <motion.div
                 key={track.id || track.name}
                 className="spotify-now"
-                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
+                data-load-step="title"
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
                 transition={fadeTransition(reduceMotion, 0.4)}
               >
@@ -168,18 +163,15 @@ function SpotifyNow() {
 
           {configured && topTracks.length > 0 && (
             <div className="spotify-top">
-              <div className="spotify-top-title">Top tracks</div>
-              <motion.ul
-                className="spotify-top-list"
-                variants={topListVariants}
-                initial="hidden"
-                animate="show"
-              >
+              <div className="spotify-top-title" data-load-step="title">
+                Top tracks
+              </div>
+              <ul className="spotify-top-list">
                 {topTracks.map((item, index) => (
-                  <motion.li
+                  <li
                     key={item.id || `${item.name}-${index}`}
                     className="spotify-top-item"
-                    variants={topItemVariants}
+                    data-load-step="item"
                   >
                     <span className="spotify-top-rank">{index + 1}</span>
                     {item.albumArt ? (
@@ -191,9 +183,9 @@ function SpotifyNow() {
                       <div className="spotify-top-name">{item.name}</div>
                       <div className="spotify-top-artists">{formatArtists(item.artists)}</div>
                     </div>
-                  </motion.li>
+                  </li>
                 ))}
-              </motion.ul>
+              </ul>
             </div>
           )}
         </div>

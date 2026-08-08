@@ -1,0 +1,60 @@
+.widget-skeleton {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: 8rem;
+  height: 100%;
+  padding: var(--gap-lg, 1rem) var(--gap-md, 0.75rem);
+  box-sizing: border-box;
+}
+
+.widget-skeleton-title {
+  height: 1.15rem;
+  width: 42%;
+  max-width: 11rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-secondary, #b7b8bd) 28%, transparent);
+  opacity: 0.55;
+}
+
+.widget-skeleton-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.widget-skeleton-row {
+  height: 2.4rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--text-secondary, #b7b8bd) 22%, transparent);
+  opacity: 0.45;
+}
+
+.widget-skeleton-row--1 {
+  width: 100%;
+}
+
+.widget-skeleton-row--2 {
+  width: 92%;
+}
+
+.widget-skeleton-row--3 {
+  width: 78%;
+}
+
+.widget-skeleton-label {
+  margin-top: 0.25rem;
+  color: var(--text-secondary, #b7b8bd);
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+/* Hide until anime reveal runs (or reduced-motion final state). */
+[data-load-pending] [data-load-step] {
+  opacity: 0;
+}

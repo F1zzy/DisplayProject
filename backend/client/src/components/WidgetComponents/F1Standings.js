@@ -1,14 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { getF1Standings } from '../../api/client';
 import { usePollingFetch } from '../../hooks/usePollingFetch';
-import LoadingState from '../ui/LoadingState';
+import WidgetSkeleton from '../ui/WidgetSkeleton';
 import ErrorState from '../ui/ErrorState';
-import {
-  fadeTransition,
-  listContainerVariants,
-  listItemVariants,
-} from '../../lib/dashboard-motion';
+import { fadeTransition } from '../../lib/dashboard-motion';
+import { useWidgetLoadSequence } from '../../hooks/useWidgetLoadSequence';
 import './F1Standings.css';
 
 const LIVE_POLL_MS = 5000;
@@ -190,7 +187,7 @@ function NextRace({ race }) {
     : null;
 
   return (
-    <div className="f1-next">
+    <div className="f1-next" data-load-step="title">
       <span className="f1-next-label">Next</span>
       {race.round != null && <span className="f1-next-round">R{race.round}</span>}
       <span className="f1-next-name">{race.raceName || 'TBC'}</span>
@@ -213,7 +210,7 @@ function NextRace({ race }) {
 
 function LiveStatus({ live }) {
   return (
-    <div className="f1-live">
+    <div className="f1-live" data-load-step="title">
       <span className="f1-live-badge">Live</span>
       <span className="f1-live-meeting">{live.meetingName || ''}</span>
       {live.sessionName && <span className="f1-live-session">{live.sessionName}</span>}
@@ -235,10 +232,11 @@ function F1Standings() {
   const { data, loading, error } = usePollingFetch(fetchF1, { intervalMs: pollMs });
   const landscape = useLandscape();
   const reduceMotion = useReducedMotion();
+  const rootRef = useRef(null);
   const maxDrivers = landscape ? MAX_DRIVER_ROWS_LANDSCAPE : MAX_DRIVER_ROWS;
   const maxConstructors = MAX_CONSTRUCTOR_ROWS;
-  const listVariants = listContainerVariants(reduceMotion, 0.035);
-  const rowVariants = listItemVariants(reduceMotion, 8);
+  const ready = Boolean(data);
+  const { showSkeleton } = useWidgetLoadSequence({ loading, ready, rootRef });
 
   const sessionActive = data?.live?.active === true;
   useEffect(() => {
@@ -262,6 +260,7 @@ function F1Standings() {
 
   return (
     <motion.div
+      ref={rootRef}
       className="widget-content f1-widget"
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -277,7 +276,7 @@ function F1Standings() {
         {data && (isLive ? <LiveStatus live={live} /> : <NextRace race={data.nextRace} />)}
       </header>
 
-      {loading && !data && <LoadingState>Loading standings…</LoadingState>}
+      {showSkeleton && <WidgetSkeleton label="Loading standings…" rows={6} />}
 
       {!loading && error && !data && (
         <ErrorState className="f1-empty">{error || 'Unable to load F1 standings'}</ErrorState>
@@ -287,6 +286,7 @@ function F1Standings() {
         <div className="f1-columns">
           <section
             className={`f1-panel ${isLive ? TRACK_STATUS_CLASS[live.trackStatusCode] || '' : ''}`}
+            data-load-step="title"
           >
             <div className="f1-colhead f1-colhead--driver">
               <span className="f1-pos">#</span>
@@ -304,9 +304,7 @@ function F1Standings() {
                 key={isLive ? 'live' : 'standings'}
                 className="f1-list"
                 style={{ '--f1-rows': Math.max(driverRows.length, 1) }}
-                variants={listVariants}
-                initial="hidden"
-                animate="show"
+                initial={false}
                 exit={{ opacity: 0 }}
                 transition={fadeTransition(reduceMotion, 0.25)}
               >
@@ -320,7 +318,7 @@ function F1Standings() {
                         style={{
                           '--team': entry.teamColour || teamColour(entry.constructorId),
                         }}
-                        variants={rowVariants}
+                        data-load-step="item"
                         layout={!reduceMotion}
                       >
                         <span className="f1-pos">{entry.position}</span>
@@ -334,11 +332,11 @@ function F1Standings() {
                       </motion.li>
                     ))
                   : driverRows.map((driver) => (
-                      <motion.li
+                      <li
                         key={driver.driverId || driver.position}
                         className="f1-row f1-row--driver"
                         style={{ '--team': teamColour(driver.constructorId) }}
-                        variants={rowVariants}
+                        data-load-step="item"
                       >
                         <motion.span
                           className="f1-fill"
@@ -355,13 +353,13 @@ function F1Standings() {
                         <span className="f1-team">{driver.constructor || ''}</span>
                         <PositionDelta value={driver.positionChange} />
                         <span className="f1-num f1-points">{driver.points}</span>
-                      </motion.li>
+                      </li>
                     ))}
               </motion.ol>
             </AnimatePresence>
           </section>
 
-          <section className="f1-panel">
+          <section className="f1-panel" data-load-step="title">
             <div className="f1-colhead f1-colhead--team">
               <span className="f1-pos">#</span>
               <span />
@@ -372,19 +370,16 @@ function F1Standings() {
               <span className="f1-num">Pts</span>
             </div>
 
-            <motion.ol
+            <ol
               className="f1-list"
               style={{ '--f1-rows': Math.max(constructorRows.length, 1) }}
-              variants={listVariants}
-              initial="hidden"
-              animate="show"
             >
               {constructorRows.map((team) => (
-                <motion.li
+                <li
                   key={team.constructorId || team.position}
                   className="f1-row f1-row--team"
                   style={{ '--team': teamColour(team.constructorId) }}
-                  variants={rowVariants}
+                  data-load-step="item"
                 >
                   <motion.span
                     className="f1-fill"
@@ -400,9 +395,9 @@ function F1Standings() {
                   <PositionDelta value={team.positionChange} />
                   <span className="f1-num f1-wins">{team.wins}</span>
                   <span className="f1-num f1-points">{team.points}</span>
-                </motion.li>
+                </li>
               ))}
-            </motion.ol>
+            </ol>
           </section>
         </div>
       )}

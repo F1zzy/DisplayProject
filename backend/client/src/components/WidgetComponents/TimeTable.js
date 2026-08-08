@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { getCalendarEvents } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
-import {
-  fadeTransition,
-  listContainerVariants,
-  listItemVariants,
-} from '../../lib/dashboard-motion';
+import { fadeTransition } from '../../lib/dashboard-motion';
+import { useWidgetLoadSequence } from '../../hooks/useWidgetLoadSequence';
+import WidgetSkeleton from '../ui/WidgetSkeleton';
 import './TimeTable.css';
 
 function isPastEvent(event) {
@@ -17,13 +15,14 @@ function isPastEvent(event) {
 function Timetable() {
   const { settings } = useSettings();
   const reduceMotion = useReducedMotion();
+  const rootRef = useRef(null);
   const calendarDays = settings.calendarDays || 1;
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(true);
   const [error, setError] = useState(null);
-  const listVariants = listContainerVariants(reduceMotion, 0.05);
-  const itemVariants = listItemVariants(reduceMotion, 10);
+  const ready = !loading;
+  const { showSkeleton } = useWidgetLoadSequence({ loading, ready, rootRef });
 
   const todayLabel = new Date().toLocaleDateString([], {
     weekday: 'long',
@@ -70,16 +69,8 @@ function Timetable() {
       <p className="timetable-date">{todayLabel}</p>
 
       <AnimatePresence mode="wait" initial={false}>
-        {loading ? (
-          <motion.p
-            key="loading"
-            className="widget-loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            Loading schedule…
-          </motion.p>
+        {showSkeleton ? (
+          <WidgetSkeleton key="loading" label="Loading schedule…" rows={4} />
         ) : error ? (
           <motion.p
             key="error"
@@ -111,18 +102,12 @@ function Timetable() {
             No more events today.
           </motion.p>
         ) : (
-          <motion.ul
-            key="list"
-            className="timetable-list"
-            variants={listVariants}
-            initial="hidden"
-            animate="show"
-          >
+          <ul key="list" ref={rootRef} className="timetable-list">
             {events.map((item) => (
-              <motion.li
+              <li
                 key={item.id || `${item.time}-${item.title}`}
                 className={`timetable-item${isPastEvent(item) ? ' timetable-item--past' : ''}`}
-                variants={itemVariants}
+                data-load-step="item"
               >
                 <span className="timetable-time">{item.time}</span>
                 <div>
@@ -131,9 +116,9 @@ function Timetable() {
                     <span className="timetable-location">{item.location}</span>
                   ) : null}
                 </div>
-              </motion.li>
+              </li>
             ))}
-          </motion.ul>
+          </ul>
         )}
       </AnimatePresence>
     </motion.div>

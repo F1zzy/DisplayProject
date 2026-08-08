@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { getSky } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
-import {
-  fadeTransition,
-  listContainerVariants,
-  listItemVariants,
-} from '../../lib/dashboard-motion';
+import { fadeTransition } from '../../lib/dashboard-motion';
+import { useWidgetLoadSequence } from '../../hooks/useWidgetLoadSequence';
+import WidgetSkeleton from '../ui/WidgetSkeleton';
 import './NightSky.css';
 
 function formatAltitude(value) {
@@ -17,11 +15,12 @@ function formatAltitude(value) {
 function NightSky() {
   const { settings } = useSettings();
   const reduceMotion = useReducedMotion();
+  const rootRef = useRef(null);
   const [sky, setSky] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const bodyList = listContainerVariants(reduceMotion, 0.07);
-  const bodyItem = listItemVariants(reduceMotion, 10);
+  const ready = Boolean(sky);
+  const { showSkeleton } = useWidgetLoadSequence({ loading, ready, rootRef });
 
   useEffect(() => {
     let cancelled = false;
@@ -60,25 +59,19 @@ function NightSky() {
     >
       <h3>Night Sky</h3>
 
-      {loading && !sky && <p className="widget-loading">Loading sky…</p>}
+      {showSkeleton && <WidgetSkeleton label="Loading sky…" rows={4} />}
       {!loading && error && !sky && <p className="night-sky-empty">{error}</p>}
 
       {sky && (
-        <>
-          <p className="night-sky-place">{place}</p>
+        <div ref={rootRef} className="night-sky-content">
+          <p className="night-sky-place" data-load-step="title">
+            {place}
+          </p>
 
-          <div className="night-sky-chart">
+          <div className="night-sky-chart" data-load-step="item">
             <div className="night-sky-chart-sway">
               {sky.chartUrl ? (
-                <motion.img
-                  key={sky.chartUrl}
-                  src={sky.chartUrl}
-                  alt=""
-                  className="night-sky-chart-image"
-                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.02 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={fadeTransition(reduceMotion, 0.6)}
-                />
+                <img src={sky.chartUrl} alt="" className="night-sky-chart-image" />
               ) : (
                 <p className="night-sky-empty">
                   {sky.configured?.chart
@@ -90,30 +83,24 @@ function NightSky() {
           </div>
 
           {bodies.length > 0 ? (
-            <motion.div
-              className="night-sky-bodies"
-              aria-label="Visible planets and Moon"
-              variants={bodyList}
-              initial="hidden"
-              animate="show"
-            >
+            <div className="night-sky-bodies" aria-label="Visible planets and Moon">
               {bodies.slice(0, 4).map((body) => (
-                <motion.div
+                <div
                   key={`${body.name}-${body.azimuth}`}
                   className="night-sky-body"
-                  variants={bodyItem}
+                  data-load-step="item"
                 >
                   <span className="night-sky-body-label">{body.name}</span>
                   <strong className="night-sky-body-value">{formatAltitude(body.altitude)}</strong>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
           ) : (
-            <p className="night-sky-empty">
+            <p className="night-sky-empty" data-load-step="item">
               {sky.errors?.planets || 'No bright bodies above the horizon'}
             </p>
           )}
-        </>
+        </div>
       )}
     </motion.div>
   );

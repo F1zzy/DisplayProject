@@ -1,18 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { getNetworkStats } from '../../api/client';
 import { usePollingFetch } from '../../hooks/usePollingFetch';
-import LoadingState from '../ui/LoadingState';
+import WidgetSkeleton from '../ui/WidgetSkeleton';
 import ErrorState from '../ui/ErrorState';
 import { LiveLineChart } from '../charts/live-line-chart';
 import { LiveLine } from '../charts/live-line';
 import { LiveXAxis } from '../charts/live-x-axis';
 import { LiveYAxis } from '../charts/live-y-axis';
-import {
-  fadeTransition,
-  listContainerVariants,
-  listItemVariants,
-} from '../../lib/dashboard-motion';
+import { fadeTransition } from '../../lib/dashboard-motion';
+import { useWidgetLoadSequence } from '../../hooks/useWidgetLoadSequence';
 import './NetworkStats.css';
 
 const HISTORY_MAX = 12;
@@ -63,12 +60,13 @@ function toLatencyPoints(history) {
 function NetworkStats() {
   const [history, setHistory] = useState([]);
   const reduceMotion = useReducedMotion();
+  const rootRef = useRef(null);
   const fetchStats = useCallback(() => getNetworkStats(), []);
   const { data: stats, loading, error } = usePollingFetch(fetchStats, {
     intervalMs: POLL_MS,
   });
-  const cardVariants = listContainerVariants(reduceMotion, 0.06);
-  const itemVariants = listItemVariants(reduceMotion, 10);
+  const ready = Boolean(stats);
+  const { showSkeleton } = useWidgetLoadSequence({ loading, ready, rootRef });
 
   useEffect(() => {
     if (!stats) return;
@@ -162,20 +160,15 @@ function NetworkStats() {
     >
       <h3>Network</h3>
 
-      {loading && !stats && <LoadingState>Checking connection…</LoadingState>}
+      {showSkeleton && <WidgetSkeleton label="Checking connection…" rows={5} />}
 
       {!loading && error && !stats && (
         <ErrorState className="network-empty">{error || 'Unable to load network stats'}</ErrorState>
       )}
 
-      {!loading && stats && (
-        <motion.div
-          className="network-stats-body"
-          variants={cardVariants}
-          initial="hidden"
-          animate="show"
-        >
-          <motion.div className="network-status-card" variants={itemVariants}>
+      {stats && (
+        <div ref={rootRef} className="network-stats-body">
+          <div className="network-status-card" data-load-step="title">
             <div className="network-status-main">
               <span
                 className={`network-status-pill ${
@@ -190,9 +183,9 @@ function NetworkStats() {
               </span>
             </div>
             <p className="network-status-detail">{statusDetail}</p>
-          </motion.div>
+          </div>
 
-          <motion.div className="network-rates" variants={itemVariants}>
+          <div className="network-rates" data-load-step="item">
             <div className="network-rate">
               <span className="network-rate-label">Download</span>
               <strong className="network-rate-value">{formatRate(stats.rxBps)}</strong>
@@ -201,9 +194,9 @@ function NetworkStats() {
               <span className="network-rate-label">Upload</span>
               <strong className="network-rate-value">{formatRate(stats.txBps)}</strong>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div className="network-identity" variants={itemVariants}>
+          <div className="network-identity" data-load-step="item">
             <div className="network-identity-item">
               <span className="network-identity-label">Public IP</span>
               <strong className="network-identity-value">{stats.publicIp || '—'}</strong>
@@ -218,9 +211,9 @@ function NetworkStats() {
                 {stats.ipv4 || stats.interface || '—'}
               </strong>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div className="network-chart-stack" variants={itemVariants}>
+          <div className="network-chart-stack" data-load-step="item">
             <section className="network-chart-panel">
               <div className="network-chart-header">
                 <h4 className="network-chart-title">Traffic</h4>
@@ -312,10 +305,10 @@ function NetworkStats() {
                 )}
               </div>
             </section>
-          </motion.div>
+          </div>
 
           {targets.length > 0 ? (
-            <motion.section className="network-targets" variants={itemVariants}>
+            <section className="network-targets" data-load-step="item">
               <h4 className="network-chart-title">Probe targets</h4>
               <div className="network-targets-list">
                 {targets.map((target) => (
@@ -337,10 +330,10 @@ function NetworkStats() {
                   </div>
                 ))}
               </div>
-            </motion.section>
+            </section>
           ) : null}
 
-          <motion.div className="network-meta" variants={itemVariants}>
+          <div className="network-meta" data-load-step="item">
             {stats.interface ? (
               <span>
                 Interface {stats.interface}
@@ -350,12 +343,12 @@ function NetworkStats() {
               <span>Traffic rates unavailable on this host</span>
             )}
             {stats.checkedAt ? <span>Checked {formatCheckedAt(stats.checkedAt)}</span> : null}
-          </motion.div>
+          </div>
 
-          <motion.p className="network-footer" variants={itemVariants}>
+          <p className="network-footer" data-load-step="item">
             Sampled every ~15s · Bklit live charts · no speed test
-          </motion.p>
-        </motion.div>
+          </p>
+        </div>
       )}
     </motion.div>
   );

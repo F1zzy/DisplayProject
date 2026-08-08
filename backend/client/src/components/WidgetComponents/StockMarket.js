@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { getStocks } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
@@ -12,6 +12,8 @@ import { Background } from '../charts/background';
 import { ChartTooltip } from '../charts/tooltip';
 import { XAxis } from '../charts/x-axis';
 import { fadeTransition } from '../../lib/dashboard-motion';
+import { useWidgetLoadSequence } from '../../hooks/useWidgetLoadSequence';
+import WidgetSkeleton from '../ui/WidgetSkeleton';
 import './StockMarket.css';
 
 /** How long each symbol stays featured before rotating (kiosk, non-interactive). */
@@ -139,6 +141,7 @@ function CandlestickTooltipContent({ point }) {
 function StockMarket() {
   const { settings } = useSettings();
   const reduceMotion = useReducedMotion();
+  const rootRef = useRef(null);
   const symbolsKey = (settings.stockSymbols || []).join(',');
   const [stocks, setStocks] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -148,6 +151,12 @@ function StockMarket() {
   const chartMode = settings.stockChartMode === 'candles' ? 'candles' : 'line';
   const panelVariants = reduceMotion ? reducedChartPanelVariants : chartPanelVariants;
   const detailVariants = reduceMotion ? reducedMetaVariants : metaVariants;
+  const ready = !loading;
+  const { showSkeleton } = useWidgetLoadSequence({
+    loading,
+    ready: ready && symbols.length > 0,
+    rootRef,
+  });
   const panelTransition = fadeTransition(reduceMotion, 0.42);
   const highlightTransition = reduceMotion
     ? { duration: 0.15 }
@@ -235,10 +244,10 @@ function StockMarket() {
       ? liveSeries.data[liveSeries.data.length - 1].value
       : null;
 
-  if (loading) {
+  if (showSkeleton) {
     return (
       <div className="stock-market-widget stock-market-widget--loading">
-        <div className="stock-loading">Loading stocks...</div>
+        <WidgetSkeleton label="Loading stocks…" rows={5} />
       </div>
     );
   }
@@ -256,13 +265,14 @@ function StockMarket() {
 
   return (
     <motion.div
+      ref={rootRef}
       className="stock-market-widget"
       aria-live="polite"
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={fadeTransition(reduceMotion, 0.4)}
     >
-      <div className="stock-ticker" role="list" aria-label="Stock symbols">
+      <div className="stock-ticker" role="list" aria-label="Stock symbols" data-load-step="title">
         {symbols.map((symbol, index) => {
           const itemStats = getLatestStats(stocks[index]);
           const isActive = index === activeIndex;
@@ -300,7 +310,7 @@ function StockMarket() {
         })}
       </div>
 
-      <div className="stock-featured">
+      <div className="stock-featured" data-load-step="item">
         <div className="stock-featured-meta">
           <AnimatePresence mode="wait" initial={false} custom={direction}>
             <motion.div
@@ -362,7 +372,7 @@ function StockMarket() {
           ) : null}
         </div>
 
-        <section className="stock-graph">
+        <section className="stock-graph" data-load-step="item">
           <div className="chart-wrapper">
             <div className="chart-header">
               <div className="chart-header-main">
