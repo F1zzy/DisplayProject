@@ -10,6 +10,7 @@ node_modules/
 build/
 dist/
 backend/remote/analytics-app/
+backend/remote/network-app/
 
 # Logs
 npm-debug.log*

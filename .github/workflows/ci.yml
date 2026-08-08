@@ -12,6 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -20,6 +24,15 @@ jobs:
             backend/package-lock.json
             backend/client/package-lock.json
             backend/remote-analytics/package-lock.json
+            backend/remote-network/package-lock.json
+
+      - name: Test Go analytics
+        working-directory: analytics
+        run: go test ./...
+
+      - name: Test Go network
+        working-directory: network
+        run: go test ./...
 
       - name: Install backend dependencies
         working-directory: backend
@@ -60,6 +73,14 @@ jobs:
 
       - name: Build remote-analytics
         working-directory: backend/remote-analytics
+        run: npm run build
+
+      - name: Install remote-network dependencies
+        working-directory: backend/remote-network
+        run: npm ci
+
+      - name: Build remote-network
+        working-directory: backend/remote-network
         run: npm run build
 
       - name: Install Playwright Chromium

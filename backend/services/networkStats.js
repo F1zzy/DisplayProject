@@ -1,196 +1,208 @@
-require('dotenv').config();
+const DEFAULT_URL = 'http://127.0.0.1:3011';
+const TIMEOUT_MS = 2500;
 
-const fs = require('fs');
-const cache = require('./cache');
+const OFFLINE_STATS = {
+  online: false,
+  latencyMs: null,
+  checkedAt: null,
+  lastOnlineAt: null,
+  interface: null,
+  ipv4: null,
+  gateway: null,
+  publicIp: null,
+  rxBps: null,
+  txBps: null,
+};
 
-const CACHE_TTL_MS = 15 * 1000;
-const CACHE_KEY = 'network:stats';
-const DEFAULT_PROBE_URL = 'https://www.gstatic.com/generate_204';
-const PROC_NET_DEV = '/proc/net/dev';
+const OFFLINE_SUMMARY = {
+  ...OFFLINE_STATS,
+  targets: [],
+  history: [],
+  windowSamples: 0,
+  available: false,
+};
 
-let lastOnlineAt = null;
-let previousCounters = null;
-
-function getProbeUrl() {
-  return process.env.NETWORK_PROBE_URL || DEFAULT_PROBE_URL;
+function getBaseUrl() {
+  const raw = process.env.NETWORK_SERVICE_URL;
+  if (raw === 'false' || raw === '0' || raw === 'off') {
+    return null;
+  }
+  // Keep unit/e2e tests offline unless NETWORK_SERVICE_URL is set explicitly.
+  if ((raw === undefined || raw === '') && process.env.NODE_ENV === 'test') {
+    return null;
+  }
+  if (raw === undefined || raw === '') {
+    return DEFAULT_URL;
+  }
+  return String(raw).replace(/\/$/, '');
 }
 
-function getPreferredIface() {
-  return process.env.NETWORK_IFACE || null;
+async function fetchFromGo(path) {
+  const base = getBaseUrl();
+  if (!base) return null;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const response = await fetch(`${base}${path}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    if (!response.ok) return null;
+    return response.json();
+  } catch (error) {
+    console.error('Network service unreachable:', error.message);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-/**
- * Parse /proc/net/dev into { name: { rxBytes, txBytes } }.
- * @param {string} content
- */
-function parseProcNetDev(content) {
-  const interfaces = {};
-  const lines = content.split('\n').slice(2);
+function optionalNumber(value) {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
+function optionalString(value) {
+  if (value == null || value === '') return null;
+  return String(value);
+}
 
-    const colon = trimmed.indexOf(':');
-    if (colon === -1) continue;
+function normalizeTargets(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((row) => ({
+      name: optionalString(row?.name) || 'unknown',
+      latencyMs: optionalNumber(row?.latencyMs),
+    }))
+    .filter((row) => row.name);
+}
 
-    const name = trimmed.slice(0, colon).trim();
-    const fields = trimmed.slice(colon + 1).trim().split(/\s+/);
-    if (fields.length < 9) continue;
+function normalizeHistory(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((row) => ({
+    at: optionalString(row?.at) || new Date().toISOString(),
+    rxBps: optionalNumber(row?.rxBps),
+    txBps: optionalNumber(row?.txBps),
+    latencyMs: optionalNumber(row?.latencyMs),
+  }));
+}
 
-    interfaces[name] = {
-      rxBytes: Number(fields[0]) || 0,
-      txBytes: Number(fields[8]) || 0,
+function normalizeStats(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      ...OFFLINE_STATS,
+      checkedAt: new Date().toISOString(),
     };
   }
 
-  return interfaces;
-}
-
-/**
- * @param {Record<string, { rxBytes: number, txBytes: number }>} interfaces
- * @param {string | null} preferred
- */
-function pickInterface(interfaces, preferred) {
-  if (preferred && interfaces[preferred]) {
-    return preferred;
-  }
-
-  const names = Object.keys(interfaces).filter((name) => name !== 'lo');
-  if (names.length === 0) return null;
-
-  // Prefer common ethernet/wifi names when present
-  const preferredOrder = ['eth0', 'en0', 'wlan0', 'enp0s3', 'ens33'];
-  for (const name of preferredOrder) {
-    if (interfaces[name]) return name;
-  }
-
-  return names[0];
-}
-
-/**
- * @param {{ rxBytes: number, txBytes: number } | null} current
- * @param {{ rxBytes: number, txBytes: number, at: number } | null} previous
- * @param {number} now
- */
-function computeRates(current, previous, now) {
-  if (!current || !previous) {
-    return { rxBps: null, txBps: null };
-  }
-
-  const elapsedSec = (now - previous.at) / 1000;
-  if (elapsedSec <= 0) {
-    return { rxBps: null, txBps: null };
-  }
-
-  const rxDelta = current.rxBytes - previous.rxBytes;
-  const txDelta = current.txBytes - previous.txBytes;
-
-  if (rxDelta < 0 || txDelta < 0) {
-    return { rxBps: null, txBps: null };
-  }
-
   return {
-    rxBps: Math.round(rxDelta / elapsedSec),
-    txBps: Math.round(txDelta / elapsedSec),
+    online: Boolean(raw.online),
+    latencyMs: optionalNumber(raw.latencyMs),
+    checkedAt: raw.checkedAt || new Date().toISOString(),
+    lastOnlineAt: optionalString(raw.lastOnlineAt),
+    interface: optionalString(raw.interface),
+    ipv4: optionalString(raw.ipv4),
+    gateway: optionalString(raw.gateway),
+    publicIp: optionalString(raw.publicIp ?? raw.publicIP),
+    rxBps: optionalNumber(raw.rxBps),
+    txBps: optionalNumber(raw.txBps),
   };
 }
 
-function readInterfaceCounters() {
-  if (!fs.existsSync(PROC_NET_DEV)) {
-    return { interface: null, counters: null };
-  }
-
-  try {
-    const content = fs.readFileSync(PROC_NET_DEV, 'utf8');
-    const interfaces = parseProcNetDev(content);
-    const name = pickInterface(interfaces, getPreferredIface());
-    if (!name) {
-      return { interface: null, counters: null };
-    }
-    return { interface: name, counters: interfaces[name] };
-  } catch (error) {
-    console.error('Failed to read interface counters:', error.message);
-    return { interface: null, counters: null };
-  }
-}
-
-async function probeLatency() {
-  const url = getProbeUrl();
-  const started = Date.now();
-
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      cache: 'no-store',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(2000),
-    });
-
-    // Any HTTP response (including 204) means the network path worked
-    if (response.status >= 100 && response.status < 600) {
-      return { online: true, latencyMs: Date.now() - started };
-    }
-
-    return { online: false, latencyMs: null };
-  } catch (error) {
-    console.error('Network probe failed:', error.message);
-    return { online: false, latencyMs: null };
-  }
-}
-
-async function collectNetworkStats() {
-  const now = Date.now();
-  const { online, latencyMs } = await probeLatency();
-
-  if (online) {
-    lastOnlineAt = new Date(now).toISOString();
-  }
-
-  const { interface: iface, counters } = readInterfaceCounters();
-  const previous =
-    previousCounters && previousCounters.interface === iface ? previousCounters : null;
-  const rates = computeRates(counters, previous, now);
-
-  if (counters && iface) {
-    previousCounters = {
-      interface: iface,
-      rxBytes: counters.rxBytes,
-      txBytes: counters.txBytes,
-      at: now,
+function normalizeSummary(raw, { available = true } = {}) {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      ...OFFLINE_SUMMARY,
+      checkedAt: new Date().toISOString(),
+      available: false,
     };
   }
 
+  const stats = normalizeStats(raw);
   return {
-    online,
-    latencyMs,
-    checkedAt: new Date(now).toISOString(),
-    lastOnlineAt,
-    interface: iface,
-    rxBps: rates.rxBps,
-    txBps: rates.txBps,
+    ...stats,
+    targets: normalizeTargets(raw.targets),
+    history: normalizeHistory(raw.history),
+    windowSamples: optionalNumber(raw.windowSamples) ?? 0,
+    available: available && Boolean(getBaseUrl()),
   };
 }
 
 async function getNetworkStats() {
-  const cached = cache.get(CACHE_KEY);
-  if (cached) return cached;
+  // Prefer /summary so the kiosk widget gets targets + history.
+  const summary = await fetchFromGo('/summary');
+  if (summary) {
+    const normalized = normalizeSummary(summary, { available: true });
+    return {
+      online: normalized.online,
+      latencyMs: normalized.latencyMs,
+      checkedAt: normalized.checkedAt,
+      lastOnlineAt: normalized.lastOnlineAt,
+      interface: normalized.interface,
+      ipv4: normalized.ipv4,
+      gateway: normalized.gateway,
+      publicIp: normalized.publicIp,
+      rxBps: normalized.rxBps,
+      txBps: normalized.txBps,
+      targets: normalized.targets,
+      history: normalized.history,
+      windowSamples: normalized.windowSamples,
+    };
+  }
 
-  const stats = await collectNetworkStats();
-  cache.set(CACHE_KEY, stats, CACHE_TTL_MS);
-  return stats;
+  const remote = await fetchFromGo('/stats');
+  if (remote) {
+    const stats = normalizeStats(remote);
+    return {
+      ...stats,
+      targets: [],
+      history: [],
+      windowSamples: 0,
+    };
+  }
+  return {
+    ...OFFLINE_STATS,
+    checkedAt: new Date().toISOString(),
+    targets: [],
+    history: [],
+    windowSamples: 0,
+  };
 }
 
-/** Test helpers — not used by production routes. */
-function _resetState() {
-  lastOnlineAt = null;
-  previousCounters = null;
+async function getNetworkSummary() {
+  if (!getBaseUrl()) {
+    return {
+      ...OFFLINE_SUMMARY,
+      checkedAt: new Date().toISOString(),
+      available: false,
+    };
+  }
+
+  const remote = await fetchFromGo('/summary');
+  if (remote) {
+    return normalizeSummary(remote, { available: true });
+  }
+  return {
+    ...OFFLINE_SUMMARY,
+    checkedAt: new Date().toISOString(),
+    available: false,
+  };
+}
+
+function isEnabled() {
+  return Boolean(getBaseUrl());
 }
 
 module.exports = {
   getNetworkStats,
-  parseProcNetDev,
-  pickInterface,
-  computeRates,
-  _resetState,
+  getNetworkSummary,
+  normalizeStats,
+  normalizeSummary,
+  isEnabled,
+  getBaseUrl,
+  OFFLINE_STATS,
+  OFFLINE_SUMMARY,
 };

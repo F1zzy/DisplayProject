@@ -25,6 +25,7 @@ DisplayProject turns a spare portrait monitor into an always-on information wall
 - WebSocket updates for display power, widgets, and settings
 - Raspberry Pi kiosk install with HDMI power control
 - Optional Go analytics microservice (API latency + widget views; remote Analytics tab)
+- Optional Go network microservice (latency, rates, host/public IP; remote Network tab)
 - Alexa skill stub in [`alexa/`](alexa/)
 
 ## Screenshots
@@ -309,15 +310,36 @@ npm run build
 
 Or from `backend/`: `npm run build:remote-analytics` (after `npm install` in `remote-analytics`). Output lands in `backend/remote/analytics-app/` and is served under `/remote/analytics-app/`.
 
+## Network service (optional)
+
+Connectivity latency, NIC rates, host/public IP, and multi-target probes for the Network widget and remote **Network** tab are collected by a small Go service:
+
+```bash
+cd network
+go run ./cmd/network
+```
+
+In `backend/.env` set `NETWORK_SERVICE_URL=http://127.0.0.1:3011` (the default). Set `NETWORK_SERVICE_URL=false` to disable. Details: [`network/README.md`](network/README.md). Linux uses `/proc/net/dev` for rates; Windows uses the IP Helper API. If the service is down, the API returns a degraded offline payload.
+
+Charts on the remote Network tab are a Vite/React island (same Bklit stack as Analytics). Build once after clone or when changing chart UI:
+
+```bash
+cd backend/remote-network
+npm install
+npm run build
+```
+
+Or from `backend/`: `npm run build:remote-network`. Output lands in `backend/remote/network-app/` and is served under `/remote/network-app/`.
+
 ## Remote control
 
 1. Start the server
 2. Open `http://localhost:3000/remote` (or `http://<pi-ip>:3000/remote` from another device)
 3. Enter your `CONTROL_API_KEY` from `backend/.env` and tap **Unlock**
 4. Use On / Sleep / Off, widget jump buttons, and **Pin widget** (pick which widget to freeze; **Unpin** or **Next Widget** clears the pin)
-5. Open the **Analytics** tab for the last-24h summary and charts (requires the Go service above; build remote-analytics once as documented in Analytics)
-6. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background, appearance (including **colour scheme** — presets or **Custom** with accent/app/panel/card pickers and optional transparent surfaces; **clock size** and **clock font size**; applied to both the dashboard and this remote page — night focus schedule and **display brightness** — on a Raspberry Pi this drives the panel/HDMI backlight via `displayproject-display-brightness`), and layout, then **Save settings**
-
+5. Open the **Analytics** tab for the last-24h summary and charts (requires the Go analytics service; build remote-analytics once as documented in Analytics)
+6. Open the **Network** tab for live connectivity cards and charts (requires the Go network service; build remote-network once as documented in Network service)
+7. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background, appearance (including **colour scheme** — presets or **Custom** with accent/app/panel/card pickers and optional transparent surfaces; **clock size** and **clock font size**; applied to both the dashboard and this remote page — night focus schedule and **display brightness** — on a Raspberry Pi this drives the panel/HDMI backlight via `displayproject-display-brightness`), and layout, then **Save settings**
 Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip. Enable **Spotify** after completing the Spotify setup above. Enable **Formula 1** for championship standings and live race order.
 
 The remote page stays locked until the API key is verified. Lock the session when finished. Settings are stored in `backend/data/settings.json` (not committed).
@@ -335,7 +357,8 @@ Install as a PWA on Android for a simple remote control app.
 | `GET /api/stocks?symbols=AAPL,GOOGL,MSFT` | Stock data (cached, rate-limited) |
 | `GET /api/news?category=general` | News headlines |
 | `GET /api/calendar/events?days=1` | Today’s Google Calendar events (503 if not configured) |
-| `GET /api/network/stats` | Connection latency + local NIC rx/tx rates (light probe, cached ~15s) |
+| `GET /api/network/stats` | Connection latency + local NIC rx/tx rates (proxied from Go network service, cached ~15s) |
+| `GET /api/network/summary` | Richer network summary with targets + history for the remote Network tab (requires `x-api-key`) |
 | `GET /api/sky/current` | Night sky chart URL + bodies above horizon (cached ~45m) |
 | `GET /api/spotify/now` | Now playing / last played + top tracks (503 if not configured) |
 | `GET /api/f1/standings` | F1 driver + constructor championships with round-over-round movement, next race, plus live race order when a session is running |

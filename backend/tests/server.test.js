@@ -56,6 +56,8 @@ describe('Calendar API', () => {
 });
 
 describe('Network API', () => {
+  const apiKey = process.env.CONTROL_API_KEY || 'change-me';
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -67,14 +69,54 @@ describe('Network API', () => {
       checkedAt: '2026-07-14T12:00:00.000Z',
       lastOnlineAt: '2026-07-14T12:00:00.000Z',
       interface: null,
+      ipv4: null,
+      gateway: null,
+      publicIp: null,
       rxBps: null,
       txBps: null,
+      targets: [{ name: 'internet', latencyMs: 18 }],
+      history: [],
+      windowSamples: 12,
     });
 
     const response = await request(app).get('/api/network/stats');
     expect(response.status).toBe(200);
     expect(response.body.online).toBe(true);
     expect(response.body.latencyMs).toBe(18);
+    expect(response.body.targets).toHaveLength(1);
+  });
+
+  test('GET /api/network/summary requires auth', async () => {
+    const response = await request(app).get('/api/network/summary');
+    expect(response.status).toBe(401);
+  });
+
+  test('GET /api/network/summary returns payload with valid key', async () => {
+    jest.spyOn(networkStats, 'getNetworkSummary').mockResolvedValue({
+      online: true,
+      latencyMs: 18,
+      checkedAt: '2026-07-14T12:00:00.000Z',
+      lastOnlineAt: '2026-07-14T12:00:00.000Z',
+      interface: 'eth0',
+      ipv4: '192.168.1.50',
+      gateway: '192.168.1.1',
+      publicIp: '203.0.113.10',
+      rxBps: 1000,
+      txBps: 200,
+      targets: [{ name: 'internet', latencyMs: 18 }],
+      history: [{ at: '2026-07-14T12:00:00.000Z', rxBps: 1000, txBps: 200, latencyMs: 18 }],
+      windowSamples: 12,
+      available: true,
+    });
+
+    const response = await request(app)
+      .get('/api/network/summary')
+      .set('x-api-key', apiKey);
+
+    expect(response.status).toBe(200);
+    expect(response.body.available).toBe(true);
+    expect(response.body.publicIp).toBe('203.0.113.10');
+    expect(response.body.targets).toHaveLength(1);
   });
 });
 

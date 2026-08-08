@@ -120,7 +120,7 @@ function syncNavIndicator(view) {
   nav.dataset.activeView = view;
 }
 
-const REMOTE_VIEW_ORDER = ['control', 'analytics', 'settings'];
+const REMOTE_VIEW_ORDER = ['control', 'analytics', 'network', 'settings'];
 
 function setRemoteView(view, { animate = true } = {}) {
   const buttons = document.querySelectorAll('[data-remote-view]');
@@ -145,6 +145,9 @@ function setRemoteView(view, { animate = true } = {}) {
     next.classList.add('is-active');
     if (view === 'analytics') {
       loadAnalytics().catch((error) => setStatus(error.message, true));
+    }
+    if (view === 'network') {
+      loadNetwork().catch((error) => setStatus(error.message, true));
     }
     return;
   }
@@ -180,6 +183,9 @@ function setRemoteView(view, { animate = true } = {}) {
 
   if (view === 'analytics') {
     loadAnalytics().catch((error) => setStatus(error.message, true));
+  }
+  if (view === 'network') {
+    loadNetwork().catch((error) => setStatus(error.message, true));
   }
 }
 
@@ -281,6 +287,99 @@ function ensureAnalyticsChartsLoaded() {
   return analyticsChartsPromise;
 }
 
+function formatNetworkRate(bps) {
+  if (bps == null || Number.isNaN(Number(bps))) return '—';
+  const n = Number(bps);
+  if (n < 1024) return `${n} B/s`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB/s`;
+  return `${(n / (1024 * 1024)).toFixed(2)} MB/s`;
+}
+
+function setNetworkText(selector, text) {
+  const el = document.querySelector(`[data-network="${selector}"]`);
+  if (el) el.textContent = text;
+}
+
+async function loadNetwork() {
+  const badge = document.getElementById('networkBadge');
+  const hint = document.getElementById('networkHint');
+  const chartsAlreadyMounted = Boolean(document.querySelector('script[data-network-charts]'));
+  const chartsReady = ensureNetworkChartsLoaded().catch(() => null);
+  const data = await apiRequest('/api/network/summary');
+
+  const online = data.online === true;
+  setNetworkText('status', online ? 'Online' : 'Offline');
+  setNetworkText(
+    'statusMeta',
+    data.latencyMs != null ? `${data.latencyMs} ms probe` : 'Latency unavailable'
+  );
+
+  setNetworkText('download', formatNetworkRate(data.rxBps));
+  setNetworkText(
+    'downloadMeta',
+    data.txBps != null ? `Upload ${formatNetworkRate(data.txBps)}` : 'Upload —'
+  );
+
+  if (data.publicIp) {
+    setNetworkText('publicIp', data.publicIp);
+    setNetworkText(
+      'publicIpMeta',
+      data.interface ? `Iface ${data.interface}${data.ipv4 ? ` · ${data.ipv4}` : ''}` : 'Outbound identity'
+    );
+  } else if (data.interface) {
+    setNetworkText('publicIp', data.interface);
+    setNetworkText('publicIpMeta', data.ipv4 ? `Local ${data.ipv4}` : 'Public IP unavailable');
+  } else {
+    setNetworkText('publicIp', 'Unavailable');
+    setNetworkText('publicIpMeta', 'Host details not available');
+  }
+
+  if (badge) {
+    badge.textContent = data.available === false ? 'OFFLINE' : online ? 'LIVE' : 'DOWN';
+  }
+  if (hint) {
+    hint.textContent =
+      data.available === false
+        ? 'Network service unreachable. Start it with: cd network && go run ./cmd/network'
+        : `Cached ~15s · ${data.history?.length || 0}/${data.windowSamples || 12} history samples`;
+  }
+
+  await chartsReady;
+  if (chartsAlreadyMounted) {
+    window.dispatchEvent(new CustomEvent('network:refresh'));
+  }
+}
+
+let networkChartsPromise = null;
+
+function ensureNetworkChartsLoaded() {
+  if (networkChartsPromise) return networkChartsPromise;
+  if (document.querySelector('script[data-network-charts]')) {
+    networkChartsPromise = Promise.resolve();
+    return networkChartsPromise;
+  }
+
+  networkChartsPromise = new Promise((resolve, reject) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/remote/network-app/assets/network.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = '/remote/network-app/assets/network.js';
+    script.dataset.networkCharts = '1';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load network charts'));
+    document.body.appendChild(script);
+  }).catch((error) => {
+    networkChartsPromise = null;
+    throw error;
+  });
+
+  return networkChartsPromise;
+}
+
 function bindRemoteNavigation() {
   syncNavIndicator('control');
 
@@ -297,6 +396,19 @@ function bindRemoteNavigation() {
       try {
         await loadAnalytics();
         setStatus('Analytics refreshed');
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    });
+  }
+
+  const networkRefreshBtn = document.getElementById('networkRefreshBtn');
+  if (networkRefreshBtn) {
+    networkRefreshBtn.addEventListener('click', async () => {
+      flashButton(networkRefreshBtn);
+      try {
+        await loadNetwork();
+        setStatus('Network refreshed');
       } catch (error) {
         setStatus(error.message, true);
       }

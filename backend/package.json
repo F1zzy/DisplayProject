@@ -8,6 +8,7 @@
     "dev:client": "npm start --prefix client",
     "build:client": "npm run build --prefix client",
     "build:remote-analytics": "npm run build --prefix remote-analytics",
+    "build:remote-network": "npm run build --prefix remote-network",
     "dev": "npm run build:client && npm start",
     "test": "jest",
     "test:e2e": "playwright test",

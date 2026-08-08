@@ -128,6 +128,21 @@ router.get('/network/stats', async (_req, res) => {
   }
 });
 
+router.get('/network/summary', (req, res, next) => {
+  if (!api.verifyControlKey(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}, async (_req, res) => {
+  try {
+    const summary = await networkStats.getNetworkSummary();
+    res.json(summary);
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({ error: 'Failed to fetch network summary' });
+  }
+});
+
 router.get('/sky/current', async (req, res) => {
   try {
     const location = api.getLocation(req);

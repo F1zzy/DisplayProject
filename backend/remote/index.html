@@ -49,6 +49,7 @@
         <span class="remote-nav-indicator" aria-hidden="true"></span>
         <button type="button" class="remote-nav-btn is-active" data-remote-view="control">Control</button>
         <button type="button" class="remote-nav-btn" data-remote-view="analytics">Analytics</button>
+        <button type="button" class="remote-nav-btn" data-remote-view="network">Network</button>
         <button type="button" class="remote-nav-btn" data-remote-view="settings">Settings</button>
       </nav>
 
@@ -113,6 +114,37 @@
             <button type="button" class="chip" id="analyticsRefreshBtn">Refresh</button>
           </div>
           <div id="analytics-charts-root"></div>
+        </section>
+      </div>
+
+      <div class="remote-view" data-view-panel="network" hidden>
+        <section class="panel panel--compact anim-in" style="--delay: 0ms">
+          <div class="panel-header panel-header--compact">
+            <h2 class="panel-title">Network</h2>
+            <span class="panel-badge" id="networkBadge">LIVE</span>
+          </div>
+          <p class="analytics-hint" id="networkHint">Connectivity and rates from the local network service.</p>
+          <div class="analytics-grid" id="networkContent">
+            <article class="analytics-card">
+              <div class="analytics-label">Status / latency</div>
+              <div class="analytics-value" data-network="status">—</div>
+              <div class="analytics-meta" data-network="statusMeta"></div>
+            </article>
+            <article class="analytics-card">
+              <div class="analytics-label">Download rate</div>
+              <div class="analytics-value" data-network="download">—</div>
+              <div class="analytics-meta" data-network="downloadMeta"></div>
+            </article>
+            <article class="analytics-card">
+              <div class="analytics-label">Public IP</div>
+              <div class="analytics-value" data-network="publicIp">—</div>
+              <div class="analytics-meta" data-network="publicIpMeta"></div>
+            </article>
+          </div>
+          <div class="chip-row analytics-actions">
+            <button type="button" class="chip" id="networkRefreshBtn">Refresh</button>
+          </div>
+          <div id="network-charts-root"></div>
         </section>
       </div>
 

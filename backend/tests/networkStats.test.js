@@ -1,49 +1,99 @@
-const {
-  parseProcNetDev,
-  pickInterface,
-  computeRates,
-} = require('../services/networkStats');
+const { normalizeStats, normalizeSummary, getBaseUrl } = require('../services/networkStats');
 
-describe('networkStats helpers', () => {
-  test('parseProcNetDev extracts rx/tx byte counters', () => {
-    const sample = [
-      'Inter-|   Receive                                                |  Transmit',
-      ' face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed',
-      '    lo: 1000 10 0 0 0 0 0 0 2000 20 0 0 0 0 0 0',
-      '  eth0: 5000 50 0 0 0 0 0 0 8000 80 0 0 0 0 0 0',
-      '',
-    ].join('\n');
+describe('networkStats proxy helpers', () => {
+  const previousEnv = process.env.NETWORK_SERVICE_URL;
 
-    const interfaces = parseProcNetDev(sample);
-    expect(interfaces.lo).toEqual({ rxBytes: 1000, txBytes: 2000 });
-    expect(interfaces.eth0).toEqual({ rxBytes: 5000, txBytes: 8000 });
+  afterEach(() => {
+    if (previousEnv === undefined) {
+      delete process.env.NETWORK_SERVICE_URL;
+    } else {
+      process.env.NETWORK_SERVICE_URL = previousEnv;
+    }
   });
 
-  test('pickInterface prefers NETWORK-style names and skips lo', () => {
-    const interfaces = {
-      lo: { rxBytes: 1, txBytes: 1 },
-      wlan0: { rxBytes: 2, txBytes: 2 },
-      eth0: { rxBytes: 3, txBytes: 3 },
-    };
-
-    expect(pickInterface(interfaces, null)).toBe('eth0');
-    expect(pickInterface(interfaces, 'wlan0')).toBe('wlan0');
-    expect(pickInterface({ lo: { rxBytes: 1, txBytes: 1 } }, null)).toBeNull();
+  test('normalizeStats maps Go payload fields', () => {
+    expect(
+      normalizeStats({
+        online: true,
+        latencyMs: 18,
+        checkedAt: '2026-07-14T12:00:00.000Z',
+        lastOnlineAt: '2026-07-14T12:00:00.000Z',
+        interface: 'eth0',
+        ipv4: '192.168.1.50',
+        gateway: '192.168.1.1',
+        publicIp: '203.0.113.10',
+        rxBps: 125000,
+        txBps: 4200,
+      })
+    ).toEqual({
+      online: true,
+      latencyMs: 18,
+      checkedAt: '2026-07-14T12:00:00.000Z',
+      lastOnlineAt: '2026-07-14T12:00:00.000Z',
+      interface: 'eth0',
+      ipv4: '192.168.1.50',
+      gateway: '192.168.1.1',
+      publicIp: '203.0.113.10',
+      rxBps: 125000,
+      txBps: 4200,
+    });
   });
 
-  test('computeRates returns bytes per second between samples', () => {
-    const previous = { rxBytes: 1000, txBytes: 2000, at: 1_000 };
-    const current = { rxBytes: 3000, txBytes: 4000 };
-    expect(computeRates(current, previous, 3_000)).toEqual({
+  test('normalizeStats fills defaults for empty payloads', () => {
+    const result = normalizeStats(null);
+    expect(result.online).toBe(false);
+    expect(result.latencyMs).toBeNull();
+    expect(result.interface).toBeNull();
+    expect(result.ipv4).toBeNull();
+    expect(result.publicIp).toBeNull();
+    expect(result.checkedAt).toBeTruthy();
+  });
+
+  test('normalizeSummary maps targets and history', () => {
+    process.env.NETWORK_SERVICE_URL = 'http://127.0.0.1:3011';
+    const result = normalizeSummary({
+      online: true,
+      latencyMs: 22,
+      checkedAt: '2026-07-14T12:00:00.000Z',
+      interface: 'eth0',
+      ipv4: '10.0.0.2',
+      publicIp: '198.51.100.9',
       rxBps: 1000,
-      txBps: 1000,
+      txBps: 200,
+      windowSamples: 12,
+      targets: [
+        { name: 'internet', latencyMs: 22 },
+        { name: 'gateway', latencyMs: null },
+        { name: 'dns', latencyMs: 5 },
+      ],
+      history: [
+        { at: '2026-07-14T11:59:00.000Z', rxBps: 900, txBps: 100, latencyMs: 20 },
+      ],
     });
+
+    expect(result.available).toBe(true);
+    expect(result.windowSamples).toBe(12);
+    expect(result.targets).toEqual([
+      { name: 'internet', latencyMs: 22 },
+      { name: 'gateway', latencyMs: null },
+      { name: 'dns', latencyMs: 5 },
+    ]);
+    expect(result.history).toHaveLength(1);
+    expect(result.history[0].rxBps).toBe(900);
   });
 
-  test('computeRates returns null without a previous sample', () => {
-    expect(computeRates({ rxBytes: 10, txBytes: 10 }, null, Date.now())).toEqual({
-      rxBps: null,
-      txBps: null,
-    });
+  test('normalizeSummary marks unavailable when empty', () => {
+    const result = normalizeSummary(null);
+    expect(result.available).toBe(false);
+    expect(result.targets).toEqual([]);
+    expect(result.history).toEqual([]);
+  });
+
+  test('getBaseUrl respects false and defaults outside test', () => {
+    process.env.NETWORK_SERVICE_URL = 'false';
+    expect(getBaseUrl()).toBeNull();
+
+    process.env.NETWORK_SERVICE_URL = 'http://127.0.0.1:3011/';
+    expect(getBaseUrl()).toBe('http://127.0.0.1:3011');
   });
 });

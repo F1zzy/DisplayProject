@@ -31,8 +31,14 @@ jest.mock('./api/client', () => ({
       checkedAt: new Date().toISOString(),
       lastOnlineAt: new Date().toISOString(),
       interface: null,
+      ipv4: null,
+      gateway: null,
+      publicIp: null,
       rxBps: null,
       txBps: null,
+      targets: [],
+      history: [],
+      windowSamples: 0,
     }),
   getSky: () =>
     Promise.resolve({

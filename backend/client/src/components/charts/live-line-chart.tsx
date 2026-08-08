@@ -39,8 +39,12 @@ import { wrapSingleYScale } from "./y-axis-scales";
 // ---------------------------------------------------------------------------
 
 export interface LiveLinePoint {
+  /** Unix timestamp in seconds */
   time: number;
-  value: number;
+  /** Primary series value (single-line charts) */
+  value?: number;
+  /** Additional series values keyed by LiveLine dataKey */
+  [key: string]: number | undefined;
 }
 
 export interface LiveLineChartProps {
@@ -86,10 +90,44 @@ interface AnimFrame {
   displayValue: number;
 }
 
+function pointValues(point: LiveLinePoint, keys?: string[]): number[] {
+  const values: number[] = [];
+  if (keys && keys.length > 0) {
+    for (const key of keys) {
+      const v = point[key];
+      if (typeof v === "number" && !Number.isNaN(v)) {
+        values.push(v);
+      }
+    }
+    return values;
+  }
+  for (const [key, v] of Object.entries(point)) {
+    if (key === "time") {
+      continue;
+    }
+    if (typeof v === "number" && !Number.isNaN(v)) {
+      values.push(v);
+    }
+  }
+  return values;
+}
+
+function pointSeriesValue(point: LiveLinePoint, dataKey: string): number | null {
+  const direct = point[dataKey];
+  if (typeof direct === "number" && !Number.isNaN(direct)) {
+    return direct;
+  }
+  if (dataKey !== "value" && typeof point.value === "number" && !Number.isNaN(point.value)) {
+    return point.value;
+  }
+  return null;
+}
+
 function computeTargetRange(
   data: LiveLinePoint[],
   value: number,
-  exaggerate: boolean
+  exaggerate: boolean,
+  seriesKeys: string[] = ["value"]
 ) {
   if (data.length === 0) {
     return { yMin: 0, yMax: 100 };
@@ -97,11 +135,13 @@ function computeTargetRange(
   let min = Number.POSITIVE_INFINITY;
   let max = Number.NEGATIVE_INFINITY;
   for (const d of data) {
-    if (d.value < min) {
-      min = d.value;
-    }
-    if (d.value > max) {
-      max = d.value;
+    for (const v of pointValues(d, seriesKeys)) {
+      if (v < min) {
+        min = v;
+      }
+      if (v > max) {
+        max = v;
+      }
     }
   }
   if (value < min) {
@@ -109,6 +149,9 @@ function computeTargetRange(
   }
   if (value > max) {
     max = value;
+  }
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return { yMin: 0, yMax: 100 };
   }
   const rawRange = max - min;
   const paddingFactor = exaggerate ? 0.03 : 0.15;
@@ -144,44 +187,43 @@ function nextAnimFrame(
 
 function interpolateAtTime(
   points: LiveLinePoint[],
-  timeSec: number
+  timeSec: number,
+  dataKey = "value"
 ): number | null {
   if (points.length === 0) {
     return null;
   }
   const firstPt = points[0] as LiveLinePoint;
   const lastPt = points.at(-1) as LiveLinePoint;
+  const firstVal = pointSeriesValue(firstPt, dataKey);
+  const lastVal = pointSeriesValue(lastPt, dataKey);
+  if (firstVal == null || lastVal == null) {
+    return null;
+  }
   if (timeSec <= firstPt.time) {
-    return firstPt.value;
+    return firstVal;
   }
   if (timeSec >= lastPt.time) {
-    return lastPt.value;
+    return lastVal;
   }
-  let lo = 0;
-  let hi = points.length - 1;
-  while (hi - lo > 1) {
-    const mid = Math.floor((lo + hi) / 2);
-    const midPt = points[mid];
-    if (midPt && midPt.time <= timeSec) {
-      lo = mid;
-    } else {
-      hi = mid;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i] as LiveLinePoint;
+    const p2 = points[i + 1] as LiveLinePoint;
+    if (timeSec >= p1.time && timeSec <= p2.time) {
+      const v1 = pointSeriesValue(p1, dataKey);
+      const v2 = pointSeriesValue(p2, dataKey);
+      if (v1 == null || v2 == null) {
+        return null;
+      }
+      const span = p2.time - p1.time;
+      if (span <= 0) {
+        return v1;
+      }
+      const t = (timeSec - p1.time) / span;
+      return v1 + (v2 - v1) * t;
     }
   }
-  const p1 = points[lo];
-  if (!p1) {
-    return null;
-  }
-  const p2 = points[hi];
-  if (!p2) {
-    return null;
-  }
-  const dt = p2.time - p1.time;
-  if (dt === 0) {
-    return p1.value;
-  }
-  const t = (timeSec - p1.time) / dt;
-  return p1.value + (p2.value - p1.value) * t;
+  return lastVal;
 }
 
 const bisectTime = bisector<LiveLinePoint, number>((d) => d.time).left;
@@ -254,12 +296,12 @@ function resolveLiveTooltip(
   const timeMs = xScaleNext.invert(cursorX).getTime();
   const timeSec = timeMs / 1000;
   const visible = data.filter((p) => p.time >= (domainEndMs - windowMs) / 1000);
-  visible.push({ time: frame.now / 1000, value: frame.displayValue });
+  visible.push({ time: frame.now / 1000, [dataKey]: frame.displayValue });
   visible.push({
     time: (frame.now + xTickUnitMs) / 1000,
-    value: frame.displayValue,
+    [dataKey]: frame.displayValue,
   });
-  const val = interpolateAtTime(visible, timeSec);
+  const val = interpolateAtTime(visible, timeSec, dataKey);
   if (val === null) {
     return null;
   }
@@ -356,13 +398,16 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
     pausedRef.current = paused;
   }, [paused]);
 
-  const targetRange = useMemo(
-    () => computeTargetRange(data, value, exaggerate),
-    [data, value, exaggerate]
+  const lines = useMemo(() => extractLiveLineConfigs(children), [children]);
+  const seriesKeys = useMemo(
+    () => (lines.length > 0 ? lines.map((line) => line.dataKey) : [dataKey]),
+    [lines, dataKey]
   );
 
-  const lines = useMemo(() => extractLiveLineConfigs(children), [children]);
-
+  const targetRange = useMemo(
+    () => computeTargetRange(data, value, exaggerate, seriesKeys),
+    [data, value, exaggerate, seriesKeys]
+  );
   // Leading offset (used in rAF for tooltip)
   const xTickUnitMs = windowMs / (numXTicks - 1);
   const leadingMs = nowOffsetUnits * xTickUnitMs;
@@ -474,19 +519,34 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
       startIdx--;
     }
     const sliced = data.slice(startIdx);
-    const records: Record<string, unknown>[] = sliced.map((p) => ({
-      date: new Date(p.time * 1000),
-      [dataKey]: p.value,
-    }));
+    const lastSample = sliced.at(-1);
+    const tipValues: Record<string, number> = {};
+    for (const key of seriesKeys) {
+      const sampleVal = lastSample ? pointSeriesValue(lastSample, key) : null;
+      tipValues[key] =
+        key === dataKey ? frame.displayValue : (sampleVal ?? 0);
+    }
+    const records: Record<string, unknown>[] = sliced.map((p) => {
+      const row: Record<string, unknown> = {
+        date: new Date(p.time * 1000),
+      };
+      for (const key of seriesKeys) {
+        const v = pointSeriesValue(p, key);
+        if (v != null) {
+          row[key] = v;
+        }
+      }
+      return row;
+    });
     // Virtual point 1: the "now" position (where the live dot sits)
     records.push({
       date: new Date(frame.now),
-      [dataKey]: frame.displayValue,
+      ...tipValues,
     });
     // Virtual point 2: queued ahead (the line extends and fades into this)
     records.push({
       date: new Date(frame.now + xTickUnitMs),
-      [dataKey]: frame.displayValue,
+      ...tipValues,
     });
     return records;
   }, [
@@ -496,6 +556,7 @@ const LiveLineChartCore = memo(function LiveLineChartCore({
     domainEndMs,
     windowMs,
     dataKey,
+    seriesKeys,
     xTickUnitMs,
   ]);
 
