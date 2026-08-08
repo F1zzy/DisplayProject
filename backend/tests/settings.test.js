@@ -43,7 +43,7 @@ describe('settings service', () => {
       stockSymbols: ['msft', 'aapl!!'],
       stockChartMode: 'candles',
       widgetRotationMs: 60000,
-      enabledWidgets: ['news', 'stock', 'bogus'],
+      enabledWidgets: ['news', 'stock', 'bogus', 'globe'],
       calendarDays: 99,
       forecastDays: 0,
       newsGeneral: false,
@@ -53,7 +53,7 @@ describe('settings service', () => {
     expect(updated.location).toBe('London');
     expect(updated.stockSymbols).toEqual(['MSFT', 'AAPL']);
     expect(updated.stockChartMode).toBe('candles');
-    expect(updated.enabledWidgets).toEqual(['news', 'stock']);
+    expect(updated.enabledWidgets).toEqual(['news', 'stock', 'globe']);
     expect(updated.calendarDays).toBe(7);
     expect(updated.forecastDays).toBe(1);
     expect(updated.newsGeneral).toBe(false);
@@ -61,6 +61,7 @@ describe('settings service', () => {
     settings.resetSettingsCache();
     expect(settings.getSettings().location).toBe('London');
     expect(settings.getSettings().stockChartMode).toBe('candles');
+    expect(settings.getSettings().enabledWidgets).toContain('globe');
   });
 
   test('updateSettings rejects unknown keys', () => {
@@ -70,6 +71,17 @@ describe('settings service', () => {
   test('enabledWidgets falls back when empty', () => {
     const updated = settings.updateSettings({ enabledWidgets: [] });
     expect(updated.enabledWidgets.length).toBeGreaterThan(0);
+  });
+
+  test('globeCities sanitizes ids and falls back when empty', () => {
+    const updated = settings.updateSettings({
+      globeCities: ['paris', 'bogus', 'paris', 'tokyo'],
+    });
+    expect(updated.globeCities).toEqual(['paris', 'tokyo']);
+
+    const cleared = settings.updateSettings({ globeCities: [] });
+    expect(cleared.globeCities.length).toBeGreaterThan(0);
+    expect(cleared.globeCities).toContain('london');
   });
 
   test('background settings sanitize mode colour and image URL', () => {

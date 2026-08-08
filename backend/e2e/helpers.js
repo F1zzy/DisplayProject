@@ -146,6 +146,40 @@ async function stubApis(page) {
       body: JSON.stringify(STUB_HOURLY),
     });
   });
+  await page.route('**/api/weather/globe**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        cities: [
+          {
+            id: 'london',
+            name: 'London',
+            country: 'UK',
+            lat: 51.5074,
+            lon: -0.1278,
+            temperature: 14,
+            humidity: 70,
+            windKph: 18,
+            condition: 'Cloudy',
+            iconUrl: '//cdn.weatherapi.com/weather/64x64/day/119.png',
+          },
+          {
+            id: 'tokyo',
+            name: 'Tokyo',
+            country: 'Japan',
+            lat: 35.6762,
+            lon: 139.6503,
+            temperature: 26,
+            humidity: 55,
+            windKph: 10,
+            condition: 'Clear',
+            iconUrl: '//cdn.weatherapi.com/weather/64x64/day/113.png',
+          },
+        ],
+      }),
+    });
+  });
   await page.route('**/api/stocks**', async (route) => {
     await route.fulfill({
       status: 200,

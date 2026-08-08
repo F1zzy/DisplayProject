@@ -9,6 +9,16 @@ const DEFAULT_SETTINGS = {
   stockChartMode: 'line',
   widgetRotationMs: 120000,
   enabledWidgets: ['stock', 'news', 'timetable', 'network', 'sky', 'spotify', 'f1'],
+  globeCities: [
+    'london',
+    'new-york',
+    'tokyo',
+    'sydney',
+    'lagos',
+    'sao-paulo',
+    'dubai',
+    'singapore',
+  ],
   calendarDays: 1,
   newsGeneral: true,
   newsTechnology: true,
@@ -54,6 +64,7 @@ export function SettingsProvider({ children }) {
       enabledWidgets: Array.isArray(next.enabledWidgets)
         ? next.enabledWidgets
         : prev.enabledWidgets,
+      globeCities: Array.isArray(next.globeCities) ? next.globeCities : prev.globeCities,
       sectionOrder: Array.isArray(next.sectionOrder)
         ? next.sectionOrder
         : prev.sectionOrder,

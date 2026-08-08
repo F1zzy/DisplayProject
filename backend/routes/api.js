@@ -54,6 +54,16 @@ router.get('/weather/hourly', async (req, res) => {
   }
 });
 
+router.get('/weather/globe', async (_req, res) => {
+  try {
+    const data = await api.getGlobeWeather();
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({ error: 'Failed to fetch globe weather' });
+  }
+});
+
 router.get('/stocks/:symbol', async (req, res) => {
   try {
     const data = await api.getStock(req.params.symbol.toUpperCase());

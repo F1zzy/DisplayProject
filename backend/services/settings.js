@@ -7,7 +7,7 @@ const SETTINGS_PATH = process.env.DISPLAY_SETTINGS_PATH
   ? path.resolve(process.env.DISPLAY_SETTINGS_PATH)
   : path.join(DATA_DIR, 'settings.json');
 
-const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network', 'sky', 'spotify', 'f1'];
+const VALID_WIDGETS = ['stock', 'news', 'timetable', 'network', 'sky', 'spotify', 'f1', 'globe'];
 
 const VALID_BACKGROUND_MODES = ['default', 'color', 'image'];
 
@@ -31,12 +31,15 @@ const VALID_NIGHT_FOCUS_WHEN = ['auto', 'always', 'custom'];
 
 const VALID_STOCK_CHART_MODES = ['line', 'candles'];
 
+const { DEFAULT_GLOBE_CITIES, sanitizeGlobeCityIds } = require('./globeCities');
+
 const DEFAULTS = {
   location: process.env.LOCATION || 'Nottingham',
   stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
   stockChartMode: 'line',
   widgetRotationMs: 120000,
   enabledWidgets: [...VALID_WIDGETS],
+  globeCities: [...DEFAULT_GLOBE_CITIES],
   calendarDays: 1,
   newsGeneral: true,
   newsTechnology: true,
@@ -185,6 +188,7 @@ function normalize(partial = {}) {
     ),
     widgetRotationMs: clampInt(merged.widgetRotationMs, 0, 3600000, DEFAULTS.widgetRotationMs),
     enabledWidgets: sanitizeEnabledWidgets(merged.enabledWidgets),
+    globeCities: sanitizeGlobeCityIds(merged.globeCities),
     calendarDays: clampInt(merged.calendarDays, 1, 7, DEFAULTS.calendarDays),
     newsGeneral: Boolean(merged.newsGeneral),
     newsTechnology: Boolean(merged.newsTechnology),
@@ -257,6 +261,7 @@ function getSettings() {
     ...cache,
     stockSymbols: [...cache.stockSymbols],
     enabledWidgets: [...cache.enabledWidgets],
+    globeCities: [...(cache.globeCities || DEFAULT_GLOBE_CITIES)],
     sectionOrder: [...cache.sectionOrder],
   };
 }

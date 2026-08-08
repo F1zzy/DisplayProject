@@ -1,5 +1,6 @@
 const request = require('supertest');
 const { app } = require('../server');
+const api = require('../services/api');
 const calendar = require('../services/calendar');
 const networkStats = require('../services/networkStats');
 const sky = require('../services/sky');
@@ -15,6 +16,36 @@ describe('API routes', () => {
     const response = await request(app).get('/api/health');
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('ok');
+  });
+});
+
+describe('Globe weather API', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('GET /api/weather/globe returns cities payload', async () => {
+    jest.spyOn(api, 'getGlobeWeather').mockResolvedValue({
+      cities: [
+        {
+          id: 'london',
+          name: 'London',
+          country: 'UK',
+          lat: 51.5074,
+          lon: -0.1278,
+          temperature: 14,
+          humidity: 70,
+          windKph: 18,
+          condition: 'Cloudy',
+          iconUrl: '//cdn.weatherapi.com/icon.png',
+        },
+      ],
+    });
+
+    const response = await request(app).get('/api/weather/globe');
+    expect(response.status).toBe(200);
+    expect(response.body.cities).toHaveLength(1);
+    expect(response.body.cities[0].name).toBe('London');
   });
 });
 

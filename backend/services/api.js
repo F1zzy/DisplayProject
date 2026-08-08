@@ -9,11 +9,13 @@ const CONTROL_API_KEY = process.env.CONTROL_API_KEY || 'change-me';
 const WEATHER_BASE = 'https://api.weatherapi.com/v1';
 const STOCK_TTL_MS = 15 * 60 * 1000;
 const WEATHER_TTL_MS = 10 * 60 * 1000;
+const GLOBE_TTL_MS = 15 * 60 * 1000;
 const NEWS_TTL_MS = 15 * 60 * 1000;
 const STOCK_FETCH_DELAY_MS = 13000;
 
 const cache = require('./cache');
 const settings = require('./settings');
+const { GLOBE_CITY_CATALOG, resolveGlobeCities } = require('./globeCities');
 
 async function fetchJson(url) {
   const response = await fetch(url);
@@ -118,6 +120,56 @@ async function getHourlyForecast(location) {
   return hours;
 }
 
+async function fetchGlobeCityWeather(city) {
+  const cacheKey = `weather:globe:${city.id}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  const data = await fetchJson(
+    `${WEATHER_BASE}/current.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(city.query)}&aqi=no`
+  );
+
+  const result = {
+    id: city.id,
+    name: city.name,
+    country: city.country,
+    lat: city.lat,
+    lon: city.lon,
+    temperature: data.current.temp_c,
+    humidity: data.current.humidity,
+    windKph: data.current.wind_kph,
+    condition: data.current.condition?.text || '',
+    iconUrl: data.current.condition?.icon || '',
+  };
+
+  cache.set(cacheKey, result, GLOBE_TTL_MS);
+  return result;
+}
+
+/**
+ * Current weather for selected globe cities (from settings.globeCities).
+ * Soft-fails per city so partial results still render.
+ */
+async function getGlobeWeather(cityIds) {
+  const selected =
+    cityIds != null
+      ? resolveGlobeCities(cityIds)
+      : resolveGlobeCities(settings.getSettings().globeCities);
+
+  const settled = await Promise.all(
+    selected.map(async (city) => {
+      try {
+        return await fetchGlobeCityWeather(city);
+      } catch (error) {
+        console.error(`Globe weather failed for ${city.id}:`, error.message);
+        return null;
+      }
+    })
+  );
+
+  return { cities: settled.filter(Boolean) };
+}
+
 async function getStock(symbol) {
   const cacheKey = `stock:${symbol}`;
   const cached = cache.get(cacheKey);
@@ -179,11 +231,13 @@ function verifyControlKey(req) {
 module.exports = {
   LOCATION,
   CONTROL_API_KEY,
+  GLOBE_CITIES: GLOBE_CITY_CATALOG,
   getLocation,
   getCurrentWeather,
   getLocationCoordinates,
   getForecast,
   getHourlyForecast,
+  getGlobeWeather,
   getStock,
   getStocksSequential,
   getNews,

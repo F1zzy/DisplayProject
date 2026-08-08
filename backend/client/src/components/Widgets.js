@@ -81,6 +81,11 @@ const WIDGET_REGISTRY = {
     label: 'Formula 1',
     Component: lazy(() => import('./WidgetComponents/F1Standings')),
   },
+  globe: {
+    key: 'globe',
+    label: 'World',
+    Component: lazy(() => import('./WidgetComponents/WorldGlobe')),
+  },
 };
 
 function ToolbarContent({ widgets, activeIndex, pinned }) {

@@ -19,6 +19,7 @@ const WIDGET_LABELS = {
   sky: 'Night Sky',
   spotify: 'Spotify',
   f1: 'Formula 1',
+  globe: 'World',
 };
 
 const SECTION_LABELS = {
@@ -798,6 +799,11 @@ function fillSettingsForm(settings) {
   document.getElementById('settingForecastDays').value = settings.forecastDays ?? 3;
   document.getElementById('settingNewsGeneral').checked = settings.newsGeneral !== false;
   document.getElementById('settingNewsTechnology').checked = settings.newsTechnology !== false;
+
+  const globeCities = new Set(settings.globeCities || []);
+  document.querySelectorAll('input[name="globeCity"]').forEach((input) => {
+    input.checked = globeCities.size === 0 || globeCities.has(input.value);
+  });
   document.getElementById('settingBackgroundMode').value = settings.backgroundMode || 'default';
   document.getElementById('settingBackgroundColor').value = settings.backgroundColor || '#101115';
   document.getElementById('settingBackgroundImage').value = settings.backgroundImage || '';
@@ -872,6 +878,9 @@ function readSettingsForm() {
     forecastDays: parseInt(document.getElementById('settingForecastDays').value, 10) || 3,
     newsGeneral: document.getElementById('settingNewsGeneral').checked,
     newsTechnology: document.getElementById('settingNewsTechnology').checked,
+    globeCities: Array.from(document.querySelectorAll('input[name="globeCity"]:checked')).map(
+      (input) => input.value
+    ),
     backgroundMode: document.getElementById('settingBackgroundMode').value,
     backgroundColor: document.getElementById('settingBackgroundColor').value,
     backgroundImage: document.getElementById('settingBackgroundImage').value.trim(),

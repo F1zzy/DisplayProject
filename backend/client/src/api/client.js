@@ -24,6 +24,10 @@ export function getHourlyForecast(location = getLocation()) {
   return request(`/api/weather/hourly?location=${encodeURIComponent(location)}`);
 }
 
+export function getGlobeWeather() {
+  return request('/api/weather/globe');
+}
+
 export function getStocks(symbols = ['AAPL', 'GOOGL', 'MSFT']) {
   return request(`/api/stocks?symbols=${symbols.join(',')}`);
 }

@@ -75,6 +75,10 @@ jest.mock('./WidgetComponents/F1Standings', () => ({
   __esModule: true,
   default: () => <div>Formula 1 widget</div>,
 }));
+jest.mock('./WidgetComponents/WorldGlobe', () => ({
+  __esModule: true,
+  default: () => <div>World widget</div>,
+}));
 
 function renderWidgets(props = {}) {
   return render(<Widgets {...props} />);
