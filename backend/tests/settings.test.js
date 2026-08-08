@@ -84,6 +84,12 @@ describe('settings service', () => {
     expect(cleared.globeCities).toContain('london');
   });
 
+  test('globeLayers sanitizes to allowlist', () => {
+    expect(settings.getSettings().globeLayers).toBe('both');
+    expect(settings.updateSettings({ globeLayers: 'radar' }).globeLayers).toBe('radar');
+    expect(settings.updateSettings({ globeLayers: 'nope' }).globeLayers).toBe('both');
+  });
+
   test('background settings sanitize mode colour and image URL', () => {
     const updated = settings.updateSettings({
       backgroundMode: 'image',

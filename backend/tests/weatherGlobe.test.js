@@ -50,6 +50,7 @@ describe('getGlobeWeather', () => {
     expect(result.cities[0]).toHaveProperty('lat');
     expect(result.cities[0]).toHaveProperty('lon');
     expect(result.cities[0]).toHaveProperty('name');
+    expect(result.cities[0]).toHaveProperty('countryIso');
   });
 
   test('uses cache on subsequent calls for the same city', async () => {

@@ -340,7 +340,7 @@ Or from `backend/`: `npm run build:remote-network`. Output lands in `backend/rem
 5. Open the **Analytics** tab for the last-24h summary and charts (requires the Go analytics service; build remote-analytics once as documented in Analytics)
 6. Open the **Network** tab for live connectivity cards and charts (requires the Go network service; build remote-network once as documented in Network service)
 7. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background, appearance (including **colour scheme** — presets or **Custom** with accent/app/panel/card pickers and optional transparent surfaces; **clock size** and **clock font size**; applied to both the dashboard and this remote page — night focus schedule and **display brightness** — on a Raspberry Pi this drives the panel/HDMI backlight via `displayproject-display-brightness`), and layout, then **Save settings**
-Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip. Enable **Spotify** after completing the Spotify setup above. Enable **Formula 1** for championship standings and live race order. Enable **World Globe** and choose cities under **World globe cities** for the rotating globe callouts.
+Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip. Enable **Spotify** after completing the Spotify setup above. Enable **Formula 1** for championship standings and live race order. Enable **World Globe** and choose cities under **World globe cities** for the rotating globe callouts. Use **Globe weather layers** for full-earth precipitation radar ([RainViewer](https://www.rainviewer.com/)) and multi-satellite cloud veil (NASA GIBS Terra/Aqua/VIIRS); set `WEATHER_LAYERS=false` in `backend/.env` to skip composing overlays.
 
 The remote page stays locked until the API key is verified. Lock the session when finished. Settings are stored in `backend/data/settings.json` (not committed).
 
@@ -355,6 +355,9 @@ Install as a PWA on Android for a simple remote control app.
 | `GET /api/weather/forecast` | 3-day forecast |
 | `GET /api/weather/hourly` | Hourly forecast |
 | `GET /api/weather/globe` | Selected major-city current weather for the World globe widget (`settings.globeCities`) |
+| `GET /api/weather/globe-layers` | Cached full-earth radar + satellite overlay URLs for the World globe (`settings.globeLayers`; set `WEATHER_LAYERS=false` to disable) |
+| `GET /api/weather/globe-layers/radar.png` | Equirectangular precipitation radar texture (RainViewer) |
+| `GET /api/weather/globe-layers/satellite.png` | Equirectangular cloud overlay (NASA GIBS Terra/Aqua/VIIRS composite) |
 | `GET /api/stocks?symbols=AAPL,GOOGL,MSFT` | Stock data (cached, rate-limited) |
 | `GET /api/news?category=general` | News headlines |
 | `GET /api/calendar/events?days=1` | Today’s Google Calendar events (503 if not configured) |

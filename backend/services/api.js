@@ -123,7 +123,16 @@ async function getHourlyForecast(location) {
 async function fetchGlobeCityWeather(city) {
   const cacheKey = `weather:globe:${city.id}`;
   const cached = cache.get(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    return {
+      ...cached,
+      country: city.country,
+      countryIso: city.countryIso,
+      name: city.name,
+      lat: city.lat,
+      lon: city.lon,
+    };
+  }
 
   const data = await fetchJson(
     `${WEATHER_BASE}/current.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(city.query)}&aqi=no`
@@ -133,6 +142,7 @@ async function fetchGlobeCityWeather(city) {
     id: city.id,
     name: city.name,
     country: city.country,
+    countryIso: city.countryIso,
     lat: city.lat,
     lon: city.lon,
     temperature: data.current.temp_c,

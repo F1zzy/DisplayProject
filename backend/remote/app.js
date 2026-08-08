@@ -804,6 +804,7 @@ function fillSettingsForm(settings) {
   document.querySelectorAll('input[name="globeCity"]').forEach((input) => {
     input.checked = globeCities.size === 0 || globeCities.has(input.value);
   });
+  document.getElementById('settingGlobeLayers').value = settings.globeLayers || 'both';
   document.getElementById('settingBackgroundMode').value = settings.backgroundMode || 'default';
   document.getElementById('settingBackgroundColor').value = settings.backgroundColor || '#101115';
   document.getElementById('settingBackgroundImage').value = settings.backgroundImage || '';
@@ -881,6 +882,7 @@ function readSettingsForm() {
     globeCities: Array.from(document.querySelectorAll('input[name="globeCity"]:checked')).map(
       (input) => input.value
     ),
+    globeLayers: document.getElementById('settingGlobeLayers').value || 'both',
     backgroundMode: document.getElementById('settingBackgroundMode').value,
     backgroundColor: document.getElementById('settingBackgroundColor').value,
     backgroundImage: document.getElementById('settingBackgroundImage').value.trim(),

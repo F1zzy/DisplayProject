@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
     'dubai',
     'singapore',
   ],
+  globeLayers: 'both',
   calendarDays: 1,
   newsGeneral: true,
   newsTechnology: true,

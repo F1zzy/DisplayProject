@@ -1,16 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import * as THREE from 'three';
-import { getGlobeWeather, weatherIconUrl } from '../../api/client';
+import { getGlobeWeather, getGlobeLayers, weatherIconUrl } from '../../api/client';
 import { fadeTransition } from '../../lib/dashboard-motion';
 import { useWidgetLoadSequence } from '../../hooks/useWidgetLoadSequence';
 import { useSettings } from '../../context/SettingsContext';
 import WidgetSkeleton from '../ui/WidgetSkeleton';
 import ErrorState from '../ui/ErrorState';
 import EmptyState from '../ui/EmptyState';
+import {
+  COUNTRIES_HIGHLIGHT_URL,
+  buildCountryHighlight,
+  disposeCountryHighlights,
+  setActiveCountry,
+} from './globeCountryHighlight';
 import './WorldGlobe.css';
 
 const POLL_MS = 15 * 60 * 1000;
+const LAYERS_POLL_MS = 10 * 60 * 1000;
 const FOCUS_MS = 6500;
 const MANUAL_HOLD_MS = 14000;
 const FOCUS_LERP = 0.08;
@@ -127,7 +134,13 @@ function WorldGlobe() {
   const reduceMotionRef = useRef(reduceMotion);
   const pauseUntilRef = useRef(0);
   const markerMeshesRef = useRef([]);
+  const overlayRef = useRef({
+    satelliteMat: null,
+    radarMat: null,
+    textures: [],
+  });
   const tagRef = useRef(null);
+  const countryHighlightRef = useRef({ byIso: new Map() });
   const projectScratch = useRef({
     world: new THREE.Vector3(),
     outward: new THREE.Vector3(),
@@ -141,8 +154,10 @@ function WorldGlobe() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [focusIndex, setFocusIndex] = useState(0);
+  const [layerAttribution, setLayerAttribution] = useState('');
 
   const globeCitiesKey = (settings?.globeCities || []).join(',');
+  const globeLayersMode = settings?.globeLayers || 'both';
   const ready = cities.length > 0;
   const { showSkeleton } = useWidgetLoadSequence({ loading, ready, rootRef });
   const focused = cities[focusIndex] || null;
@@ -157,6 +172,8 @@ function WorldGlobe() {
     markerMeshesRef.current.forEach((marker, index) => {
       setMarkerActive(marker, index === focusIndex);
     });
+    const city = cities[focusIndex];
+    setActiveCountry(countryHighlightRef.current.byIso, city?.countryIso);
   }, [focusIndex, cities]);
 
   useEffect(() => {
@@ -258,6 +275,37 @@ function WorldGlobe() {
     const earth = new THREE.Mesh(earthGeo, earthMat);
     globeGroup.add(earth);
 
+    const satelliteMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.FrontSide,
+    });
+    const radarMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.FrontSide,
+    });
+    const satelliteMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(EARTH_RADIUS * 1.002, 64, 64),
+      satelliteMat
+    );
+    const radarMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(EARTH_RADIUS * 1.005, 64, 64),
+      radarMat
+    );
+    satelliteMesh.visible = false;
+    radarMesh.visible = false;
+    globeGroup.add(satelliteMesh, radarMesh);
+    overlayRef.current = {
+      satelliteMat,
+      radarMat,
+      satelliteMesh,
+      radarMesh,
+      textures: [],
+    };
+
     const atmosGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.035, 48, 48);
     const atmosMat = new THREE.MeshBasicMaterial({
       color: 0x6ea8ff,
@@ -287,6 +335,32 @@ function WorldGlobe() {
         // Keep solid fallback color if texture fails (offline / missing asset).
       }
     );
+
+    const countryGroup = new THREE.Group();
+    globeGroup.add(countryGroup);
+    const countryByIso = new Map();
+    countryHighlightRef.current = { byIso: countryByIso };
+
+    fetch(COUNTRIES_HIGHLIGHT_URL)
+      .then((response) => {
+        if (!response.ok) throw new Error(`countries ${response.status}`);
+        return response.json();
+      })
+      .then((collection) => {
+        if (disposed || !Array.isArray(collection?.features)) return;
+        for (const feature of collection.features) {
+          const highlight = buildCountryHighlight(feature, latLonToVector3, EARTH_RADIUS);
+          if (!highlight.children.length) continue;
+          const iso = String(feature.id).padStart(3, '0');
+          countryByIso.set(iso, highlight);
+          countryGroup.add(highlight);
+        }
+        const focusedCity = citiesRef.current[focusIndexRef.current];
+        setActiveCountry(countryByIso, focusedCity?.countryIso);
+      })
+      .catch((err) => {
+        console.warn('WorldGlobe country boundaries unavailable:', err.message);
+      });
 
     const markerGroup = new THREE.Group();
     globeGroup.add(markerGroup);
@@ -378,8 +452,21 @@ function WorldGlobe() {
       cancelAnimationFrame(raf);
       resizeObserver?.disconnect();
       markerMeshesRef.current = [];
+      disposeCountryHighlights(countryByIso);
+      countryHighlightRef.current = { byIso: new Map() };
+      const overlay = overlayRef.current;
+      overlay.textures?.forEach((tex) => tex.dispose());
+      overlay.textures = [];
+      overlay.satelliteMat = null;
+      overlay.radarMat = null;
+      overlay.satelliteMesh = null;
+      overlay.radarMesh = null;
       earthGeo.dispose();
       atmosGeo.dispose();
+      satelliteMesh.geometry.dispose();
+      radarMesh.geometry.dispose();
+      satelliteMat.dispose();
+      radarMat.dispose();
       earthMat.map?.dispose();
       earthMat.dispose();
       atmosMat.dispose();
@@ -392,6 +479,112 @@ function WorldGlobe() {
       renderer.dispose();
     };
   }, [markerKey]);
+
+  useEffect(() => {
+    if (cities.length === 0) return undefined;
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+
+    function clearOverlayTextures() {
+      const overlay = overlayRef.current;
+      overlay.textures?.forEach((tex) => tex.dispose());
+      overlay.textures = [];
+      if (overlay.satelliteMat) {
+        overlay.satelliteMat.map = null;
+        overlay.satelliteMat.opacity = 0;
+        overlay.satelliteMat.needsUpdate = true;
+      }
+      if (overlay.radarMat) {
+        overlay.radarMat.map = null;
+        overlay.radarMat.opacity = 0;
+        overlay.radarMat.needsUpdate = true;
+      }
+      if (overlay.satelliteMesh) overlay.satelliteMesh.visible = false;
+      if (overlay.radarMesh) overlay.radarMesh.visible = false;
+    }
+
+    function loadMap(url) {
+      return new Promise((resolve, reject) => {
+        loader.load(
+          url,
+          (texture) => {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.anisotropy = Math.min(8, 4);
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            resolve(texture);
+          },
+          undefined,
+          reject
+        );
+      });
+    }
+
+    async function refreshLayers() {
+      const mode = globeLayersMode;
+      if (mode === 'off') {
+        clearOverlayTextures();
+        if (!cancelled) setLayerAttribution('');
+        return;
+      }
+
+      try {
+        const data = await getGlobeLayers();
+        if (cancelled) return;
+        const overlay = overlayRef.current;
+        if (!overlay.satelliteMat || !overlay.radarMat) return;
+
+        clearOverlayTextures();
+        const nextTextures = [];
+        const wantSat = mode === 'satellite' || mode === 'both';
+        const wantRadar = mode === 'radar' || mode === 'both';
+
+        if (wantSat && data?.satelliteUrl) {
+          const texture = await loadMap(data.satelliteUrl);
+          if (cancelled) {
+            texture.dispose();
+            return;
+          }
+          overlay.satelliteMat.map = texture;
+          overlay.satelliteMat.opacity = 0.34;
+          overlay.satelliteMat.needsUpdate = true;
+          overlay.satelliteMesh.visible = true;
+          nextTextures.push(texture);
+        }
+
+        if (wantRadar && data?.radarUrl) {
+          const texture = await loadMap(data.radarUrl);
+          if (cancelled) {
+            texture.dispose();
+            return;
+          }
+          overlay.radarMat.map = texture;
+          overlay.radarMat.opacity = 0.72;
+          overlay.radarMat.needsUpdate = true;
+          overlay.radarMesh.visible = true;
+          nextTextures.push(texture);
+        }
+
+        overlay.textures = nextTextures;
+        setLayerAttribution(
+          nextTextures.length > 0 ? data?.attribution || 'Radar © RainViewer · Imagery NASA GIBS' : ''
+        );
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setLayerAttribution('');
+      }
+    }
+
+    refreshLayers();
+    const id = setInterval(refreshLayers, LAYERS_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [cities.length, globeLayersMode, markerKey]);
 
   function focusCity(index) {
     if (index < 0 || index >= cities.length) return;
@@ -458,6 +651,10 @@ function WorldGlobe() {
               </div>
             ) : null}
           </div>
+
+          {layerAttribution ? (
+            <p className="world-globe-attribution">{layerAttribution}</p>
+          ) : null}
 
           <AnimatePresence mode="wait" initial={false}>
             {focused ? (

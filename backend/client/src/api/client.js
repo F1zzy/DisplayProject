@@ -28,6 +28,25 @@ export function getGlobeWeather() {
   return request('/api/weather/globe');
 }
 
+export async function getGlobeLayers() {
+  const response = await fetch(`${API_BASE}/api/weather/globe-layers`);
+  const data = await response.json().catch(() => ({
+    available: false,
+    radarUrl: null,
+    satelliteUrl: null,
+    attribution: '',
+  }));
+  if (!response.ok) {
+    return {
+      available: false,
+      radarUrl: null,
+      satelliteUrl: null,
+      attribution: '',
+    };
+  }
+  return data;
+}
+
 export function getStocks(symbols = ['AAPL', 'GOOGL', 'MSFT']) {
   return request(`/api/stocks?symbols=${symbols.join(',')}`);
 }

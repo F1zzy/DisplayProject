@@ -64,6 +64,58 @@ router.get('/weather/globe', async (_req, res) => {
   }
 });
 
+router.get('/weather/globe-layers', async (_req, res) => {
+  try {
+    const weatherLayers = require('../services/weatherLayers');
+    const data = await weatherLayers.getGlobeLayers();
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({
+      available: false,
+      radarUrl: null,
+      satelliteUrl: null,
+      radarTs: null,
+      satelliteDate: null,
+      attribution: 'Radar © RainViewer · Imagery NASA GIBS',
+      error: 'Failed to fetch globe layers',
+    });
+  }
+});
+
+async function sendGlobeLayer(kind, res) {
+  const fs = require('fs');
+  const weatherLayers = require('../services/weatherLayers');
+  if (!weatherLayers.isEnabled()) {
+    return res.status(404).json({ error: 'Weather layers disabled' });
+  }
+  await weatherLayers.ensureComposed();
+  const filePath = weatherLayers.resolveLayerPath(kind);
+  if (!filePath || !fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Layer not available' });
+  }
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  return res.sendFile(filePath);
+}
+
+router.get('/weather/globe-layers/radar.png', async (_req, res) => {
+  try {
+    return await sendGlobeLayer('radar', res);
+  } catch (error) {
+    console.error(error);
+    return res.status(502).json({ error: 'Failed to serve globe layer' });
+  }
+});
+
+router.get('/weather/globe-layers/satellite.png', async (_req, res) => {
+  try {
+    return await sendGlobeLayer('satellite', res);
+  } catch (error) {
+    console.error(error);
+    return res.status(502).json({ error: 'Failed to serve globe layer' });
+  }
+});
+
 router.get('/stocks/:symbol', async (req, res) => {
   try {
     const data = await api.getStock(req.params.symbol.toUpperCase());

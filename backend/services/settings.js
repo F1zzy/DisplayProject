@@ -31,6 +31,8 @@ const VALID_NIGHT_FOCUS_WHEN = ['auto', 'always', 'custom'];
 
 const VALID_STOCK_CHART_MODES = ['line', 'candles'];
 
+const VALID_GLOBE_LAYERS = ['off', 'radar', 'satellite', 'both'];
+
 const { DEFAULT_GLOBE_CITIES, sanitizeGlobeCityIds } = require('./globeCities');
 
 const DEFAULTS = {
@@ -40,6 +42,7 @@ const DEFAULTS = {
   widgetRotationMs: 120000,
   enabledWidgets: [...VALID_WIDGETS],
   globeCities: [...DEFAULT_GLOBE_CITIES],
+  globeLayers: 'both',
   calendarDays: 1,
   newsGeneral: true,
   newsTechnology: true,
@@ -189,6 +192,7 @@ function normalize(partial = {}) {
     widgetRotationMs: clampInt(merged.widgetRotationMs, 0, 3600000, DEFAULTS.widgetRotationMs),
     enabledWidgets: sanitizeEnabledWidgets(merged.enabledWidgets),
     globeCities: sanitizeGlobeCityIds(merged.globeCities),
+    globeLayers: sanitizeFromList(merged.globeLayers, VALID_GLOBE_LAYERS, DEFAULTS.globeLayers),
     calendarDays: clampInt(merged.calendarDays, 1, 7, DEFAULTS.calendarDays),
     newsGeneral: Boolean(merged.newsGeneral),
     newsTechnology: Boolean(merged.newsTechnology),
@@ -304,6 +308,7 @@ module.exports = {
   VALID_CLOCK_FONT_SIZES,
   VALID_NIGHT_FOCUS_WHEN,
   VALID_STOCK_CHART_MODES,
+  VALID_GLOBE_LAYERS,
   DEFAULTS,
   getSettings,
   updateSettings,

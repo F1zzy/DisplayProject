@@ -233,7 +233,7 @@
                   </label>
                 </div>
               </div>
-              <div class="subpanel">
+              <div className="subpanel">
                 <div class="subpanel-title">World globe cities</div>
                 <p class="field-hint">Pick which cities appear on the globe. At least one is kept.</p>
                 <div class="toggle-list globe-city-toggles">
@@ -318,6 +318,16 @@
                     <span class="toggle" aria-hidden="true"></span>
                   </label>
                 </div>
+                <label class="field" style="margin-top: 0.75rem">
+                  <span class="field-label">Globe weather layers</span>
+                  <select id="settingGlobeLayers">
+                    <option value="both">Radar + satellite</option>
+                    <option value="radar">Radar only</option>
+                    <option value="satellite">Satellite only</option>
+                    <option value="off">Off</option>
+                  </select>
+                </label>
+                <p class="field-hint">Full-earth precipitation radar (RainViewer) and IR clouds (NASA GIBS).</p>
               </div>
               <div class="subpanel">
                 <div class="subpanel-title">News columns</div>

@@ -146,7 +146,35 @@ async function stubApis(page) {
       body: JSON.stringify(STUB_HOURLY),
     });
   });
+  await page.route('**/api/weather/globe-layers**', async (route) => {
+    const url = route.request().url();
+    if (url.includes('.png')) {
+      // 1×1 transparent PNG
+      const png = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      await route.fulfill({ status: 200, contentType: 'image/png', body: png });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        available: true,
+        radarUrl: '/api/weather/globe-layers/radar.png',
+        satelliteUrl: '/api/weather/globe-layers/satellite.png',
+        radarTs: Date.now(),
+        satelliteDate: '2026-08-06',
+        attribution: 'Radar © RainViewer · Imagery NASA GIBS',
+      }),
+    });
+  });
   await page.route('**/api/weather/globe**', async (route) => {
+    if (route.request().url().includes('globe-layers')) {
+      await route.fallback();
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -156,6 +184,7 @@ async function stubApis(page) {
             id: 'london',
             name: 'London',
             country: 'UK',
+            countryIso: '826',
             lat: 51.5074,
             lon: -0.1278,
             temperature: 14,
@@ -168,6 +197,7 @@ async function stubApis(page) {
             id: 'tokyo',
             name: 'Tokyo',
             country: 'Japan',
+            countryIso: '392',
             lat: 35.6762,
             lon: 139.6503,
             temperature: 26,

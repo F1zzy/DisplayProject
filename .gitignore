@@ -33,6 +33,9 @@ coverage/
 # Runtime settings (defaults applied if missing)
 backend/data/settings.json
 
+# Cached globe radar / satellite overlays
+backend/data/weather-layers/
+
 # F1 live timing credentials and the browser profile that renews them
 backend/data/f1-token.json
 backend/data/f1-profile/
