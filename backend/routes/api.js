@@ -10,6 +10,7 @@ const f1Logos = require('../services/f1Logos');
 const f1Media = require('../services/f1Media');
 const settings = require('../services/settings');
 const cache = require('../services/cache');
+const n2yo = require('../services/n2yo');
 
 const router = express.Router();
 
@@ -213,6 +214,21 @@ router.get('/sky/current', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(502).json({ error: 'Failed to fetch night sky' });
+  }
+});
+
+router.get('/satellites/positions', async (_req, res) => {
+  try {
+    const data = await n2yo.getSatellitePositions();
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({
+      satellites: [],
+      disabled: false,
+      attribution: 'Tracking © n2yo.com',
+      error: 'Failed to fetch satellite positions',
+    });
   }
 });
 

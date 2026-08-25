@@ -10,17 +10,21 @@
   display: inline-flex;
   align-items: baseline;
   justify-content: center;
-  gap: 0.1em;
+  gap: 0.08em;
   flex-wrap: nowrap;
+  min-width: 0;
   max-width: 100%;
+  max-height: 100%;
   line-height: 1;
+  overflow: hidden;
 }
 
 .clock-block {
   display: inline-flex;
   align-items: baseline;
   gap: 0.02em;
-  flex-shrink: 0;
+  min-width: 0;
+  flex-shrink: 1;
   line-height: 1;
 }
 
@@ -86,10 +90,22 @@
 
 @media (orientation: landscape) {
   .clock-face {
-    gap: 0.12em;
+    gap: 0.05em;
+  }
+
+  .clock-block {
+    gap: 0;
   }
 
   .clock-block--seconds {
-    font-size: 0.36em;
+    font-size: 0.32em;
+  }
+
+  .clock-digit {
+    min-width: 0.55em;
+  }
+
+  .clock-sep {
+    min-width: 0.2em;
   }
 }

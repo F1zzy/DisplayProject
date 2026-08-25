@@ -28,6 +28,28 @@ export function getGlobeWeather() {
   return request('/api/weather/globe');
 }
 
+export async function getSatellitePositions() {
+  const response = await fetch(`${API_BASE}/api/satellites/positions`);
+  const data = await response.json().catch(() => ({
+    satellites: [],
+    disabled: true,
+    attribution: 'Tracking © n2yo.com',
+  }));
+  if (!response.ok) {
+    return {
+      satellites: [],
+      disabled: Boolean(data?.disabled),
+      attribution: data?.attribution || 'Tracking © n2yo.com',
+    };
+  }
+  return {
+    satellites: Array.isArray(data?.satellites) ? data.satellites : [],
+    disabled: Boolean(data?.disabled),
+    attribution: data?.attribution || 'Tracking © n2yo.com',
+    fetchedAt: data?.fetchedAt || null,
+  };
+}
+
 export async function getGlobeLayers() {
   const response = await fetch(`${API_BASE}/api/weather/globe-layers`);
   const data = await response.json().catch(() => ({

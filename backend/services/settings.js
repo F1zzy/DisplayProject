@@ -35,6 +35,23 @@ const VALID_GLOBE_LAYERS = ['off', 'radar', 'satellite', 'both'];
 
 const { DEFAULT_GLOBE_CITIES, sanitizeGlobeCityIds } = require('./globeCities');
 
+/** Default NORAD catalog IDs shown on the World Globe (GOES 13). */
+const DEFAULT_GLOBE_SATELLITES = [29155];
+
+function sanitizeGlobeSatellites(value) {
+  if (!Array.isArray(value)) return [...DEFAULT_GLOBE_SATELLITES];
+  const seen = new Set();
+  const ids = [];
+  for (const entry of value) {
+    const id = Number.parseInt(entry, 10);
+    if (!Number.isFinite(id) || id <= 0 || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+    if (ids.length >= 8) break;
+  }
+  return ids.length ? ids : [...DEFAULT_GLOBE_SATELLITES];
+}
+
 const DEFAULTS = {
   location: process.env.LOCATION || 'Nottingham',
   stockSymbols: ['AAPL', 'GOOGL', 'MSFT'],
@@ -43,6 +60,7 @@ const DEFAULTS = {
   enabledWidgets: [...VALID_WIDGETS],
   globeCities: [...DEFAULT_GLOBE_CITIES],
   globeLayers: 'both',
+  globeSatellites: [...DEFAULT_GLOBE_SATELLITES],
   calendarDays: 1,
   newsGeneral: true,
   newsTechnology: true,
@@ -193,6 +211,7 @@ function normalize(partial = {}) {
     enabledWidgets: sanitizeEnabledWidgets(merged.enabledWidgets),
     globeCities: sanitizeGlobeCityIds(merged.globeCities),
     globeLayers: sanitizeFromList(merged.globeLayers, VALID_GLOBE_LAYERS, DEFAULTS.globeLayers),
+    globeSatellites: sanitizeGlobeSatellites(merged.globeSatellites),
     calendarDays: clampInt(merged.calendarDays, 1, 7, DEFAULTS.calendarDays),
     newsGeneral: Boolean(merged.newsGeneral),
     newsTechnology: Boolean(merged.newsTechnology),
@@ -266,6 +285,7 @@ function getSettings() {
     stockSymbols: [...cache.stockSymbols],
     enabledWidgets: [...cache.enabledWidgets],
     globeCities: [...(cache.globeCities || DEFAULT_GLOBE_CITIES)],
+    globeSatellites: [...(cache.globeSatellites || DEFAULT_GLOBE_SATELLITES)],
     sectionOrder: [...cache.sectionOrder],
   };
 }
@@ -309,6 +329,8 @@ module.exports = {
   VALID_NIGHT_FOCUS_WHEN,
   VALID_STOCK_CHART_MODES,
   VALID_GLOBE_LAYERS,
+  DEFAULT_GLOBE_SATELLITES,
+  sanitizeGlobeSatellites,
   DEFAULTS,
   getSettings,
   updateSettings,

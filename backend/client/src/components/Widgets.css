@@ -23,8 +23,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: clamp(8px, 1cqi, 12px);
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   padding: clamp(8px, 1cqh, 12px) clamp(12px, 1.4cqi, 18px);
 }
@@ -39,6 +40,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .widget-pinned-badge {
@@ -52,9 +55,11 @@
 
 .widget-tabs {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: clamp(4px, 0.6cqi, 8px);
+  flex-wrap: nowrap;
   justify-content: flex-end;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .widget-tab {
@@ -62,11 +67,13 @@
   background: var(--bg-card);
   color: var(--text-muted);
   border-radius: 0;
-  padding: 10px 16px;
+  padding: clamp(6px, 0.8cqh, 10px) clamp(8px, 1.2cqi, 16px);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: clamp(0.65rem, 1.4cqi, 0.8rem);
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
   cursor: default;
   transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
 }
@@ -136,8 +143,11 @@
   min-height: 0;
   width: 100%;
   height: 100%;
+  overflow: hidden;
   display: grid;
   grid-template-rows: minmax(0, 1fr);
+  container-type: size;
+  container-name: widget;
   will-change: transform, opacity;
 }
 
@@ -145,7 +155,9 @@
 .widget-stage > .widget-content,
 .widget-stage > .error-boundary-fallback,
 .widget-display .widget-content,
-.widget-display .error-boundary-fallback {
+.widget-display .error-boundary-fallback,
+.widget-display .news-widget,
+.widget-display .stock-market-widget {
   min-height: 0;
   width: 100%;
   height: 100%;
@@ -158,9 +170,15 @@
   }
 }
 
+@container dashboard (max-width: 800px) {
+  .widget-tab:not(.active) {
+    display: none;
+  }
+}
+
 @media (orientation: landscape) {
   .widget-toolbar-inner {
-    padding: clamp(10px, 1.2vh, 16px) clamp(12px, 1.4vw, 20px);
+    padding: clamp(10px, 1.2cqh, 16px) clamp(12px, 1.4cqi, 20px);
   }
 
   .widget-toolbar-title {
@@ -168,7 +186,7 @@
   }
 
   .widget-tab {
-    padding: 8px 14px;
+    padding: clamp(6px, 0.8cqh, 8px) clamp(8px, 1cqi, 14px);
     font-size: 0.75rem;
   }
 }

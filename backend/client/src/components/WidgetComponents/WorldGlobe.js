@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import * as THREE from 'three';
-import { getGlobeWeather, getGlobeLayers, weatherIconUrl } from '../../api/client';
+import { getGlobeWeather, getGlobeLayers, getSatellitePositions, weatherIconUrl } from '../../api/client';
 import { fadeTransition } from '../../lib/dashboard-motion';
 import { useWidgetLoadSequence } from '../../hooks/useWidgetLoadSequence';
 import { useSettings } from '../../context/SettingsContext';
@@ -18,11 +18,13 @@ import './WorldGlobe.css';
 
 const POLL_MS = 15 * 60 * 1000;
 const LAYERS_POLL_MS = 10 * 60 * 1000;
+const SAT_POLL_MS = 50 * 1000;
 const FOCUS_MS = 6500;
 const MANUAL_HOLD_MS = 14000;
 const FOCUS_LERP = 0.08;
 const IDLE_SPIN = 0.00055;
 const EARTH_RADIUS = 1;
+const EARTH_KM = 6371;
 const CAMERA_AXIS = new THREE.Vector3(0, 0, 1);
 const EARTH_TEXTURE_URL = `${process.env.PUBLIC_URL || ''}/globe/earth-day.jpg`;
 
@@ -35,6 +37,17 @@ function latLonToVector3(lat, lon, radius = EARTH_RADIUS) {
     radius * Math.cos(phi),
     radius * Math.sin(phi) * Math.sin(theta)
   );
+}
+
+/** Orbit altitude → sphere radius (LEO≈1.02 … GEO≈1.12). */
+function altitudeRadius(altKm) {
+  const factor = 1 + Math.max(0, Number(altKm) || 0) / EARTH_KM;
+  return EARTH_RADIUS * Math.min(1.12, Math.max(1.02, factor));
+}
+
+function formatAltKm(value) {
+  if (value == null || Number.isNaN(Number(value))) return '—';
+  return `${Math.round(Number(value))} km`;
 }
 
 /**
@@ -62,6 +75,12 @@ const MARKER = {
   activeCore: 0xffffff,
   activeRing: 0xff7a33,
   activeHalo: 0xff6a1a,
+};
+
+const SAT_MARKER = {
+  core: 0xb8ecff,
+  ring: 0x4cb8e8,
+  trail: 0x5ec8ff,
 };
 
 function orientOutward(group, position) {
@@ -109,6 +128,137 @@ function createCityMarker() {
   return { group, core, ring, halo };
 }
 
+/** Distinct from city pins: diamond core + square ring. */
+function createSatMarker() {
+  const group = new THREE.Group();
+
+  const core = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.022, 0),
+    new THREE.MeshBasicMaterial({
+      color: SAT_MARKER.core,
+      transparent: true,
+      opacity: 0.98,
+      depthWrite: false,
+    })
+  );
+
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.026, 0.038, 4),
+    new THREE.MeshBasicMaterial({
+      color: SAT_MARKER.ring,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    })
+  );
+  ring.rotation.z = Math.PI / 4;
+
+  group.add(ring, core);
+  return { group, core, ring };
+}
+
+function syncSatVisuals(satGroup, sats) {
+  clearGroup(satGroup);
+  const visuals = [];
+
+  for (const sat of sats) {
+    if (sat?.lat == null || sat?.lon == null) continue;
+    const marker = createSatMarker();
+    orientOutward(marker.group, latLonToVector3(sat.lat, sat.lon, altitudeRadius(sat.altKm)));
+    satGroup.add(marker.group);
+
+    // Ground footprint pin so the location is visible even when the orbiter is high.
+    const footprint = new THREE.Mesh(
+      new THREE.RingGeometry(0.012, 0.02, 32),
+      new THREE.MeshBasicMaterial({
+        color: SAT_MARKER.trail,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    orientOutward(footprint, latLonToVector3(sat.lat, sat.lon, EARTH_RADIUS * 1.008));
+    satGroup.add(footprint);
+
+    const stemPoints = [
+      latLonToVector3(sat.lat, sat.lon, EARTH_RADIUS * 1.01),
+      latLonToVector3(sat.lat, sat.lon, altitudeRadius(sat.altKm)),
+    ];
+    const stemGeo = new THREE.BufferGeometry().setFromPoints(stemPoints);
+    const stemMat = new THREE.LineBasicMaterial({
+      color: SAT_MARKER.trail,
+      transparent: true,
+      opacity: 0.45,
+      depthWrite: false,
+    });
+    satGroup.add(new THREE.Line(stemGeo, stemMat));
+
+    const track = Array.isArray(sat.track) ? sat.track : [];
+    if (track.length >= 2) {
+      const points = track.map((p) =>
+        latLonToVector3(p.lat, p.lon, altitudeRadius(p.altKm ?? sat.altKm))
+      );
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({
+        color: SAT_MARKER.trail,
+        transparent: true,
+        opacity: 0.55,
+        depthWrite: false,
+      });
+      satGroup.add(new THREE.Line(geometry, material));
+    }
+
+    visuals.push({ id: sat.id, group: marker.group, name: sat.name, altKm: sat.altKm });
+  }
+
+  return visuals;
+}
+
+function disposeObject3D(root) {
+  root.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) {
+      if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose());
+      else obj.material.dispose();
+    }
+  });
+}
+
+function clearGroup(group) {
+  while (group.children.length) {
+    const child = group.children[0];
+    group.remove(child);
+    disposeObject3D(child);
+  }
+}
+
+/**
+ * Canvas getContext('webgl2') reuses the prior context across React effect remounts.
+ * Three.js then uploads empty TEXTURE_3D data while FLIP_Y/PREMULTIPLY may still be on,
+ * which Chrome rejects. Reset unpack flags before constructing the renderer.
+ */
+function createGlobeRenderer(canvas) {
+  const attributes = {
+    alpha: true,
+    antialias: true,
+    powerPreference: 'low-power',
+  };
+  const gl = canvas.getContext('webgl2', attributes) || canvas.getContext('webgl2');
+  if (gl) {
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+  }
+  return new THREE.WebGLRenderer({
+    canvas,
+    context: gl || undefined,
+    antialias: true,
+    alpha: true,
+    powerPreference: 'low-power',
+  });
+}
+
 function setMarkerActive(marker, active) {
   if (!marker) return;
   const { core, ring, halo, group } = marker;
@@ -134,6 +284,9 @@ function WorldGlobe() {
   const reduceMotionRef = useRef(reduceMotion);
   const pauseUntilRef = useRef(0);
   const markerMeshesRef = useRef([]);
+  const satGroupRef = useRef(null);
+  const satVisualsRef = useRef([]);
+  const satLabelElsRef = useRef(new Map());
   const overlayRef = useRef({
     satelliteMat: null,
     radarMat: null,
@@ -151,10 +304,13 @@ function WorldGlobe() {
   reduceMotionRef.current = reduceMotion;
 
   const [cities, setCities] = useState([]);
+  const [satellites, setSatellites] = useState([]);
+  const satellitesRef = useRef([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [focusIndex, setFocusIndex] = useState(0);
   const [layerAttribution, setLayerAttribution] = useState('');
+  const [satAttribution, setSatAttribution] = useState('');
 
   const globeCitiesKey = (settings?.globeCities || []).join(',');
   const globeLayersMode = settings?.globeLayers || 'both';
@@ -162,10 +318,15 @@ function WorldGlobe() {
   const { showSkeleton } = useWidgetLoadSequence({ loading, ready, rootRef });
   const focused = cities[focusIndex] || null;
   const markerKey = cities.map((c) => `${c.id}:${c.lat}:${c.lon}`).join('|');
+  const attributionText = [layerAttribution, satAttribution].filter(Boolean).join(' · ');
 
   useEffect(() => {
     citiesRef.current = cities;
   }, [cities]);
+
+  useEffect(() => {
+    satellitesRef.current = satellites;
+  }, [satellites]);
 
   useEffect(() => {
     focusIndexRef.current = focusIndex;
@@ -214,6 +375,33 @@ function WorldGlobe() {
   }, [globeCitiesKey]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadSats() {
+      try {
+        const data = await getSatellitePositions();
+        if (cancelled) return;
+        const next = Array.isArray(data?.satellites) ? data.satellites : [];
+        setSatellites(next);
+        setSatAttribution(next.length > 0 ? data?.attribution || 'Tracking © n2yo.com' : '');
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) {
+          setSatellites([]);
+          setSatAttribution('');
+        }
+      }
+    }
+
+    loadSats();
+    const interval = setInterval(loadSats, SAT_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
     if (cities.length <= 1) return undefined;
 
     const id = setInterval(() => {
@@ -242,12 +430,7 @@ function WorldGlobe() {
     let height = parent?.clientHeight || width;
     const size = Math.min(width, height) || width;
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: 'low-power',
-    });
+    const renderer = createGlobeRenderer(canvas);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(size, size, false);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -375,6 +558,11 @@ function WorldGlobe() {
       setMarkerActive(marker, index === focusIndexRef.current);
     });
 
+    const satGroup = new THREE.Group();
+    globeGroup.add(satGroup);
+    satGroupRef.current = satGroup;
+    satVisualsRef.current = syncSatVisuals(satGroup, satellitesRef.current);
+
     const onResize = () => {
       if (!parent) return;
       const next = Math.min(parent.clientWidth, parent.clientHeight) || parent.clientWidth;
@@ -442,6 +630,35 @@ function WorldGlobe() {
         }
       }
 
+      const stage = canvasEl?.parentElement;
+      const canvasRect = canvasEl?.getBoundingClientRect?.();
+      const stageRect = stage?.getBoundingClientRect?.();
+      if (stage && canvasRect && stageRect) {
+        const { world, outward, toCam } = projectScratch.current;
+        for (const visual of satVisualsRef.current) {
+          const labelEl = satLabelElsRef.current.get(visual.id);
+          if (!labelEl || !visual.group) continue;
+          visual.group.getWorldPosition(world);
+          outward.copy(world).normalize();
+          world.addScaledVector(outward, 0.04);
+          toCam.copy(camera.position).sub(world).normalize();
+          const facing = outward.dot(toCam) > 0.08;
+          world.project(camera);
+          if (facing && world.z < 1) {
+            const x =
+              (world.x * 0.5 + 0.5) * canvasRect.width + (canvasRect.left - stageRect.left);
+            const y =
+              (-world.y * 0.5 + 0.5) * canvasRect.height + (canvasRect.top - stageRect.top);
+            labelEl.style.opacity = '1';
+            labelEl.style.visibility = 'visible';
+            labelEl.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, calc(-100% - 6px))`;
+          } else {
+            labelEl.style.opacity = '0';
+            labelEl.style.visibility = 'hidden';
+          }
+        }
+      }
+
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
     };
@@ -452,6 +669,11 @@ function WorldGlobe() {
       cancelAnimationFrame(raf);
       resizeObserver?.disconnect();
       markerMeshesRef.current = [];
+      if (satGroupRef.current) {
+        clearGroup(satGroupRef.current);
+      }
+      satGroupRef.current = null;
+      satVisualsRef.current = [];
       disposeCountryHighlights(countryByIso);
       countryHighlightRef.current = { byIso: new Map() };
       const overlay = overlayRef.current;
@@ -479,6 +701,13 @@ function WorldGlobe() {
       renderer.dispose();
     };
   }, [markerKey]);
+
+  useEffect(() => {
+    const satGroup = satGroupRef.current;
+    if (!satGroup) return undefined;
+    satVisualsRef.current = syncSatVisuals(satGroup, satellites);
+    return undefined;
+  }, [satellites, markerKey]);
 
   useEffect(() => {
     if (cities.length === 0) return undefined;
@@ -597,6 +826,12 @@ function WorldGlobe() {
     }
   }
 
+  function focusSatellite(sat) {
+    if (!sat || sat.lat == null || sat.lon == null) return;
+    pauseUntilRef.current = Date.now() + MANUAL_HOLD_MS;
+    focusQuaternion(sat.lat, sat.lon, targetQuatRef.current);
+  }
+
   return (
     <motion.div
       ref={rootRef}
@@ -650,10 +885,23 @@ function WorldGlobe() {
                 <span className="world-globe-tag-pointer" aria-hidden="true" />
               </div>
             ) : null}
+            {satellites.map((sat) => (
+              <div
+                key={sat.id}
+                className="world-globe-sat-label"
+                ref={(el) => {
+                  if (el) satLabelElsRef.current.set(sat.id, el);
+                  else satLabelElsRef.current.delete(sat.id);
+                }}
+              >
+                <span className="world-globe-sat-label-name">{sat.name}</span>
+                <span className="world-globe-sat-label-alt">{formatAltKm(sat.altKm)}</span>
+              </div>
+            ))}
           </div>
 
-          {layerAttribution ? (
-            <p className="world-globe-attribution">{layerAttribution}</p>
+          {attributionText ? (
+            <p className="world-globe-attribution">{attributionText}</p>
           ) : null}
 
           <AnimatePresence mode="wait" initial={false}>
@@ -707,6 +955,18 @@ function WorldGlobe() {
               >
                 <span className="world-globe-city-chip-name">{city.name}</span>
                 <span className="world-globe-city-chip-temp">{formatTemp(city.temperature)}</span>
+              </button>
+            ))}
+            {satellites.map((sat) => (
+              <button
+                key={`sat-${sat.id}`}
+                type="button"
+                className="world-globe-city-chip world-globe-sat-chip"
+                onClick={() => focusSatellite(sat)}
+                title={`${sat.name} · ${formatAltKm(sat.altKm)}`}
+              >
+                <span className="world-globe-city-chip-name">{sat.name}</span>
+                <span className="world-globe-city-chip-temp">{formatAltKm(sat.altKm)}</span>
               </button>
             ))}
           </div>

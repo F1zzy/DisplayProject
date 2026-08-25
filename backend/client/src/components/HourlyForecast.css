@@ -163,26 +163,26 @@
 
 @media (orientation: landscape) {
   .hourly-graph {
-    gap: clamp(3px, 0.5vw, 8px);
+    gap: clamp(3px, 0.5cqi, 8px);
   }
 
   .hourly-point {
-    gap: clamp(3px, 0.55vh, 6px);
-    padding: clamp(4px, 0.8vh, 8px) clamp(2px, 0.3vw, 4px);
+    gap: clamp(3px, 0.55cqh, 6px);
+    padding: clamp(4px, 0.8cqh, 8px) clamp(2px, 0.3cqi, 4px);
   }
 
   .hourly-temp {
-    font-size: clamp(0.68rem, 1.4vh, 0.95rem);
+    font-size: clamp(0.68rem, 1.4cqh, 0.95rem);
   }
 
   .hourly-weather-icon {
-    width: clamp(18px, 3.2vh, 28px);
-    height: clamp(18px, 3.2vh, 28px);
+    width: clamp(18px, 3.2cqh, 28px);
+    height: clamp(18px, 3.2cqh, 28px);
   }
 
   .hourly-meta {
     gap: 2px;
-    padding-top: clamp(3px, 0.5vh, 6px);
+    padding-top: clamp(3px, 0.5cqh, 6px);
   }
 }
 

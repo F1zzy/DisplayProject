@@ -4,6 +4,7 @@
   gap: var(--gap-sm, 10px);
   height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 .world-globe-widget > h3 {
@@ -26,7 +27,7 @@
 .world-globe-stage {
   position: relative;
   flex: 1;
-  min-height: 180px;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -144,6 +145,46 @@
   filter: drop-shadow(0 1px 0 color-mix(in srgb, var(--border-strong, var(--border)) 70%, transparent));
 }
 
+.world-globe-sat-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  width: max-content;
+  max-width: min(10rem, 70%);
+  padding: 0.28rem 0.45rem;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform, opacity;
+  transition: opacity 0.16s ease;
+  border: 1px solid color-mix(in srgb, #4cb8e8 55%, var(--border));
+  background: color-mix(in srgb, var(--bg-card) 88%, #0a2030);
+  color: var(--text-primary);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.28));
+}
+
+.world-globe-sat-label-name {
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.world-globe-sat-label-alt {
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: #7fd4ff;
+  line-height: 1;
+}
+
 .world-globe-attribution {
   margin: 0;
   flex-shrink: 0;
@@ -157,16 +198,19 @@
 
 .world-globe-callout {
   flex-shrink: 0;
-  padding: 10px 12px;
+  min-width: 0;
+  overflow: hidden;
+  padding: clamp(8px, 1cqh, 12px) clamp(10px, 1.2cqi, 14px);
   background: var(--bg-card);
   border: 1px solid var(--border);
 }
 
 .world-globe-callout-head {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 0.65rem;
   align-items: center;
+  min-width: 0;
 }
 
 .world-globe-callout-icon {
@@ -175,10 +219,13 @@
 }
 
 .world-globe-callout-city {
-  font-size: 1.1rem;
+  font-size: clamp(0.95rem, 2.4cqi, 1.1rem);
   color: var(--text-primary);
   letter-spacing: 0.02em;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .world-globe-callout-meta {
@@ -188,7 +235,7 @@
 }
 
 .world-globe-callout-temp {
-  font-size: 1.85rem;
+  font-size: clamp(1.35rem, 4cqi, 1.85rem);
   color: var(--accent, #ff6a1a);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
@@ -197,7 +244,8 @@
 
 .world-globe-callout-stats {
   display: flex;
-  gap: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
   margin-top: 0.65rem;
   padding-top: 0.55rem;
   border-top: 1px solid var(--border);
@@ -216,8 +264,8 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   flex-shrink: 0;
-  max-height: 5.5rem;
-  overflow: auto;
+  max-height: 2.2rem;
+  overflow: hidden;
   padding-bottom: 0.15rem;
 }
 
@@ -257,6 +305,14 @@
 .world-globe-city-chip-temp {
   font-variant-numeric: tabular-nums;
   color: var(--accent, #ff6a1a);
+}
+
+.world-globe-sat-chip {
+  border-color: color-mix(in srgb, #4cb8e8 45%, var(--border));
+}
+
+.world-globe-sat-chip .world-globe-city-chip-temp {
+  color: #7fd4ff;
 }
 
 .world-globe-empty {

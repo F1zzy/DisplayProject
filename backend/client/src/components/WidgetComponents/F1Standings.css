@@ -567,3 +567,21 @@
     grid-template-columns: 1.5rem 3px 1.35rem 2.7rem minmax(0, 1fr) 1.9rem 3.4rem;
   }
 }
+
+@container widget (max-width: 800px) {
+  .f1-hide-narrow {
+    display: none;
+  }
+
+  .f1-colhead--driver,
+  .f1-row--driver {
+    grid-template-columns:
+      1.6rem 3px 1.5rem 2.8rem minmax(0, 1fr)
+      2rem 3.6rem;
+  }
+
+  .f1-circuit {
+    width: 4.5rem;
+    height: 1.7rem;
+  }
+}

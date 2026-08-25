@@ -90,6 +90,14 @@ describe('settings service', () => {
     expect(settings.updateSettings({ globeLayers: 'nope' }).globeLayers).toBe('both');
   });
 
+  test('globeSatellites sanitizes NORAD ids and falls back when empty', () => {
+    expect(settings.getSettings().globeSatellites).toEqual([29155]);
+    const updated = settings.updateSettings({ globeSatellites: [29155, '25544', 29155, -1, 'x'] });
+    expect(updated.globeSatellites).toEqual([29155, 25544]);
+    const cleared = settings.updateSettings({ globeSatellites: [] });
+    expect(cleared.globeSatellites).toEqual([29155]);
+  });
+
   test('background settings sanitize mode colour and image URL', () => {
     const updated = settings.updateSettings({
       backgroundMode: 'image',

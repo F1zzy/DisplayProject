@@ -34,7 +34,7 @@
 .night-sky-chart {
   position: relative;
   flex: 1 1 auto;
-  min-height: clamp(220px, 28cqh, 420px);
+  min-height: 0;
   overflow: hidden;
   background: transparent;
 }
@@ -65,9 +65,12 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(10px, 1.2cqh, 16px);
   flex: 0 0 auto;
+  min-height: 0;
 }
 
 .night-sky-body {
+  min-width: 0;
+  overflow: hidden;
   padding: var(--gap-md) var(--gap-lg);
   border: 1px solid var(--border);
   border-radius: 0;
@@ -117,7 +120,7 @@
   }
 
   .night-sky-chart {
-    min-height: 160px;
+    min-height: 0;
   }
 
   .night-sky-bodies {
@@ -127,5 +130,24 @@
 
   .night-sky-body-value {
     font-size: 1.25rem;
+  }
+}
+
+@container widget (max-height: 600px) {
+  .night-sky-widget {
+    padding: clamp(8px, 1.2cqh, 14px);
+    gap: clamp(8px, 1cqh, 12px);
+  }
+
+  .night-sky-place {
+    font-size: 1.1rem;
+  }
+
+  .night-sky-body {
+    padding: clamp(6px, 0.8cqh, 10px) clamp(8px, 1cqi, 12px);
+  }
+
+  .night-sky-body-value {
+    font-size: clamp(1rem, 2.8cqi, 1.25rem);
   }
 }

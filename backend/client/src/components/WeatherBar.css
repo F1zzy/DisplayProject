@@ -50,7 +50,7 @@
 .forecast-item {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: clamp(4px, 0.8vh, 8px);
+  gap: clamp(4px, 0.8cqh, 8px);
   min-height: 0;
   padding: clamp(12px, 1.5cqh, 18px);
   border: 1px solid var(--border);
@@ -79,7 +79,7 @@
 }
 
 .forecast-day-name {
-  font-size: clamp(0.8rem, 1.6vh, 1.05rem);
+  font-size: clamp(0.8rem, 1.6cqh, 1.05rem);
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.15;
@@ -90,7 +90,7 @@
 }
 
 .forecast-day-date {
-  font-size: clamp(0.7rem, 1.2vh, 0.82rem);
+  font-size: clamp(0.7rem, 1.2cqh, 0.82rem);
   color: var(--text-muted);
   line-height: 1.2;
 }
@@ -109,14 +109,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(2px, 0.5vh, 6px);
+  gap: clamp(2px, 0.5cqh, 6px);
   min-height: 0;
   overflow: hidden;
 }
 
 .forecast-icon {
-  width: clamp(28px, 6vh, 56px);
-  height: clamp(28px, 6vh, 56px);
+  width: clamp(28px, 6cqh, 56px);
+  height: clamp(28px, 6cqh, 56px);
   flex-shrink: 1;
   object-fit: contain;
   filter: none;
@@ -124,7 +124,7 @@
 
 .forecast-condition {
   margin: 0;
-  font-size: clamp(0.68rem, 1.2vh, 0.85rem);
+  font-size: clamp(0.68rem, 1.2cqh, 0.85rem);
   line-height: 1.25;
   color: var(--text-secondary);
   display: -webkit-box;
@@ -140,7 +140,7 @@
 
 .forecast-details {
   position: relative;
-  min-height: clamp(40px, 7vh, 64px);
+  min-height: clamp(32px, 4.5cqh, 64px);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -166,7 +166,7 @@
 }
 
 .forecast-stat-label {
-  font-size: clamp(0.6rem, 1vh, 0.72rem);
+  font-size: clamp(0.6rem, 1cqh, 0.72rem);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -174,13 +174,13 @@
 }
 
 .forecast-stat-value {
-  font-size: clamp(0.8rem, 1.4vh, 1rem);
+  font-size: clamp(0.8rem, 1.4cqh, 1rem);
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .forecast-stat--secondary .forecast-stat-value {
-  font-size: clamp(0.72rem, 1.2vh, 0.88rem);
+  font-size: clamp(0.72rem, 1.2cqh, 0.88rem);
   font-weight: 600;
 }
 
@@ -192,7 +192,7 @@
   color: #1a1c21;
 }
 
-@media (max-width: 700px) {
+@container weather (max-width: 400px) {
   .forecast-row {
     grid-template-columns: 1fr;
     overflow: hidden;
@@ -213,20 +213,20 @@
 @media (orientation: landscape) {
   .forecast-content,
   .hourly-content {
-    padding: clamp(8px, 1.2vh, 14px) clamp(10px, 1.2vw, 16px);
-    gap: clamp(4px, 0.8vh, 8px);
+    padding: clamp(8px, 1.2cqh, 14px) clamp(10px, 1.2cqi, 16px);
+    gap: clamp(4px, 0.8cqh, 8px);
   }
 
   .forecast-content h2,
   .hourly-content h2 {
-    font-size: clamp(0.75rem, 1.2vh, 0.95rem);
+    font-size: clamp(0.75rem, 1.2cqh, 0.95rem);
   }
 
   .forecast-row {
-    gap: clamp(6px, 1vw, 12px);
+    gap: clamp(6px, 1cqi, 12px);
   }
 
   .forecast-item {
-    padding: clamp(8px, 1.2vh, 14px);
+    padding: clamp(8px, 1.2cqh, 14px);
   }
 }

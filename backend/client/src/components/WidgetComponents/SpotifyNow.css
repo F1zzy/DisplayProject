@@ -42,7 +42,7 @@
 
 .spotify-now {
   display: grid;
-  grid-template-columns: minmax(180px, 40%) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
   gap: clamp(16px, 2cqi, 28px);
   align-items: stretch;
   flex: 1 1 auto;
@@ -62,6 +62,7 @@
 .spotify-now-art img,
 .spotify-now-art-placeholder {
   width: 100%;
+  max-height: 100%;
   aspect-ratio: 1;
   object-fit: cover;
   background: var(--bg-card);
@@ -101,10 +102,14 @@
 
 .spotify-track-name {
   font-family: var(--font-display);
-  font-size: clamp(1.2rem, 2.4vw, 1.8rem);
+  font-size: clamp(1.2rem, 4.8cqi, 1.8rem);
   font-weight: 800;
   line-height: 1.1;
   color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .spotify-track-artists {
@@ -170,9 +175,10 @@
 
 .spotify-top-item {
   display: grid;
-  grid-template-columns: 1.25rem 40px minmax(0, 1fr);
+  grid-template-columns: 1.25rem clamp(28px, 6cqi, 40px) minmax(0, 1fr);
   gap: 10px;
   align-items: center;
+  min-width: 0;
 }
 
 .spotify-top-rank {
@@ -182,8 +188,8 @@
 }
 
 .spotify-top-art {
-  width: 40px;
-  height: 40px;
+  width: 100%;
+  aspect-ratio: 1;
   object-fit: cover;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -217,7 +223,7 @@
   }
 
   .spotify-now {
-    grid-template-columns: minmax(96px, 140px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
     gap: var(--gap-lg);
     align-items: center;
   }
@@ -227,8 +233,17 @@
   }
 }
 
-@media (orientation: landscape) and (max-width: 700px) {
+@container widget (max-height: 500px) {
   .spotify-now {
-    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 0.9fr) minmax(0, 1fr);
+    gap: clamp(8px, 1.2cqh, 12px);
+  }
+
+  .spotify-now-art img,
+  .spotify-now-art-placeholder {
+    max-height: 28cqh;
+    width: auto;
+    margin: 0 auto;
   }
 }

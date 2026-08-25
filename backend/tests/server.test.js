@@ -10,6 +10,7 @@ const f1Live = require('../services/f1Live');
 const f1Logos = require('../services/f1Logos');
 const f1Media = require('../services/f1Media');
 const metrics = require('../services/metrics');
+const n2yo = require('../services/n2yo');
 
 describe('API routes', () => {
   test('GET /api/health returns ok', async () => {
@@ -173,6 +174,35 @@ describe('Sky API', () => {
     expect(response.status).toBe(200);
     expect(response.body.chartUrl).toContain('chart.png');
     expect(response.body.bodies[0].name).toBe('Moon');
+  });
+});
+
+describe('Satellites API', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('GET /api/satellites/positions returns payload', async () => {
+    jest.spyOn(n2yo, 'getSatellitePositions').mockResolvedValue({
+      satellites: [
+        {
+          id: 29155,
+          name: 'GOES 13',
+          lat: 0.1,
+          lon: -75.2,
+          altKm: 35786,
+          timestamp: 1700000000,
+          track: [],
+        },
+      ],
+      disabled: false,
+      attribution: 'Tracking © n2yo.com',
+    });
+
+    const response = await request(app).get('/api/satellites/positions');
+    expect(response.status).toBe(200);
+    expect(response.body.satellites[0].name).toBe('GOES 13');
+    expect(response.body.attribution).toContain('n2yo');
   });
 });
 

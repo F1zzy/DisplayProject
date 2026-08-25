@@ -71,17 +71,22 @@
 
 .dashboard-header {
   width: 100%;
-  flex: 0 0 auto;
-  min-height: 0;
-  /* Keep the chrome compact so the widget stage owns the tall frame. */
+  flex: 0 1 26%;
+  height: 26%;
   max-height: 28%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .dashboard-weather {
   width: 100%;
-  flex: 0 0 auto;
-  height: clamp(160px, 16cqh, 260px);
+  flex: 0 1 16%;
+  height: 16%;
+  max-height: 18%;
   min-height: 0;
+  overflow: hidden;
+  container-type: size;
+  container-name: weather;
 }
 
 .dashboard-widgets {
@@ -134,23 +139,27 @@
   justify-content: center;
   min-width: 0;
   min-height: 0;
-  container-type: inline-size;
+  container-type: size;
   container-name: clock;
   font-family: var(--font-display);
-  font-size: clamp(3.1rem, 18cqi, 6.75rem);
   font-weight: 800;
   line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
-  padding: clamp(18px, 2.4cqh, 32px) clamp(14px, 2cqi, 28px);
+  padding: clamp(6px, 7cqh, 32px) clamp(8px, 2cqi, 28px);
   color: var(--text-primary);
   background: var(--bg-panel-elevated);
   border: 1px solid var(--border-strong);
   border-top: 3px solid var(--accent);
   border-radius: 0;
   box-shadow: none;
+}
+
+/* Size the face from the clock panel, not .App (landscape left column is ~40% wide). */
+.time-container-time .clock-face {
+  font-size: clamp(1.5rem, min(16cqi, 48cqh), 6.75rem);
 }
 
 .App.clock-size-small .time-container {
@@ -162,23 +171,23 @@
 }
 
 .App.clock-size-small .time-container-time {
-  padding: clamp(12px, 1.6cqh, 20px) clamp(10px, 1.5cqi, 18px);
+  padding: clamp(4px, 5cqh, 16px) clamp(8px, 1.5cqi, 18px);
 }
 
 .App.clock-size-large .time-container-time {
-  padding: clamp(22px, 3cqh, 40px) clamp(16px, 2.4cqi, 32px);
+  padding: clamp(8px, 8cqh, 40px) clamp(12px, 2.4cqi, 32px);
 }
 
-.App.clock-font-sm .time-container-time {
-  font-size: clamp(2.35rem, 14cqi, 4.75rem);
+.App.clock-font-sm .time-container-time .clock-face {
+  font-size: clamp(1.25rem, min(12cqi, 38cqh), 4.75rem);
 }
 
-.App.clock-font-lg .time-container-time {
-  font-size: clamp(3.6rem, 22cqi, 7.75rem);
+.App.clock-font-lg .time-container-time .clock-face {
+  font-size: clamp(1.75rem, min(18cqi, 54cqh), 7.75rem);
 }
 
-.App.clock-font-xl .time-container-time {
-  font-size: clamp(4.1rem, 26cqi, 9.25rem);
+.App.clock-font-xl .time-container-time .clock-face {
+  font-size: clamp(2rem, min(21cqi, 60cqh), 9.25rem);
 }
 
 .time-container-dateCon {
@@ -292,6 +301,52 @@
   filter: none;
 }
 
+@container dashboard (max-width: 800px) {
+  .time-container-dateCon {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .time-container-weekday,
+  .temp-container-stats-weather,
+  .time-container-stats-humidity,
+  .time-container-stats-temp {
+    padding: clamp(6px, 0.8cqh, 10px);
+  }
+}
+
+@container dashboard (max-height: 1400px) {
+  .dashboard-header {
+    flex-basis: 24%;
+    height: 24%;
+    max-height: 26%;
+  }
+
+  .dashboard-weather {
+    flex-basis: 14%;
+    height: 14%;
+    max-height: 16%;
+  }
+}
+
+@container dashboard (min-width: 1200px) and (min-height: 2200px) {
+  .dashboard-header {
+    flex-basis: 28%;
+    height: 28%;
+    max-height: 30%;
+  }
+
+  .dashboard-weather {
+    flex-basis: 18%;
+    height: 18%;
+    max-height: 22%;
+  }
+
+  .time-container-time .clock-face {
+    font-size: clamp(1.75rem, min(16cqi, 50cqh), 8.5rem);
+  }
+}
+
 /* Soft night focus: dim everything except the clock digits (Motion drives opacity). */
 .App.night-focus .time-container-time {
   opacity: 1;
@@ -313,18 +368,18 @@
     grid-template-areas:
       'header widgets'
       'weather widgets';
-    padding: clamp(12px, 1.6vh, 24px);
-    gap: clamp(10px, 1.2vh, 16px);
+    padding: clamp(12px, 1.6cqh, 24px);
+    gap: clamp(10px, 1.2cqh, 16px);
   }
 
   .App.density-compact {
-    padding: clamp(8px, 1.2vh, 14px);
-    gap: clamp(6px, 1vh, 10px);
+    padding: clamp(8px, 1.2cqh, 14px);
+    gap: clamp(6px, 1cqh, 10px);
   }
 
   .App.density-roomy {
-    padding: clamp(16px, 2vh, 28px);
-    gap: clamp(12px, 1.6vh, 22px);
+    padding: clamp(16px, 2cqh, 28px);
+    gap: clamp(12px, 1.6cqh, 22px);
   }
 
   .dashboard-header {
@@ -358,7 +413,7 @@
   .time-container {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(0, 1.55fr) minmax(0, 0.85fr);
-    gap: clamp(8px, 1.2vh, 14px);
+    gap: clamp(8px, 1.2cqh, 14px);
   }
 
   .App.clock-side-right .time-container {
@@ -372,9 +427,12 @@
 
   .time-container-time {
     min-height: 0;
-    font-size: clamp(2.8rem, 14cqi, 7.25rem);
-    letter-spacing: 0.02em;
-    padding: clamp(16px, 2.2vh, 28px) clamp(14px, 1.8cqi, 24px);
+    letter-spacing: 0;
+    padding: clamp(4px, 4cqh, 14px) clamp(8px, 1.4cqi, 16px);
+  }
+
+  .time-container-time .clock-face {
+    font-size: clamp(1.05rem, min(16cqi, 42cqh), 7.5rem);
   }
 
   .App.clock-size-small .time-container {
@@ -385,30 +443,35 @@
     grid-template-rows: minmax(0, 1.9fr) minmax(0, 0.65fr);
   }
 
-  .App.clock-font-sm .time-container-time {
-    font-size: clamp(2.1rem, 10cqi, 5rem);
+  .App.clock-size-small .time-container-time,
+  .App.clock-size-large .time-container-time {
+    padding: clamp(4px, 3.5cqh, 12px) clamp(6px, 1.2cqi, 14px);
   }
 
-  .App.clock-font-lg .time-container-time {
-    font-size: clamp(3.2rem, 17cqi, 8.25rem);
+  .App.clock-font-sm .time-container-time .clock-face {
+    font-size: clamp(0.95rem, min(13cqi, 34cqh), 5.5rem);
   }
 
-  .App.clock-font-xl .time-container-time {
-    font-size: clamp(3.7rem, 20cqi, 9.75rem);
+  .App.clock-font-lg .time-container-time .clock-face {
+    font-size: clamp(1.1rem, min(17.5cqi, 46cqh), 8.25rem);
+  }
+
+  .App.clock-font-xl .time-container-time .clock-face {
+    font-size: clamp(1.2rem, min(20cqi, 52cqh), 9rem);
   }
 
   .time-container-dateCon {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     min-height: 0;
-    gap: clamp(6px, 1vh, 12px);
+    gap: clamp(6px, 1cqh, 12px);
   }
 
   .time-container-weekday,
   .temp-container-stats-weather,
   .time-container-stats-humidity,
   .time-container-stats-temp {
-    padding: clamp(8px, 1vh, 12px);
+    padding: clamp(8px, 1cqh, 12px);
     background: var(--bg-panel-elevated);
     border: 1px solid var(--border);
   }

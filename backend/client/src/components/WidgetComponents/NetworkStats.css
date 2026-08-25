@@ -293,7 +293,7 @@
 .network-chart-empty {
   margin: 0;
   height: 100%;
-  min-height: 80px;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -407,5 +407,11 @@
   .network-chart-stack {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+@container widget (max-width: 400px) {
+  .network-identity {
+    grid-template-columns: 1fr;
   }
 }

@@ -136,14 +136,14 @@ async function stubApis(page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(STUB_FORECAST),
+      body: JSON.stringify(STUB_FORECAST.forecast),
     });
   });
   await page.route('**/api/weather/hourly**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(STUB_HOURLY),
+      body: JSON.stringify(STUB_HOURLY.hours),
     });
   });
   await page.route('**/api/weather/globe-layers**', async (route) => {
@@ -221,7 +221,43 @@ async function stubApis(page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ articles: [] }),
+      body: JSON.stringify([
+        {
+          title: 'City council approves new riverside park',
+          description: 'A short summary that should wrap inside the news card without overflowing.',
+          url: 'https://example.com/news/1',
+          urlToImage: null,
+          source: { name: 'Example News' },
+        },
+        {
+          title: 'Local rail line adds weekend services',
+          description: 'Second story used to fill the headlines column on the kiosk.',
+          url: 'https://example.com/news/2',
+          urlToImage: null,
+          source: { name: 'Daily Wire' },
+        },
+        {
+          title: 'Warm spell expected through Thursday',
+          description: 'Third headline so the general list occupies its flex rows.',
+          url: 'https://example.com/news/3',
+          urlToImage: null,
+          source: { name: 'Weather Desk' },
+        },
+        {
+          title: 'Chipmakers report stronger quarter',
+          description: 'Technology column item one.',
+          url: 'https://example.com/news/4',
+          urlToImage: null,
+          source: { name: 'Tech Daily' },
+        },
+        {
+          title: 'Open-source maps add transit layer',
+          description: 'Technology column item two.',
+          url: 'https://example.com/news/5',
+          urlToImage: null,
+          source: { name: 'Open Atlas' },
+        },
+      ]),
     });
   });
   await page.route('**/api/calendar/**', async (route) => {
@@ -243,6 +279,31 @@ async function stubApis(page) {
       status: 503,
       contentType: 'application/json',
       body: JSON.stringify({ error: 'Sky not configured' }),
+    });
+  });
+  await page.route('**/api/satellites/positions**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        satellites: [
+          {
+            id: 29155,
+            name: 'GOES 13',
+            lat: 0.1,
+            lon: -75.2,
+            altKm: 35786,
+            timestamp: 1700000000,
+            track: [
+              { lat: 0.1, lon: -75.2, altKm: 35786, timestamp: 1700000000 },
+              { lat: 0.12, lon: -75.25, altKm: 35786, timestamp: 1700000045 },
+              { lat: 0.14, lon: -75.3, altKm: 35786, timestamp: 1700000090 },
+            ],
+          },
+        ],
+        disabled: false,
+        attribution: 'Tracking © n2yo.com',
+      }),
     });
   });
   await page.route('**/api/spotify/**', async (route) => {
