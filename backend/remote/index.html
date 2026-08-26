@@ -182,6 +182,24 @@
                   <input id="settingForecastDays" type="number" min="1" max="7" step="1" />
                 </label>
               </div>
+              <div class="toggle-list">
+                <label class="toggle-row">
+                  <span class="toggle-copy">Sleep when phone leaves Wi-Fi</span>
+                  <input type="checkbox" id="settingPresenceEnabled" class="toggle-input" />
+                  <span class="toggle" aria-hidden="true"></span>
+                </label>
+              </div>
+              <div class="settings-grid">
+                <label class="field">
+                  <span class="field-label">Phone IP</span>
+                  <input id="settingPresenceHost" type="text" inputmode="decimal" placeholder="192.168.0.50" />
+                  <span class="field-hint">DHCP reservation on LAN. iPhone: turn off Private Wi-Fi Address.</span>
+                </label>
+                <label class="field">
+                  <span class="field-label">Away after (sec)</span>
+                  <input id="settingPresenceAwayAfter" type="number" min="30" max="600" step="15" />
+                </label>
+              </div>
             </div>
           </details>
 

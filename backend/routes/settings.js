@@ -2,6 +2,7 @@ const express = require('express');
 const api = require('../services/api');
 const settings = require('../services/settings');
 const { setDisplayBrightness } = require('../services/displayBrightness');
+const presence = require('../services/presence');
 
 function createSettingsRouter(broadcast) {
   const router = express.Router();
@@ -21,6 +22,7 @@ function createSettingsRouter(broadcast) {
     try {
       const updated = settings.updateSettings(req.body || {});
       setDisplayBrightness(updated.displayBrightness);
+      presence.reload();
       broadcast({ type: 'settings:update', settings: updated });
       res.json(updated);
     } catch (error) {

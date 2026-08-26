@@ -227,4 +227,33 @@ describe('settings service', () => {
     expect(fallback.nightFocusEndHour).toBe(0);
     expect(fallback.displayBrightness).toBe(10);
   });
+
+  test('presence settings sanitize private IPv4 and clamps', () => {
+    const updated = settings.updateSettings({
+      presenceEnabled: true,
+      presenceHost: '192.168.0.50',
+      presenceIntervalMs: 20000,
+      presenceAwayAfterMs: 120000,
+    });
+    expect(updated.presenceEnabled).toBe(true);
+    expect(updated.presenceHost).toBe('192.168.0.50');
+    expect(updated.presenceIntervalMs).toBe(20000);
+    expect(updated.presenceAwayAfterMs).toBe(120000);
+
+    const cleared = settings.updateSettings({
+      presenceEnabled: 0,
+      presenceHost: '8.8.8.8',
+      presenceIntervalMs: 1000,
+      presenceAwayAfterMs: 5000,
+    });
+    expect(cleared.presenceEnabled).toBe(false);
+    expect(cleared.presenceHost).toBe('');
+    expect(cleared.presenceIntervalMs).toBe(5000);
+    expect(cleared.presenceAwayAfterMs).toBe(30000);
+
+    expect(settings.sanitizePresenceHost('10.1.2.3')).toBe('10.1.2.3');
+    expect(settings.sanitizePresenceHost('172.16.0.1')).toBe('172.16.0.1');
+    expect(settings.sanitizePresenceHost('1.1.1.1')).toBe('');
+    expect(settings.sanitizePresenceHost('not-an-ip')).toBe('');
+  });
 });

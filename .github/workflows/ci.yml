@@ -34,6 +34,10 @@ jobs:
         working-directory: network
         run: go test ./...
 
+      - name: Test Go presence
+        working-directory: presence
+        run: go test ./...
+
       - name: Install backend dependencies
         working-directory: backend
         run: npm ci

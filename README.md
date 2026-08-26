@@ -23,6 +23,7 @@ DisplayProject turns a spare portrait monitor into an always-on information wall
 - Remote control page at `/remote` (API-key unlock + dashboard settings)
 - Widget pin from remote (choose a widget and freeze auto-rotation until cleared)
 - WebSocket updates for display power, widgets, and settings
+- Optional LAN presence: a Go service pings a reserved phone IP; Node sleeps the display when you leave Wi‑Fi (wake when you return; manual Off is sticky)
 - Raspberry Pi kiosk install with HDMI power control
 - Optional Go analytics microservice (API latency + widget views; remote Analytics tab)
 - Optional Go network microservice (latency, rates, host/public IP; remote Network tab)
@@ -331,6 +332,17 @@ npm run build
 
 Or from `backend/`: `npm run build:remote-network`. Output lands in `backend/remote/network-app/` and is served under `/remote/network-app/`.
 
+## Presence (optional)
+
+LAN presence (sleep when your phone leaves Wi‑Fi) is probed by a small Go service — ICMP ping first, then ARP/neighbor so a sleeping phone still counts as home. Node pushes settings and applies **sleep** / **on**; the remote never talks to Go.
+
+```bash
+cd presence
+go run ./cmd/presence
+```
+
+In `backend/.env` set `PRESENCE_SERVICE_URL=http://127.0.0.1:3012` (the default). Set `PRESENCE_SERVICE_URL=false` to disable. Details: [`presence/README.md`](presence/README.md). If the service is down, presence fails open (no sleep/wake).
+
 ## Remote control
 
 1. Start the server
@@ -339,10 +351,19 @@ Or from `backend/`: `npm run build:remote-network`. Output lands in `backend/rem
 4. Use On / Sleep / Off, widget jump buttons, and **Pin widget** (pick which widget to freeze; **Unpin** or **Next Widget** clears the pin)
 5. Open the **Analytics** tab for the last-24h summary and charts (requires the Go analytics service; build remote-analytics once as documented in Analytics)
 6. Open the **Network** tab for live connectivity cards and charts (requires the Go network service; build remote-network once as documented in Network service)
-7. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background, appearance (including **colour scheme** — presets or **Custom** with accent/app/panel/card pickers and optional transparent surfaces; **clock size** and **clock font size**; applied to both the dashboard and this remote page — night focus schedule and **display brightness** — on a Raspberry Pi this drives the panel/HDMI backlight via `displayproject-display-brightness`), and layout, then **Save settings**
+7. Under **Dashboard Settings**, change location, stocks, widgets, rotation, news, calendar, background, appearance (including **colour scheme** — presets or **Custom** with accent/app/panel/card pickers and optional transparent surfaces; **clock size** and **clock font size**; applied to both the dashboard and this remote page — night focus schedule and **display brightness** — on a Raspberry Pi this drives the panel/HDMI backlight via `displayproject-display-brightness`), layout, and **Sleep when phone leaves Wi-Fi** (LAN presence), then **Save settings**
 Enable **Night Sky** under Enabled widgets to show the AstronomyAPI chart and visible planets/Moon strip. Enable **Spotify** after completing the Spotify setup above. Enable **Formula 1** for championship standings and live race order. Enable **World Globe** and choose cities under **World globe cities** for the rotating globe callouts. Use **Globe weather layers** for full-earth precipitation radar ([RainViewer](https://www.rainviewer.com/)) and multi-satellite cloud veil (NASA GIBS Terra/Aqua/VIIRS); set `WEATHER_LAYERS=false` in `backend/.env` to skip composing overlays. With `N2YO_API_KEY` set (free key from [n2yo.com/api](https://www.n2yo.com/api/)), the globe also shows modeled satellite markers and short ground-track trails (default: GOES 13 / NORAD 29155). Leave the key empty or set `N2YO_API_KEY=false` to soft-disable; attribution: Tracking © n2yo.com.
 
 The remote page stays locked until the API key is verified. Lock the session when finished. Settings are stored in `backend/data/settings.json` (not committed).
+
+### LAN presence (phone on Wi-Fi)
+
+When **Sleep when phone leaves Wi-Fi** is on, the Go presence service pings a reserved phone IPv4. After the **Away after** grace period with no reply (ICMP, then ARP/neighbor as a fallback for sleeping phones), Node puts the kiosk to **sleep**. When the phone is reachable again, it wakes to **on**.
+
+- Give the phone a **DHCP reservation** so the IP does not change.
+- On iPhone, turn off **Private Wi-Fi Address** for this network or the reservation will not stick.
+- Presence never sends **Off**. If you tap Off on the remote, the display stays off until you tap On (or Alexa on).
+- ICMP-only would false-away a locked iPhone; ARP/neighbor STALE/REACHABLE still counts as home.
 
 Install as a PWA on Android for a simple remote control app.
 
@@ -374,7 +395,7 @@ Install as a PWA on Android for a simple remote control app.
 | `PUT /api/settings` | Update preferences (requires `x-api-key`); broadcasts `settings:update` |
 | `GET /api/analytics/summary` | Last-24h analytics summary from the Go service (requires `x-api-key`; empty/offline fallback if unreachable) |
 | `POST /api/analytics/event` | Dashboard widget-view beacon (`{ type: "widget_view", widget, source? }`) |
-| `GET /api/display/state` | Display state (includes `pinned`) |
+| `GET /api/display/state` | Display state (includes `pinned` and `presence`) |
 | `POST /api/display/auth/verify` | Validate `CONTROL_API_KEY` for remote unlock |
 | `POST /api/display/power` | `{ action: "on" \| "off" \| "sleep" }` (requires `x-api-key`) |
 | `POST /api/display/widgets/rotate` | Next widget; clears pin (requires `x-api-key`) |

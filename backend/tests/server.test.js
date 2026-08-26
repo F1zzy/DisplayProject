@@ -451,6 +451,10 @@ describe('Display control', () => {
     expect(response.body).toHaveProperty('power');
     expect(response.body).toHaveProperty('widgetCount');
     expect(response.body).toHaveProperty('pinned');
+    expect(response.body).toHaveProperty('presence');
+    expect(response.body.presence).toHaveProperty('enabled');
+    expect(response.body.presence).toHaveProperty('home');
+    expect(response.body.presence).toHaveProperty('host');
   });
 
   test('POST /api/display/auth/verify requires auth', async () => {
@@ -517,21 +521,33 @@ describe('Display control', () => {
   });
 
   test('POST /api/display/widgets/pin can pin a chosen widget index', async () => {
-    const pinned = await request(app)
-      .post('/api/display/widgets/pin')
+    const settingsService = require('../services/settings');
+    const previousWidgets = settingsService.getSettings().enabledWidgets;
+    const updated = await request(app)
+      .put('/api/settings')
       .set('x-api-key', apiKey)
-      .send({ pinned: true, index: 1 });
+      .send({ enabledWidgets: ['stock', 'network'] });
+    expect(updated.status).toBe(200);
 
-    expect(pinned.status).toBe(200);
-    expect(pinned.body.pinned).toBe(true);
-    expect(pinned.body.currentWidget).toBe(1);
+    try {
+      const pinned = await request(app)
+        .post('/api/display/widgets/pin')
+        .set('x-api-key', apiKey)
+        .send({ pinned: true, index: 1 });
 
-    const invalid = await request(app)
-      .post('/api/display/widgets/pin')
-      .set('x-api-key', apiKey)
-      .send({ pinned: true, index: 99 });
+      expect(pinned.status).toBe(200);
+      expect(pinned.body.pinned).toBe(true);
+      expect(pinned.body.currentWidget).toBe(1);
 
-    expect(invalid.status).toBe(400);
+      const invalid = await request(app)
+        .post('/api/display/widgets/pin')
+        .set('x-api-key', apiKey)
+        .send({ pinned: true, index: 99 });
+
+      expect(invalid.status).toBe(400);
+    } finally {
+      settingsService.updateSettings({ enabledWidgets: previousWidgets });
+    }
   });
 
   test('POST /api/display/widgets/pin requires auth', async () => {

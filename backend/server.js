@@ -98,6 +98,17 @@ if (require.main === module) {
     } catch (error) {
       console.error('Failed to start F1 live timing client:', error.message);
     }
+
+    try {
+      const presence = require('./services/presence');
+      const displayControl = require('./services/displayControl');
+      presence.start({
+        applyPower: displayControl.applyPower,
+        getPower: displayControl.getPower,
+      });
+    } catch (error) {
+      console.error('Failed to start presence monitor:', error.message);
+    }
   });
 }
 

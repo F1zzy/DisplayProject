@@ -498,6 +498,15 @@ async function refreshDisplayState() {
   try {
     const state = await apiRequest('/api/display/state');
     setRemotePinnedUi(state.pinned, state.currentWidget);
+    if (powerStateBadge && state.power) {
+      const presence = state.presence;
+      let label = String(state.power).toUpperCase();
+      if (presence && presence.enabled) {
+        if (presence.home === true) label = `${label} · HOME`;
+        else if (presence.home === false) label = `${label} · AWAY`;
+      }
+      powerStateBadge.textContent = label;
+    }
     return state;
   } catch {
     return null;
@@ -797,6 +806,11 @@ function fillSettingsForm(settings) {
   document.getElementById('settingRotation').value = Math.round((settings.widgetRotationMs || 0) / 1000);
   document.getElementById('settingCalendarDays').value = settings.calendarDays ?? 1;
   document.getElementById('settingForecastDays').value = settings.forecastDays ?? 3;
+  document.getElementById('settingPresenceEnabled').checked = settings.presenceEnabled === true;
+  document.getElementById('settingPresenceHost').value = settings.presenceHost || '';
+  document.getElementById('settingPresenceAwayAfter').value = Math.round(
+    (settings.presenceAwayAfterMs != null ? settings.presenceAwayAfterMs : 90000) / 1000
+  );
   document.getElementById('settingNewsGeneral').checked = settings.newsGeneral !== false;
   document.getElementById('settingNewsTechnology').checked = settings.newsTechnology !== false;
 
@@ -877,6 +891,10 @@ function readSettingsForm() {
     enabledWidgets,
     calendarDays: parseInt(document.getElementById('settingCalendarDays').value, 10) || 1,
     forecastDays: parseInt(document.getElementById('settingForecastDays').value, 10) || 3,
+    presenceEnabled: document.getElementById('settingPresenceEnabled').checked,
+    presenceHost: document.getElementById('settingPresenceHost').value.trim(),
+    presenceAwayAfterMs:
+      (parseInt(document.getElementById('settingPresenceAwayAfter').value, 10) || 90) * 1000,
     newsGeneral: document.getElementById('settingNewsGeneral').checked,
     newsTechnology: document.getElementById('settingNewsTechnology').checked,
     globeCities: Array.from(document.querySelectorAll('input[name="globeCity"]:checked')).map(
@@ -950,8 +968,8 @@ document.querySelectorAll('[data-action]').forEach((button) => {
       });
       document.querySelectorAll('[data-action]').forEach((btn) => btn.classList.remove('is-active'));
       flashButton(button);
+      await refreshDisplayState();
       if (powerStateBadge) {
-        powerStateBadge.textContent = action.toUpperCase();
         flashPowerBadge();
       }
       setStatus(`Display set to ${action}`);

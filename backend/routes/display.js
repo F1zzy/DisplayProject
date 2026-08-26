@@ -1,17 +1,11 @@
 const express = require('express');
 const api = require('../services/api');
-const settings = require('../services/settings');
-const metrics = require('../services/metrics');
-const { setDisplayPower } = require('../services/displayPower');
+const displayControl = require('../services/displayControl');
+const presence = require('../services/presence');
 
 function createDisplayRouter(broadcast) {
+  displayControl.configure({ broadcast });
   const router = express.Router();
-
-  let displayState = {
-    power: 'on',
-    currentWidget: 0,
-    pinned: false,
-  };
 
   function requireAuth(req, res, next) {
     if (!api.verifyControlKey(req)) {
@@ -20,39 +14,11 @@ function createDisplayRouter(broadcast) {
     next();
   }
 
-  function getWidgetCount() {
-    return Math.max(1, settings.getSettings().enabledWidgets.length);
-  }
-
-  function widgetKeyAt(index) {
-    const enabled = settings.getSettings().enabledWidgets || [];
-    return enabled[index] || null;
-  }
-
-  function recordWidgetView(index, source) {
-    const key = widgetKeyAt(index);
-    if (!key) return;
-    metrics.record({
-      type: 'widget_view',
-      widget_key: key,
-      source,
-    });
-  }
-
-  function getLiveState() {
-    const widgetCount = getWidgetCount();
-    const currentWidget = ((displayState.currentWidget % widgetCount) + widgetCount) % widgetCount;
-    displayState = { ...displayState, currentWidget };
-    return {
-      power: displayState.power,
-      currentWidget,
-      widgetCount,
-      pinned: Boolean(displayState.pinned),
-    };
-  }
-
   router.get('/state', (_req, res) => {
-    res.json(getLiveState());
+    res.json({
+      ...displayControl.getLiveState(),
+      presence: presence.getStatus(),
+    });
   });
 
   router.post('/auth/verify', requireAuth, (_req, res) => {
@@ -60,80 +26,41 @@ function createDisplayRouter(broadcast) {
   });
 
   router.post('/power', requireAuth, (req, res) => {
-    const { action } = req.body;
-    if (!['on', 'off', 'sleep'].includes(action)) {
-      return res.status(400).json({ error: 'action must be on, off, or sleep' });
+    const result = displayControl.applyPower(req.body.action);
+    if (!result.ok) {
+      return res.status(400).json({ error: result.error });
     }
-
-    displayState = { ...displayState, power: action };
-    broadcast({ type: 'display:power', action });
-    setDisplayPower(action);
-    metrics.record({ type: 'power', power_action: action });
-    res.json(getLiveState());
+    res.json(result.state);
   });
 
-  router.post('/widgets/rotate', requireAuth, (req, res) => {
-    const widgetCount = getWidgetCount();
-    const current = getLiveState().currentWidget;
-    displayState = {
-      ...displayState,
-      pinned: false,
-      currentWidget: (current + 1) % widgetCount,
-    };
-    const live = getLiveState();
-    broadcast({ type: 'widgets:rotate', currentWidget: live.currentWidget, pinned: false });
-    recordWidgetView(live.currentWidget, 'rotate');
-    res.json(live);
+  router.post('/widgets/rotate', requireAuth, (_req, res) => {
+    res.json(displayControl.rotateWidget());
   });
 
   router.post('/widgets/set', requireAuth, (req, res) => {
-    const widgetCount = getWidgetCount();
-    const index = parseInt(req.body.index, 10);
-    if (Number.isNaN(index) || index < 0 || index >= widgetCount) {
-      return res.status(400).json({ error: 'Invalid widget index' });
+    const result = displayControl.setWidget(req.body.index);
+    if (!result.ok) {
+      return res.status(400).json({ error: result.error });
     }
-
-    displayState = { ...displayState, currentWidget: index };
-    const live = getLiveState();
-    broadcast({ type: 'widgets:set', currentWidget: index, pinned: live.pinned });
-    recordWidgetView(live.currentWidget, 'set');
-    res.json(live);
+    res.json(result.state);
   });
 
   router.post('/widgets/pin', requireAuth, (req, res) => {
-    const pinned = Boolean(req.body?.pinned);
-    const widgetCount = getWidgetCount();
-    const nextState = { ...displayState, pinned };
-
-    if (pinned && req.body?.index !== undefined && req.body?.index !== null && req.body?.index !== '') {
-      const index = parseInt(req.body.index, 10);
-      if (Number.isNaN(index) || index < 0 || index >= widgetCount) {
-        return res.status(400).json({ error: 'Invalid widget index' });
-      }
-      nextState.currentWidget = index;
-    }
-
-    displayState = nextState;
-    const live = getLiveState();
-    broadcast({
-      type: 'widgets:pin',
-      pinned: live.pinned,
-      currentWidget: live.currentWidget,
+    const result = displayControl.pinWidget({
+      pinned: req.body?.pinned,
+      index: req.body?.index,
     });
-    if (pinned) {
-      recordWidgetView(live.currentWidget, 'pin');
+    if (!result.ok) {
+      return res.status(400).json({ error: result.error });
     }
-    res.json(live);
+    res.json(result.state);
   });
 
   // Legacy endpoint kept for compatibility
   router.post('/control-display', requireAuth, (req, res) => {
     const { action } = req.body;
     if (action === 'on' || action === 'off') {
-      displayState = { ...displayState, power: action };
-      broadcast({ type: 'display:power', action });
-      setDisplayPower(action);
-      metrics.record({ type: 'power', power_action: action });
+      displayControl.applyPower(action);
     }
     res.sendStatus(200);
   });

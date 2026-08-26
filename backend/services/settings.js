@@ -87,6 +87,10 @@ const DEFAULTS = {
   nightFocusEndHour: 6,
   displayBrightness: 100,
   spotifyLyricsBackground: true,
+  presenceEnabled: false,
+  presenceHost: '',
+  presenceIntervalMs: 15000,
+  presenceAwayAfterMs: 90000,
 };
 
 let cache = null;
@@ -182,6 +186,20 @@ function sanitizeFromList(value, allowed, fallback) {
   return allowed.includes(key) ? key : fallback;
 }
 
+/** RFC1918 IPv4 only. Empty string disables probing. */
+function sanitizePresenceHost(value) {
+  const raw = String(value || '').trim();
+  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(raw);
+  if (!match) return '';
+  const parts = match.slice(1).map((octet) => Number(octet));
+  if (parts.some((n) => n > 255)) return '';
+  const [a, b] = parts;
+  const privateIp =
+    a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  if (!privateIp) return '';
+  return parts.join('.');
+}
+
 function sanitizeSectionOrder(input) {
   if (!Array.isArray(input)) return [...DEFAULTS.sectionOrder];
   const seen = new Set();
@@ -253,6 +271,15 @@ function normalize(partial = {}) {
       merged.spotifyLyricsBackground === undefined
         ? DEFAULTS.spotifyLyricsBackground
         : Boolean(merged.spotifyLyricsBackground),
+    presenceEnabled: Boolean(merged.presenceEnabled),
+    presenceHost: sanitizePresenceHost(merged.presenceHost),
+    presenceIntervalMs: clampInt(merged.presenceIntervalMs, 5000, 60000, DEFAULTS.presenceIntervalMs),
+    presenceAwayAfterMs: clampInt(
+      merged.presenceAwayAfterMs,
+      30000,
+      600000,
+      DEFAULTS.presenceAwayAfterMs
+    ),
   };
 }
 
@@ -331,6 +358,7 @@ module.exports = {
   VALID_GLOBE_LAYERS,
   DEFAULT_GLOBE_SATELLITES,
   sanitizeGlobeSatellites,
+  sanitizePresenceHost,
   DEFAULTS,
   getSettings,
   updateSettings,
